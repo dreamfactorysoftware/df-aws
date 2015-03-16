@@ -1,0 +1,46 @@
+{
+  "name": "dreamfactory/aws",
+  "description": "AWS package containing AWS components for the rave core.",
+  "minimum-stability": "dev",
+  "keywords": [
+    "dreamfactory",
+    "dsp",
+    "rave",
+    "aws",
+    "s3",
+    "dynamodb"
+  ],
+  "homepage": "https://www.dreamfactory.com/",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Arif Islam",
+      "email": "arifislam@dreamfactory.com"
+    },
+    {
+      "name": "Jerry Ablan",
+      "email": "jerryablan@dreamfactory.com"
+    },
+    {
+      "name": "Lee Hicks",
+      "email": "leehicks@dreamfactory.com"
+    }
+  ],
+  "support": {
+    "email": "support@dreamfactory.com",
+    "issues": "https://github.com/dreamfactorysoftware/rave/issues",
+    "wiki": "https://github.com/dreamfactorysoftware/rave/wiki",
+    "source": "https://github.com/dreamfactorysoftware/rave"
+  },
+  "require": {
+    "dreamfactory/php-utils": "dev-develop as dev-master",
+    "dreamfactory/rave-common": "dev-develop as dev-master",
+    "rhumsaa/array_column": "~1.1",
+    "dreamfactory/azure-sdk-for-php": "dev-develop as dev-master"
+  },
+  "autoload":{
+    "psr-4": {
+      "DreamFactory\\Aws\\":"src/"
+    }
+  }
+}

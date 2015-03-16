@@ -30,7 +30,7 @@ class FileServiceS3Test extends FileServiceTestCase
     {
         parent::stage();
 
-        Artisan::call('migrate', ['--path' => 'workbench/DreamFactory/Aws/database/migrations/']);
+        Artisan::call('migrate', ['--path' => 'vendor/dreamfactory/aws/database/migrations/']);
         Artisan::call('db:seed', ['--class' => 'DreamFactory\\Aws\\Database\\Seeds\\AwsSeeder']);
         if(!$this->serviceExists('s3'))
         {
