@@ -1,5 +1,5 @@
 {
-  "name": "dreamfactory/aws",
+  "name": "dreamfactory/rave-aws",
   "description": "AWS package containing AWS components for the rave core.",
   "minimum-stability": "dev",
   "keywords": [
