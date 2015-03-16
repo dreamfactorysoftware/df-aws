@@ -36,7 +36,7 @@
     "dreamfactory/php-utils": "dev-develop as dev-master",
     "dreamfactory/rave-common": "dev-develop as dev-master",
     "rhumsaa/array_column": "~1.1",
-    "dreamfactory/azure-sdk-for-php": "dev-develop as dev-master"
+    "aws/aws-sdk-php": "~2.7.0"
   },
   "autoload":{
     "psr-4": {
