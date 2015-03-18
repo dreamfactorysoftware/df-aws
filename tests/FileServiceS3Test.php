@@ -34,7 +34,7 @@ class FileServiceS3Test extends FileServiceTestCase
         Artisan::call('db:seed', ['--class' => 'DreamFactory\\Aws\\Database\\Seeds\\AwsSeeder']);
         if(!$this->serviceExists('s3'))
         {
-            \Rave\Models\Service::create(
+            \DreamFactory\Rave\Models\Service::create(
                 [
                     "name"        => "s3",
                     "label"       => "S3 file service",

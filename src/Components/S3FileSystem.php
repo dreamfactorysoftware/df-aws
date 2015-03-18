@@ -21,10 +21,10 @@
 namespace DreamFactory\Aws\Components;
 
 use DreamFactory\Library\Utility\ArrayUtils;
-use DreamFactory\Rave\Common\Exceptions\RaveException;
-use DreamFactory\Rave\Common\Exceptions\BadRequestException;
-use Rave\Components\RemoteFileSystem;
-use Rave\Utility\AwsSvcUtilities;
+use DreamFactory\Rave\Exceptions\RaveException;
+use DreamFactory\Rave\Exceptions\BadRequestException;
+use DreamFactory\Rave\Components\RemoteFileSystem;
+use DreamFactory\Rave\Utility\AwsSvcUtilities;
 use Aws\S3\S3Client;
 
 /**

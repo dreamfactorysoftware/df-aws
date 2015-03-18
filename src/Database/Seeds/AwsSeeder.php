@@ -21,7 +21,7 @@
 namespace DreamFactory\Aws\Database\Seeds;
 
 use Illuminate\Database\Seeder;
-use Rave\Models\ServiceType;
+use DreamFactory\Rave\Models\ServiceType;
 
 /**
  * Class AwsSeeder

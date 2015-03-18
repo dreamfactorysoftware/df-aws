@@ -20,8 +20,8 @@
 
 namespace DreamFactory\Aws\Models;
 
-use Rave\Contracts\ServiceConfigHandlerInterface;
-use Rave\Models\BaseServiceConfigModel;
+use DreamFactory\Rave\Contracts\ServiceConfigHandlerInterface;
+use DreamFactory\Rave\Models\BaseServiceConfigModel;
 
 /**
  * Class AwsConfig
