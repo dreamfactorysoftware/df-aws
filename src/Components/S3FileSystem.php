@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-namespace DreamFactory\Aws\Components;
+namespace DreamFactory\Rave\Aws\Components;
 
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Rave\Exceptions\RaveException;
@@ -30,7 +30,7 @@ use Aws\S3\S3Client;
 /**
  * Class S3FileSystem (a copy of dsp's AwsS3Svc class)
  *
- * @package DreamFactory\Aws\Components
+ * @package DreamFactory\Rave\Aws\Components
  */
 class S3FileSystem extends RemoteFileSystem
 {

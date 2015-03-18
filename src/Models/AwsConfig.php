@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-namespace DreamFactory\Aws\Models;
+namespace DreamFactory\Rave\Aws\Models;
 
 use DreamFactory\Rave\Contracts\ServiceConfigHandlerInterface;
 use DreamFactory\Rave\Models\BaseServiceConfigModel;
@@ -26,7 +26,7 @@ use DreamFactory\Rave\Models\BaseServiceConfigModel;
 /**
  * Class AwsConfig
  *
- * @package DreamFactory\Aws\Models
+ * @package DreamFactory\Rave\Aws\Models
  */
 class AwsConfig extends BaseServiceConfigModel implements ServiceConfigHandlerInterface
 {

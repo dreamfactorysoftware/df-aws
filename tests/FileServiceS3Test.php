@@ -20,7 +20,7 @@
 
 use DreamFactory\Library\Utility\Enums\Verbs;
 
-class FileServiceS3Test extends \Rave\Testing\FileServiceTestCase
+class FileServiceS3Test extends \DreamFactory\Rave\Testing\FileServiceTestCase
 {
     protected static $staged = false;
 
@@ -29,7 +29,7 @@ class FileServiceS3Test extends \Rave\Testing\FileServiceTestCase
         parent::stage();
 
         Artisan::call('migrate', ['--path' => 'vendor/dreamfactory/rave-aws/database/migrations/']);
-        Artisan::call('db:seed', ['--class' => 'DreamFactory\\Aws\\Database\\Seeds\\AwsSeeder']);
+        Artisan::call('db:seed', ['--class' => 'DreamFactory\\Rave\\Aws\\Database\\Seeds\\AwsSeeder']);
         if(!$this->serviceExists('s3'))
         {
             \DreamFactory\Rave\Models\Service::create(

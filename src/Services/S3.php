@@ -18,16 +18,16 @@
  * limitations under the License.
  */
 
-namespace DreamFactory\Aws\Services;
+namespace DreamFactory\Rave\Aws\Services;
 
 use DreamFactory\Rave\Utility\AwsSvcUtilities;
 use DreamFactory\Rave\Services\RemoteFileService;
-use DreamFactory\Aws\Components\S3FileSystem;
+use DreamFactory\Rave\Aws\Components\S3FileSystem;
 
 /**
  * Class S3
  *
- * @package DreamFactory\Aws\Services
+ * @package DreamFactory\Rave\Aws\Services
  */
 class S3 extends RemoteFileService
 {

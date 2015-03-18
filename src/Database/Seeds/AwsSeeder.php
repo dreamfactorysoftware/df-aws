@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-namespace DreamFactory\Aws\Database\Seeds;
+namespace DreamFactory\Rave\Aws\Database\Seeds;
 
 use Illuminate\Database\Seeder;
 use DreamFactory\Rave\Models\ServiceType;
@@ -26,7 +26,7 @@ use DreamFactory\Rave\Models\ServiceType;
 /**
  * Class AwsSeeder
  *
- * @package DreamFactory\Aws\Database\Seeds
+ * @package DreamFactory\Rave\Aws\Database\Seeds
  */
 class AwsSeeder extends Seeder
 {
@@ -43,8 +43,8 @@ class AwsSeeder extends Seeder
             ServiceType::create(
                 [
                     'name'           => 's3_file',
-                    'class_name'     => "DreamFactory\\Aws\\Services\\S3",
-                    'config_handler' => "DreamFactory\\Aws\\Models\\AwsConfig",
+                    'class_name'     => "DreamFactory\\Rave\\Aws\\Services\\S3",
+                    'config_handler' => "DreamFactory\\Rave\\Aws\\Models\\AwsConfig",
                     'label'          => 'S3 file service',
                     'description'    => 'File service supporting the AWS S3 file system.',
                     'group'          => 'files',
