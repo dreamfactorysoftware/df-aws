@@ -20,9 +20,9 @@
 
 namespace DreamFactory\Rave\Aws\Services;
 
-use DreamFactory\Rave\Utility\AwsSvcUtilities;
-use DreamFactory\Rave\Services\RemoteFileService;
+use DreamFactory\Rave\Aws\Utility\AwsSvcUtilities;
 use DreamFactory\Rave\Aws\Components\S3FileSystem;
+use DreamFactory\Rave\Services\RemoteFileService;
 
 /**
  * Class S3

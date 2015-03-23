@@ -37,21 +37,38 @@ class AwsSeeder extends Seeder
      */
     public function run()
     {
-        if ( !ServiceType::whereName( 's3_file' )->count() )
+        if ( !ServiceType::whereName( 'aws_s3' )->count() )
         {
             // Add the service type
             ServiceType::create(
                 [
-                    'name'           => 's3_file',
+                    'name'           => 'aws_s3',
                     'class_name'     => "DreamFactory\\Rave\\Aws\\Services\\S3",
                     'config_handler' => "DreamFactory\\Rave\\Aws\\Models\\AwsConfig",
-                    'label'          => 'S3 file service',
+                    'label'          => 'AWS S3 file service',
                     'description'    => 'File service supporting the AWS S3 file system.',
                     'group'          => 'files',
                     'singleton'      => 1
                 ]
             );
-            $this->command->info( 'S3 file service type seeded!' );
+            $this->command->info( 'AWS S3 file service type seeded!' );
+        }
+
+        if ( !ServiceType::whereName( 'aws_dynamodb' )->count() )
+        {
+            // Add the service type
+            ServiceType::create(
+                [
+                    'name'           => 'aws_dynamodb',
+                    'class_name'     => "DreamFactory\\Rave\\Aws\\Services\\DynamoDb",
+                    'config_handler' => "DreamFactory\\Rave\\Aws\\Models\\AwsConfig",
+                    'label'          => 'AWS DynamoDb service',
+                    'description'    => 'NoSQL database service supporting the AWS DynamoDb system.',
+                    'group'          => 'database, nosql',
+                    'singleton'      => 1
+                ]
+            );
+            $this->command->info( 'AWS DynamoDb database service type seeded!' );
         }
     }
 

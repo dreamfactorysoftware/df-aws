@@ -21,20 +21,24 @@
 namespace DreamFactory\Rave\Aws\Services;
 
 
-use DreamFactory\Rave\Services\BaseNoSqlDbService;
 use Aws\DynamoDb\DynamoDbClient;
-use Aws\DynamoDb\Enum\ComparisonOperator;
-use Aws\DynamoDb\Enum\KeyType;
-use Aws\DynamoDb\Enum\ReturnValue;
-use Aws\DynamoDb\Enum\Type;
-use Aws\DynamoDb\Model\Attribute;
+use DreamFactory\Rave\Aws\Utility\AwsSvcUtilities;
+use DreamFactory\Rave\Aws\Resources\Schema;
+use DreamFactory\Rave\Aws\Resources\Table;
+use DreamFactory\Rave\Contracts\ServiceResponseInterface;
 use DreamFactory\Rave\Exceptions\BadRequestException;
 use DreamFactory\Rave\Exceptions\InternalServerErrorException;
 use DreamFactory\Rave\Exceptions\NotFoundException;
-//use DreamFactory\Rave\Resources\User\Session;
-use DreamFactory\Rave\Utility\AwsSvcUtilities;
+use DreamFactory\Rave\Resources\BaseRestResource;
+use DreamFactory\Rave\Services\BaseNoSqlDbService;
 use DreamFactory\Library\Utility\ArrayUtils;
 
+/**
+ * DynamoDb
+ *
+ * A service to handle DynamoDb NoSQL (schema-less) database
+ * services accessed through the REST API.
+ */
 class DynamoDb extends BaseNoSqlDbService
 {
     //*************************************************************************
@@ -52,57 +56,51 @@ class DynamoDb extends BaseNoSqlDbService
     /**
      * @var DynamoDbClient|null
      */
-    protected $_dbConn = null;
+    protected $dbConn = null;
     /**
      * @var array
      */
-    protected $_defaultCreateTable = array(
-        'AttributeDefinitions'  => array(
-            array(
-                'AttributeName' => 'id',
-                'AttributeType' => Type::S
-            )
-        ),
-        'KeySchema'             => array(
-            array(
-                'AttributeName' => 'id',
-                'KeyType'       => KeyType::HASH
-            )
-        ),
-        'ProvisionedThroughput' => array(
-            'ReadCapacityUnits'  => 10,
-            'WriteCapacityUnits' => 20
-        )
-    );
+    protected $resources = [
+        Schema::RESOURCE_NAME          => [
+            'name'       => Schema::RESOURCE_NAME,
+            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\Schema',
+            'label'      => 'Schema',
+        ],
+        Table::RESOURCE_NAME           => [
+            'name'       => Table::RESOURCE_NAME,
+            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\Table',
+            'label'      => 'Table',
+        ],
+    ];
 
     //*************************************************************************
     //	Methods
     //*************************************************************************
 
     /**
-     * Create a new AwsDynamoDbSvc
+     * Create a new DynamoDb
      *
      * @param array $config
      *
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    public function __construct( $config )
+    public function __construct( $settings = array() )
     {
-        parent::__construct( $config );
+        parent::__construct( $settings );
 
-        $_credentials = ArrayUtils::clean( ArrayUtils::get( $config, 'credentials' ) );
-        AwsSvcUtilities::updateCredentials( $_credentials, true );
+        $config = ArrayUtils::clean( ArrayUtils::get( $settings, 'config' ) );
+        AwsSvcUtilities::updateCredentials( $config, true );
 
         // set up a default table schema
-        $_parameters = ArrayUtils::get( $config, 'parameters' );
+        $parameters = ArrayUtils::clean( ArrayUtils::get( $config, 'parameters' ));
         //Session::replaceLookups( $_parameters );
-        if ( null !== ( $_table = ArrayUtils::get( $_parameters, 'default_create_table' ) ) )
+        if ( null !== ( $_table = ArrayUtils::get( $parameters, 'default_create_table' ) ) )
         {
-            $this->_defaultCreateTable = $_table;
+            $this->defaultCreateTable = $_table;
         }
 
-        $this->_dbConn = AwsSvcUtilities::createClient( $_credentials, static::CLIENT_NAME );
+        $this->dbConn = AwsSvcUtilities::createClient( $config, static::CLIENT_NAME );
     }
 
     /**
@@ -112,7 +110,7 @@ class DynamoDb extends BaseNoSqlDbService
     {
         try
         {
-            $this->_dbConn = null;
+            $this->dbConn = null;
         }
         catch ( \Exception $_ex )
         {
@@ -123,16 +121,43 @@ class DynamoDb extends BaseNoSqlDbService
     /**
      * @throws \Exception
      */
-    protected function checkConnection()
+    public function getConnection()
     {
-        if ( empty( $this->_dbConn ) )
+        if ( !isset( $this->dbConn ) )
         {
             throw new InternalServerErrorException( 'Database connection has not been initialized.' );
         }
+
+        return $this->dbConn;
     }
 
+    public function getTables()
+    {
+        $out = array();
+        do
+        {
+            $result = $this->dbConn->listTables(
+                array(
+                    'Limit'                   => 100, // arbitrary limit
+                    'ExclusiveStartTableName' => isset( $_result ) ? $_result['LastEvaluatedTableName'] : null
+                )
+            );
+
+            $out = array_merge( $out, $result['TableNames'] );
+        }
+        while ( $result['LastEvaluatedTableName'] );
+
+        return $out;
+    }
+
+    // REST service implementation
+
     /**
-     * {@InheritDoc}
+     * @param string $name
+     *
+     * @return string
+     * @throws BadRequestException
+     * @throws NotFoundException
      */
     public function correctTableName( &$name )
     {
@@ -140,7 +165,7 @@ class DynamoDb extends BaseNoSqlDbService
 
         if ( !$_existing )
         {
-            $_existing = $this->_getTablesAsArray();
+            $_existing = $this->getTables();
         }
 
         if ( empty( $name ) )
@@ -156,6 +181,156 @@ class DynamoDb extends BaseNoSqlDbService
         return $name;
     }
 
+    /**
+     * @param string $main   Main resource or empty for service
+     * @param string $sub    Subtending resources if applicable
+     * @param string $action Action to validate permission
+     */
+    protected function validateResourceAccess( $main, $sub, $action )
+    {
+        if ( !empty( $main ) )
+        {
+            $_resource = rtrim( $main, '/' ) . '/';
+            switch ( $main )
+            {
+                case Schema::RESOURCE_NAME:
+                case Table::RESOURCE_NAME:
+                    if ( !empty( $sub ) )
+                    {
+                        $_resource .= $sub;
+                    }
+                    break;
+            }
 
+            $this->checkPermission( $action, $_resource );
+
+            return;
+        }
+
+        parent::validateResourceAccess( $main, $sub, $action );
+    }
+
+    /**
+     * @param BaseRestResource $class
+     * @param array            $info
+     *
+     * @return mixed
+     */
+    protected function instantiateResource( $class, $info = [ ] )
+    {
+        return new $class( $this, $info );
+    }
+
+    /**
+     * {@InheritDoc}
+     */
+    protected function handleResource()
+    {
+        try
+        {
+            return parent::handleResource();
+        }
+        catch ( NotFoundException $_ex )
+        {
+            // If version 1.x, the resource could be a table
+//            if ($this->request->getApiVersion())
+//            {
+//                $resource = $this->instantiateResource( 'DreamFactory\\Rave\\MongoDb\\Resources\\Table', [ 'name' => $this->resource ] );
+//                $newPath = $this->resourceArray;
+//                array_shift( $newPath );
+//                $newPath = implode( '/', $newPath );
+//
+//                return $resource->handleRequest( $this->request, $newPath, $this->outputFormat );
+//            }
+
+            throw $_ex;
+        }
+    }
+
+    /**
+     * @return array
+     */
+    protected function getResources()
+    {
+        return $this->resources;
+    }
+
+    // REST service implementation
+
+    /**
+     * {@inheritdoc}
+     */
+    public function listResources( $include_properties = null )
+    {
+        if ( !$this->request->queryBool( 'as_access_components' ) )
+        {
+            return parent::listResources( $include_properties );
+        }
+
+        $_resources = [ ];
+
+//        $refresh = $this->request->queryBool( 'refresh' );
+
+        $_name = Schema::RESOURCE_NAME . '/';
+        $_access = $this->getPermissions( $_name );
+        if ( !empty( $_access ) )
+        {
+            $_resources[] = $_name;
+            $_resources[] = $_name . '*';
+        }
+
+        $_result = $this->getTables();
+        foreach ( $_result as $_name )
+        {
+            $_name = Schema::RESOURCE_NAME . '/' . $_name;
+            $_access = $this->getPermissions( $_name );
+            if ( !empty( $_access ) )
+            {
+                $_resources[] = $_name;
+            }
+        }
+
+        $_name = Table::RESOURCE_NAME . '/';
+        $_access = $this->getPermissions( $_name );
+        if ( !empty( $_access ) )
+        {
+            $_resources[] = $_name;
+            $_resources[] = $_name . '*';
+        }
+
+        foreach ( $_result as $_name )
+        {
+            $_name = Table::RESOURCE_NAME . '/' . $_name;
+            $_access = $this->getPermissions( $_name );
+            if ( !empty( $_access ) )
+            {
+                $_resources[] = $_name;
+            }
+        }
+
+        return array( 'resource' => $_resources );
+    }
+
+    /**
+     * @return ServiceResponseInterface
+     */
+//    protected function respond()
+//    {
+//        if ( Verbs::POST === $this->getRequestedAction() )
+//        {
+//            switch ( $this->resource )
+//            {
+//                case Table::RESOURCE_NAME:
+//                case Schema::RESOURCE_NAME:
+//                    if ( !( $this->response instanceof ServiceResponseInterface ) )
+//                    {
+//                        $this->response = ResponseFactory::create( $this->response, $this->outputFormat, ServiceResponseInterface::HTTP_CREATED );
+//                    }
+//                    break;
+//            }
+//        }
+//
+//        parent::respond();
+//    }
 
 }

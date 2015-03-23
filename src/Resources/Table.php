@@ -20,247 +20,112 @@
 
 namespace DreamFactory\Rave\Aws\Resources;
 
+use Aws\DynamoDb\Enum\ComparisonOperator;
+use Aws\DynamoDb\Enum\ReturnValue;
+use Aws\DynamoDb\Enum\Type;
+use Aws\DynamoDb\Model\Attribute;
 use DreamFactory\Library\Utility\ArrayUtils;
-use \DreamFactory\Rave\Resources\BaseDbTableResource;
+use DreamFactory\Library\Utility\Enums\Verbs;
+use DreamFactory\Library\Utility\Inflector;
+use DreamFactory\Rave\Exceptions\BadRequestException;
+use DreamFactory\Rave\Exceptions\InternalServerErrorException;
+use DreamFactory\Rave\Exceptions\NotFoundException;
+use DreamFactory\Rave\Resources\BaseDbTableResource;
+use DreamFactory\Rave\Aws\Services\DynamoDb;
+use DreamFactory\Rave\Utility\DbUtilities;
 
 class Table extends BaseDbTableResource
 {
+    //*************************************************************************
+    //	Constants
+    //*************************************************************************
+
+    const TABLE_INDICATOR = 'TableName';
+
+    //*************************************************************************
+    //	Members
+    //*************************************************************************
+
     /**
-     * {@inheritdoc}
+     * @var null|DynamoDb
      */
-    protected function commitTransaction( $extras = null )
+    protected $service = null;
+
+    //*************************************************************************
+    //	Methods
+    //*************************************************************************
+
+    /**
+     * {@InheritDoc}
+     */
+    public function correctTableName( &$name )
     {
-        if ( empty( $this->_batchRecords ) && empty( $this->_batchIds ) )
+        static $_existing = null;
+
+        if ( !$_existing )
         {
-            return null;
+            $_existing = $this->service->getTables();
         }
 
-//        $_ssFilters = ArrayUtils::get( $extras, 'ss_filters' );
-        $_fields = ArrayUtils::get( $extras, 'fields' );
-        $_requireMore = ArrayUtils::get( $extras, 'require_more' );
-        $_idsInfo = ArrayUtils::get( $extras, 'ids_info' );
-        $_idFields = ArrayUtils::get( $extras, 'id_fields' );
-
-        $_out = array();
-        switch ( $this->getAction() )
+        if ( empty( $name ) )
         {
-            case static::POST:
-                $_requests = array();
-                foreach ( $this->_batchRecords as $_item )
-                {
-                    $_requests[] = array('PutRequest' => array('Item' => $_item));
-                }
-
-                /*$_result = */
-                $this->_dbConn->batchWriteItem(
-                    array('RequestItems' => array($this->_transactionTable => $_requests))
-                );
-
-                // todo check $_result['UnprocessedItems'] for 'PutRequest'
-
-                foreach ( $this->_batchRecords as $_item )
-                {
-                    $_out[] = static::cleanRecord( $this->_unformatAttributes( $_item ), $_fields, $_idFields );
-                }
-                break;
-
-            case static::PUT:
-                $_requests = array();
-                foreach ( $this->_batchRecords as $_item )
-                {
-                    $_requests[] = array('PutRequest' => array('Item' => $_item));
-                }
-
-                /*$_result = */
-                $this->_dbConn->batchWriteItem(
-                    array('RequestItems' => array($this->_transactionTable => $_requests))
-                );
-
-                // todo check $_result['UnprocessedItems'] for 'PutRequest'
-
-                foreach ( $this->_batchRecords as $_item )
-                {
-                    $_out[] = static::cleanRecord( $this->_unformatAttributes( $_item ), $_fields, $_idFields );
-                }
-                break;
-
-            case static::MERGE:
-            case static::PATCH:
-                throw new BadRequestException( 'Batch operation not supported for patch.' );
-                break;
-
-            case static::DELETE:
-                $_requests = array();
-                foreach ( $this->_batchIds as $_id )
-                {
-                    $_record = array($_idFields[0] => $_id);
-                    $_out[] = $_record;
-                    $_key = static::_buildKey( $_idsInfo, $_record );
-                    $_requests[] = array('DeleteRequest' => array('Key' => $_key));
-                }
-                if ( $_requireMore )
-                {
-                    $_scanProperties = array(
-                        'Keys'           => $this->_batchRecords,
-                        'ConsistentRead' => true,
-                    );
-
-                    $_attributes = static::_buildAttributesToGet( $_fields, $_idFields );
-                    if ( !empty( $_attributes ) )
-                    {
-                        $_scanProperties['AttributesToGet'] = $_attributes;
-                    }
-
-                    // Get multiple items by key in a BatchGetItem request
-                    $_result = $this->_dbConn->batchGetItem(
-                        array(
-                            'RequestItems' => array(
-                                $this->_transactionTable => $_scanProperties
-                            )
-                        )
-                    );
-
-                    $_out = array();
-                    $_items = $_result->getPath( "Responses/{$this->_transactionTable}" );
-                    foreach ( $_items as $_item )
-                    {
-                        $_out[] = $this->_unformatAttributes( $_item );
-                    }
-                }
-
-                /*$_result = */
-                $this->_dbConn->batchWriteItem(
-                    array('RequestItems' => array($this->_transactionTable => $_requests))
-                );
-
-                // todo check $_result['UnprocessedItems'] for 'DeleteRequest'
-                break;
-
-            case static::GET:
-                $_keys = array();
-                foreach ( $this->_batchIds as $_id )
-                {
-                    $_record = array($_idFields[0] => $_id);
-                    $_key = static::_buildKey( $_idsInfo, $_record );
-                    $_keys[] = $_key;
-                }
-
-                $_scanProperties = array(
-                    'Keys'           => $_keys,
-                    'ConsistentRead' => true,
-                );
-
-                $_fields = static::_buildAttributesToGet( $_fields, $_idFields );
-                if ( !empty( $_fields ) )
-                {
-                    $_scanProperties['AttributesToGet'] = $_fields;
-                }
-
-                // Get multiple items by key in a BatchGetItem request
-                $_result = $this->_dbConn->batchGetItem(
-                    array(
-                        'RequestItems' => array(
-                            $this->_transactionTable => $_scanProperties
-                        )
-                    )
-                );
-
-                $_items = $_result->getPath( "Responses/{$this->_transactionTable}" );
-                foreach ( $_items as $_item )
-                {
-                    $_out[] = $this->_unformatAttributes( $_item );
-                }
-                break;
-            default:
-                break;
+            throw new BadRequestException( 'Table name can not be empty.' );
         }
 
-        $this->_batchIds = array();
-        $this->_batchRecords = array();
+        if ( false === array_search( $name, $_existing ) )
+        {
+            throw new NotFoundException( "Table '$name' not found." );
+        }
 
-        return $_out;
+        return $name;
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function rollbackTransaction()
+    public function listResources($include_properties = null)
     {
-        if ( !empty( $this->_rollbackRecords ) )
+//        $refresh = $this->request->queryBool('refresh');
+
+        $_names = $this->service->getTables();
+
+        if (empty($include_properties))
         {
-            switch ( $this->getAction() )
-            {
-                case static::POST:
-                    $_requests = array();
-                    foreach ( $this->_rollbackRecords as $_item )
-                    {
-                        $_requests[] = array('DeleteRequest' => array('Key' => $_item));
-                    }
-
-                    /* $_result = */
-                    $this->_dbConn->batchWriteItem(
-                        array('RequestItems' => array($this->_transactionTable => $_requests))
-                    );
-
-                    // todo check $_result['UnprocessedItems'] for 'DeleteRequest'
-                    break;
-
-                case static::PUT:
-                case static::PATCH:
-                case static::MERGE:
-                case static::DELETE:
-                    $_requests = array();
-                    foreach ( $this->_rollbackRecords as $_item )
-                    {
-                        $_requests[] = array('PutRequest' => array('Item' => $_item));
-                    }
-
-                    /* $_result = */
-                    $this->_dbConn->batchWriteItem(
-                        array('RequestItems' => array($this->_transactionTable => $_requests))
-                    );
-
-                    // todo check $_result['UnprocessedItems'] for 'PutRequest'
-                    break;
-
-                default:
-                    break;
-            }
-
-            $this->_rollbackRecords = array();
+            return array('resource' => $_names);
         }
 
-        return true;
-    }
+        $_extras = DbUtilities::getSchemaExtrasForTables( $this->service->getServiceId(), $_names, false, 'table,label,plural' );
 
-    protected function getIdsInfo( $table, $fields_info = null, &$requested_fields = null, $requested_types = null )
-    {
-        $requested_fields = array();
-        $_result = $this->describeTable( $table );
-        $_keys = ArrayUtils::get( $_result, 'KeySchema', array() );
-        $_definitions = ArrayUtils::get( $_result, 'AttributeDefinitions', array() );
-        $_fields = array();
-        foreach ( $_keys as $_key )
+        $_tables = array();
+        foreach ( $_names as $name )
         {
-            $_name = ArrayUtils::get( $_key, 'AttributeName' );
-            $_keyType = ArrayUtils::get( $_key, 'KeyType' );
-            $_type = null;
-            foreach ( $_definitions as $_type )
+            $label = '';
+            $plural = '';
+            foreach ( $_extras as $each )
             {
-                if ( 0 == strcmp( $_name, ArrayUtils::get( $_type, 'AttributeName' ) ) )
+                if ( 0 == strcasecmp( $name, ArrayUtils::get( $each, 'table', '' ) ) )
                 {
-                    $_type = ArrayUtils::get( $_type, 'AttributeType' );
+                    $label = ArrayUtils::get( $each, 'label' );
+                    $plural = ArrayUtils::get( $each, 'plural' );
+                    break;
                 }
             }
 
-            $requested_fields[] = $_name;
-            $_fields[] = array('name' => $_name, 'key_type' => $_keyType, 'type' => $_type, 'required' => true);
+            if ( empty( $label ) )
+            {
+                $label = Inflector::camelize( $name, ['_','.'], true );
+            }
+
+            if ( empty( $plural ) )
+            {
+                $plural = Inflector::pluralize( $label );
+            }
+
+            $_tables[] = array('name' => $name, 'label' => $label, 'plural' => $plural);
         }
 
-        return $_fields;
+        return $this->makeResourceList($_tables, $include_properties, true);
     }
-
-    // records is an array of field arrays
 
     /**
      * {@inheritdoc}
@@ -292,7 +157,7 @@ class Table extends BaseDbTableResource
 
         try
         {
-            $_result = $this->_dbConn->scan( $_scanProperties );
+            $_result = $this->service->getConnection()->scan( $_scanProperties );
             $_items = ArrayUtils::clean( $_result['Items'] );
 
             $_out = array();
@@ -373,7 +238,7 @@ class Table extends BaseDbTableResource
                     case 'user_id_on_create':
                         if ( !$for_update )
                         {
-                            $userId = null;//Session::getCurrentUserId();
+                            $userId = 1;//Session::getCurrentUserId();
                             if ( isset( $userId ) )
                             {
                                 $_parsed[$_name] = $userId;
@@ -381,7 +246,7 @@ class Table extends BaseDbTableResource
                         }
                         break;
                     case 'user_id_on_update':
-                        $userId = null;//Session::getCurrentUserId();
+                        $userId = 1;//Session::getCurrentUserId();
                         if ( isset( $userId ) )
                         {
                             $_parsed[$_name] = $userId;
@@ -409,7 +274,7 @@ class Table extends BaseDbTableResource
     {
         $_format = ( $for_update ) ? Attribute::FORMAT_UPDATE : Attribute::FORMAT_PUT;
 
-        return $this->_dbConn->formatAttributes( $record, $_format );
+        return $this->service->getConnection()->formatAttributes( $record, $_format );
     }
 
     /**
@@ -499,6 +364,33 @@ class Table extends BaseDbTableResource
         return $fields;
     }
 
+    protected function getIdsInfo( $table, $fields_info = null, &$requested_fields = null, $requested_types = null )
+    {
+        $requested_fields = array();
+        $_result = $this->service->getConnection()->describeTable( array(static::TABLE_INDICATOR => $table) );
+        $_keys = ArrayUtils::get( $_result, 'KeySchema', array() );
+        $_definitions = ArrayUtils::get( $_result, 'AttributeDefinitions', array() );
+        $_fields = array();
+        foreach ( $_keys as $_key )
+        {
+            $_name = ArrayUtils::get( $_key, 'AttributeName' );
+            $_keyType = ArrayUtils::get( $_key, 'KeyType' );
+            $_type = null;
+            foreach ( $_definitions as $_type )
+            {
+                if ( 0 == strcmp( $_name, ArrayUtils::get( $_type, 'AttributeName' ) ) )
+                {
+                    $_type = ArrayUtils::get( $_type, 'AttributeType' );
+                }
+            }
+
+            $requested_fields[] = $_name;
+            $_fields[] = array('name' => $_name, 'key_type' => $_keyType, 'type' => $_type, 'required' => true);
+        }
+
+        return $_fields;
+    }
+
     protected static function _buildKey( $ids_info, &$record, $remove = false )
     {
         $_keys = array();
@@ -534,7 +426,7 @@ class Table extends BaseDbTableResource
         // build filter array if necessary, add server-side filters if necessary
         if ( !is_array( $filter ) )
         {
-            //Session::replaceLookups( $filter );
+//            Session::replaceLookups( $filter );
             $_criteria = static::buildFilterArray( $filter, $params );
         }
         else
@@ -606,7 +498,7 @@ class Table extends BaseDbTableResource
      * @param string|array $filter Filter for querying records by
      * @param null|array   $params
      *
-     * @throws \DreamFactory\Rave\Exceptions\BadRequestException
+     * @throws BadRequestException
      * @return array
      */
     protected static function buildFilterArray( $filter, $params = null )
@@ -893,7 +785,7 @@ class Table extends BaseDbTableResource
         $_out = array();
         switch ( $this->getAction() )
         {
-            case static::POST:
+            case Verbs::POST:
                 $_parsed = $this->parseRecord( $record, $_fieldsInfo, $_ssFilters );
                 if ( empty( $_parsed ) )
                 {
@@ -903,7 +795,7 @@ class Table extends BaseDbTableResource
                 $_native = $this->_formatAttributes( $_parsed );
 
                 /*$_result = */
-                $this->_dbConn->putItem(
+                $this->service->getConnection()->putItem(
                     array(
                         static::TABLE_INDICATOR => $this->_transactionTable,
                         'Item'                  => $_native,
@@ -919,7 +811,7 @@ class Table extends BaseDbTableResource
 
                 $_out = static::cleanRecord( $record, $_fields, $_idFields );
                 break;
-            case static::PUT:
+            case Verbs::PUT:
                 if ( !empty( $_updates ) )
                 {
                     // only update by full records can use batching
@@ -941,7 +833,7 @@ class Table extends BaseDbTableResource
                 }
 
                 $_options = ( $rollback ) ? ReturnValue::ALL_OLD : ReturnValue::NONE;
-                $_result = $this->_dbConn->putItem(
+                $_result = $this->service->getConnection()->putItem(
                     array(
                         static::TABLE_INDICATOR => $this->_transactionTable,
                         'Item'                  => $_native,
@@ -962,8 +854,8 @@ class Table extends BaseDbTableResource
                 $_out = static::cleanRecord( $record, $_fields, $_idFields );
                 break;
 
-            case static::MERGE:
-            case static::PATCH:
+            case Verbs::MERGE:
+            case Verbs::PATCH:
                 if ( !empty( $_updates ) )
                 {
                     $_updates[$_idFields[0]] = $id;
@@ -982,7 +874,7 @@ class Table extends BaseDbTableResource
                 // simple insert request
                 $_options = ( $rollback ) ? ReturnValue::ALL_OLD : ReturnValue::ALL_NEW;
 
-                $_result = $this->_dbConn->updateItem(
+                $_result = $this->service->getConnection()->updateItem(
                     array(
                         static::TABLE_INDICATOR => $this->_transactionTable,
                         'Key'                   => $_key,
@@ -1007,7 +899,7 @@ class Table extends BaseDbTableResource
                 }
                 break;
 
-            case static::DELETE:
+            case Verbs::DELETE:
                 if ( !$continue && !$rollback )
                 {
                     return parent::addToTransaction( null, $id );
@@ -1016,7 +908,7 @@ class Table extends BaseDbTableResource
                 $_record = array($_idFields[0] => $id);
                 $_key = static::_buildKey( $_idsInfo, $_record );
 
-                $_result = $this->_dbConn->deleteItem(
+                $_result = $this->service->getConnection()->deleteItem(
                     array(
                         static::TABLE_INDICATOR => $this->_transactionTable,
                         'Key'                   => $_key,
@@ -1035,7 +927,7 @@ class Table extends BaseDbTableResource
                 $_out = static::cleanRecord( $_temp, $_fields, $_idFields );
                 break;
 
-            case static::GET:
+            case Verbs::GET:
                 $_record = array($_idFields[0] => $id);
                 $_key = static::_buildKey( $_idsInfo, $_record );
                 $_scanProperties = array(
@@ -1050,7 +942,7 @@ class Table extends BaseDbTableResource
                     $_scanProperties['AttributesToGet'] = $_fields;
                 }
 
-                $_result = $this->_dbConn->getItem( $_scanProperties );
+                $_result = $this->service->getConnection()->getItem( $_scanProperties );
 
                 // Grab value from the result object like an array
                 $_out = $this->_unformatAttributes( $_result['Item'] );
@@ -1062,7 +954,161 @@ class Table extends BaseDbTableResource
         return $_out;
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    protected function commitTransaction( $extras = null )
+    {
+        if ( empty( $this->_batchRecords ) && empty( $this->_batchIds ) )
+        {
+            return null;
+        }
 
+//        $_ssFilters = ArrayUtils::get( $extras, 'ss_filters' );
+        $_fields = ArrayUtils::get( $extras, 'fields' );
+        $_requireMore = ArrayUtils::get( $extras, 'require_more' );
+        $_idsInfo = ArrayUtils::get( $extras, 'ids_info' );
+        $_idFields = ArrayUtils::get( $extras, 'id_fields' );
+
+        $_out = array();
+        switch ( $this->getAction() )
+        {
+            case Verbs::POST:
+                $_requests = array();
+                foreach ( $this->_batchRecords as $_item )
+                {
+                    $_requests[] = array('PutRequest' => array('Item' => $_item));
+                }
+
+                /*$_result = */
+                $this->service->getConnection()->batchWriteItem(
+                    array('RequestItems' => array($this->_transactionTable => $_requests))
+                );
+
+                // todo check $_result['UnprocessedItems'] for 'PutRequest'
+
+                foreach ( $this->_batchRecords as $_item )
+                {
+                    $_out[] = static::cleanRecord( $this->_unformatAttributes( $_item ), $_fields, $_idFields );
+                }
+                break;
+
+            case Verbs::PUT:
+                $_requests = array();
+                foreach ( $this->_batchRecords as $_item )
+                {
+                    $_requests[] = array('PutRequest' => array('Item' => $_item));
+                }
+
+                /*$_result = */
+                $this->service->getConnection()->batchWriteItem(
+                    array('RequestItems' => array($this->_transactionTable => $_requests))
+                );
+
+                // todo check $_result['UnprocessedItems'] for 'PutRequest'
+
+                foreach ( $this->_batchRecords as $_item )
+                {
+                    $_out[] = static::cleanRecord( $this->_unformatAttributes( $_item ), $_fields, $_idFields );
+                }
+                break;
+
+            case Verbs::MERGE:
+            case Verbs::PATCH:
+                throw new BadRequestException( 'Batch operation not supported for patch.' );
+                break;
+
+            case Verbs::DELETE:
+                $_requests = array();
+                foreach ( $this->_batchIds as $_id )
+                {
+                    $_record = array($_idFields[0] => $_id);
+                    $_out[] = $_record;
+                    $_key = static::_buildKey( $_idsInfo, $_record );
+                    $_requests[] = array('DeleteRequest' => array('Key' => $_key));
+                }
+                if ( $_requireMore )
+                {
+                    $_scanProperties = array(
+                        'Keys'           => $this->_batchRecords,
+                        'ConsistentRead' => true,
+                    );
+
+                    $_attributes = static::_buildAttributesToGet( $_fields, $_idFields );
+                    if ( !empty( $_attributes ) )
+                    {
+                        $_scanProperties['AttributesToGet'] = $_attributes;
+                    }
+
+                    // Get multiple items by key in a BatchGetItem request
+                    $_result = $this->service->getConnection()->batchGetItem(
+                        array(
+                            'RequestItems' => array(
+                                $this->_transactionTable => $_scanProperties
+                            )
+                        )
+                    );
+
+                    $_out = array();
+                    $_items = $_result->getPath( "Responses/{$this->_transactionTable}" );
+                    foreach ( $_items as $_item )
+                    {
+                        $_out[] = $this->_unformatAttributes( $_item );
+                    }
+                }
+
+                /*$_result = */
+                $this->service->getConnection()->batchWriteItem(
+                    array('RequestItems' => array($this->_transactionTable => $_requests))
+                );
+
+                // todo check $_result['UnprocessedItems'] for 'DeleteRequest'
+                break;
+
+            case Verbs::GET:
+                $_keys = array();
+                foreach ( $this->_batchIds as $_id )
+                {
+                    $_record = array($_idFields[0] => $_id);
+                    $_key = static::_buildKey( $_idsInfo, $_record );
+                    $_keys[] = $_key;
+                }
+
+                $_scanProperties = array(
+                    'Keys'           => $_keys,
+                    'ConsistentRead' => true,
+                );
+
+                $_fields = static::_buildAttributesToGet( $_fields, $_idFields );
+                if ( !empty( $_fields ) )
+                {
+                    $_scanProperties['AttributesToGet'] = $_fields;
+                }
+
+                // Get multiple items by key in a BatchGetItem request
+                $_result = $this->service->getConnection()->batchGetItem(
+                    array(
+                        'RequestItems' => array(
+                            $this->_transactionTable => $_scanProperties
+                        )
+                    )
+                );
+
+                $_items = $_result->getPath( "Responses/{$this->_transactionTable}" );
+                foreach ( $_items as $_item )
+                {
+                    $_out[] = $this->_unformatAttributes( $_item );
+                }
+                break;
+            default:
+                break;
+        }
+
+        $this->_batchIds = array();
+        $this->_batchRecords = array();
+
+        return $_out;
+    }
 
     /**
      * {@inheritdoc}
@@ -1072,4 +1118,55 @@ class Table extends BaseDbTableResource
         return parent::addToRollback( $record );
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    protected function rollbackTransaction()
+    {
+        if ( !empty( $this->_rollbackRecords ) )
+        {
+            switch ( $this->getAction() )
+            {
+                case Verbs::POST:
+                    $_requests = array();
+                    foreach ( $this->_rollbackRecords as $_item )
+                    {
+                        $_requests[] = array('DeleteRequest' => array('Key' => $_item));
+                    }
+
+                    /* $_result = */
+                    $this->service->getConnection()->batchWriteItem(
+                        array('RequestItems' => array($this->_transactionTable => $_requests))
+                    );
+
+                    // todo check $_result['UnprocessedItems'] for 'DeleteRequest'
+                    break;
+
+                case Verbs::PUT:
+                case Verbs::PATCH:
+                case Verbs::MERGE:
+                case Verbs::DELETE:
+                    $_requests = array();
+                    foreach ( $this->_rollbackRecords as $_item )
+                    {
+                        $_requests[] = array('PutRequest' => array('Item' => $_item));
+                    }
+
+                    /* $_result = */
+                    $this->service->getConnection()->batchWriteItem(
+                        array('RequestItems' => array($this->_transactionTable => $_requests))
+                    );
+
+                    // todo check $_result['UnprocessedItems'] for 'PutRequest'
+                    break;
+
+                default:
+                    break;
+            }
+
+            $this->_rollbackRecords = array();
+        }
+
+        return true;
+    }
 }

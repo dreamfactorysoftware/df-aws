@@ -20,48 +20,100 @@
 
 namespace DreamFactory\Rave\Aws\Resources;
 
+use Aws\DynamoDb\Enum\KeyType;
+use Aws\DynamoDb\Enum\Type;
 use DreamFactory\Library\Utility\ArrayUtils;
+use DreamFactory\Library\Utility\Inflector;
+use DreamFactory\Rave\Exceptions\BadRequestException;
+use DreamFactory\Rave\Exceptions\InternalServerErrorException;
 use DreamFactory\Rave\Resources\BaseNoSqlDbSchemaResource;
+use DreamFactory\Rave\Aws\Services\DynamoDb;
+use DreamFactory\Rave\Utility\DbUtilities;
 
 class Schema extends BaseNoSqlDbSchemaResource
 {
-    protected function _getTablesAsArray()
-    {
-        $_out = array();
-        do
-        {
-            $_result = $this->_dbConn->listTables(
-                array(
-                    'Limit'                   => 100, // arbitrary limit
-                    'ExclusiveStartTableName' => isset( $_result ) ? $_result['LastEvaluatedTableName'] : null
-                )
-            );
+    //*************************************************************************
+    //	Constants
+    //*************************************************************************
 
-            $_out = array_merge( $_out, $_result['TableNames'] );
-        }
-        while ( $_result['LastEvaluatedTableName'] );
+    const TABLE_INDICATOR = 'TableName';
 
-        return $_out;
-    }
+    //*************************************************************************
+    //	Members
+    //*************************************************************************
 
-    // REST service implementation
+    /**
+     * @var null|DynamoDb
+     */
+    protected $service = null;
+    /**
+     * @var array
+     */
+    protected $_defaultCreateTable = array(
+        'AttributeDefinitions'  => array(
+            array(
+                'AttributeName' => 'id',
+                'AttributeType' => Type::S
+            )
+        ),
+        'KeySchema'             => array(
+            array(
+                'AttributeName' => 'id',
+                'KeyType'       => KeyType::HASH
+            )
+        ),
+        'ProvisionedThroughput' => array(
+            'ReadCapacityUnits'  => 10,
+            'WriteCapacityUnits' => 20
+        )
+    );
 
     /**
      * {@inheritdoc}
      */
-    protected function _listTables( /** @noinspection PhpUnusedParameterInspection */ $refresh = true )
+    public function listResources($include_properties = null)
     {
-        $_resources = array();
-        $_result = $this->_getTablesAsArray();
-        foreach ( $_result as $_table )
+//        $refresh = $this->request->queryBool('refresh');
+
+        $_names = $this->service->getTables();
+
+        if (empty($include_properties))
         {
-            $_resources[] = array('name' => $_table, static::TABLE_INDICATOR => $_table);
+            return array('resource' => $_names);
         }
 
-        return $_resources;
-    }
+        $_extras = DbUtilities::getSchemaExtrasForTables( $this->service->getServiceId(), $_names, false, 'table,label,plural' );
 
-    // Handle administrative options, table add, delete, etc
+        $_tables = array();
+        foreach ( $_names as $name )
+        {
+            $label = '';
+            $plural = '';
+            foreach ( $_extras as $each )
+            {
+                if ( 0 == strcasecmp( $name, ArrayUtils::get( $each, 'table', '' ) ) )
+                {
+                    $label = ArrayUtils::get( $each, 'label' );
+                    $plural = ArrayUtils::get( $each, 'plural' );
+                    break;
+                }
+            }
+
+            if ( empty( $label ) )
+            {
+                $label = Inflector::camelize( $name, ['_','.'], true );
+            }
+
+            if ( empty( $plural ) )
+            {
+                $plural = Inflector::pluralize( $label );
+            }
+
+            $_tables[] = array('name' => $name, 'label' => $label, 'plural' => $plural);
+        }
+
+        return $this->makeResourceList($_tables, $include_properties, true);
+    }
 
     /**
      * {@inheritdoc}
@@ -73,7 +125,7 @@ class Schema extends BaseNoSqlDbSchemaResource
                 : $table;
         try
         {
-            $_result = $this->_dbConn->describeTable( array(static::TABLE_INDICATOR => $_name) );
+            $_result = $this->service->getConnection()->describeTable( array(static::TABLE_INDICATOR => $_name) );
 
             // The result of an operation can be used like an array
             $_out = $_result['Table'];
@@ -110,10 +162,10 @@ class Schema extends BaseNoSqlDbSchemaResource
                 $this->_defaultCreateTable,
                 $properties
             );
-            $_result = $this->_dbConn->createTable( $_properties );
+            $_result = $this->service->getConnection()->createTable( $_properties );
 
             // Wait until the table is created and active
-            $this->_dbConn->waitUntilTableExists( array(static::TABLE_INDICATOR => $table) );
+            $this->service->getConnection()->waitUntilTableExists( array(static::TABLE_INDICATOR => $table) );
 
             $_out = array_merge( array('name' => $table), $_result['TableDescription'] );
 
@@ -146,10 +198,10 @@ class Schema extends BaseNoSqlDbSchemaResource
                 array(static::TABLE_INDICATOR => $table),
                 $properties
             );
-            $_result = $this->_dbConn->updateTable( $_properties );
+            $_result = $this->service->getConnection()->updateTable( $_properties );
 
             // Wait until the table is active again after updating
-            $this->_dbConn->waitUntilTableExists( array(static::TABLE_INDICATOR => $table) );
+            $this->service->getConnection()->waitUntilTableExists( array(static::TABLE_INDICATOR => $table) );
 
             return array_merge( array('name' => $table), $_result['TableDescription'] );
         }
@@ -174,10 +226,10 @@ class Schema extends BaseNoSqlDbSchemaResource
 
         try
         {
-            $_result = $this->_dbConn->deleteTable( array(static::TABLE_INDICATOR => $_name) );
+            $_result = $this->service->getConnection()->deleteTable( array(static::TABLE_INDICATOR => $_name) );
 
             // Wait until the table is truly gone
-            $this->_dbConn->waitUntilTableNotExists( array(static::TABLE_INDICATOR => $_name) );
+            $this->service->getConnection()->waitUntilTableNotExists( array(static::TABLE_INDICATOR => $_name) );
 
             return array_merge( array('name' => $_name), $_result['TableDescription'] );
         }
