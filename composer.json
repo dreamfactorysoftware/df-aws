@@ -33,9 +33,7 @@
     "source": "https://github.com/dreamfactorysoftware/rave"
   },
   "require": {
-    "dreamfactory/php-utils": "dev-develop as dev-master",
     "dreamfactory/rave": "dev-develop as dev-master",
-    "rhumsaa/array_column": "~1.1",
     "aws/aws-sdk-php": "~2.7.0"
   },
   "autoload":{
