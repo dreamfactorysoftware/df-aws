@@ -285,9 +285,12 @@ class Table extends BaseDbTableResource
     protected function _unformatAttributes( $native )
     {
         $_out = array();
-        foreach ( $native as $_key => $_value )
+        if (is_array($native))
         {
-            $_out[$_key] = static::_unformatValue( $_value );
+            foreach ( $native as $_key => $_value )
+            {
+                $_out[$_key] = static::_unformatValue( $_value );
+            }
         }
 
         return $_out;
@@ -368,6 +371,7 @@ class Table extends BaseDbTableResource
     {
         $requested_fields = array();
         $_result = $this->service->getConnection()->describeTable( array(static::TABLE_INDICATOR => $table) );
+        $_result = $_result['Table'];
         $_keys = ArrayUtils::get( $_result, 'KeySchema', array() );
         $_definitions = ArrayUtils::get( $_result, 'AttributeDefinitions', array() );
         $_fields = array();
@@ -943,6 +947,11 @@ class Table extends BaseDbTableResource
                 }
 
                 $_result = $this->service->getConnection()->getItem( $_scanProperties );
+                $_result = $_result['Item'];
+                if (empty($_result))
+                {
+                    throw new NotFoundException('Record not found.');
+                }
 
                 // Grab value from the result object like an array
                 $_out = $this->_unformatAttributes( $_result['Item'] );
