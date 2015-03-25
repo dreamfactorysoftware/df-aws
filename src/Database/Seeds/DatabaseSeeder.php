@@ -24,11 +24,11 @@ use Illuminate\Database\Seeder;
 use DreamFactory\Rave\Models\ServiceType;
 
 /**
- * Class AwsSeeder
+ * Class DatabaseSeeder
  *
  * @package DreamFactory\Rave\Aws\Database\Seeds
  */
-class AwsSeeder extends Seeder
+class DatabaseSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -69,6 +69,40 @@ class AwsSeeder extends Seeder
                 ]
             );
             $this->command->info( 'AWS DynamoDb database service type seeded!' );
+        }
+
+        if ( !ServiceType::whereName( 'aws_simpledb' )->count() )
+        {
+            // Add the service type
+            ServiceType::create(
+                [
+                    'name'           => 'aws_simpledb',
+                    'class_name'     => "DreamFactory\\Rave\\Aws\\Services\\SimpleDb",
+                    'config_handler' => "DreamFactory\\Rave\\Aws\\Models\\AwsConfig",
+                    'label'          => 'AWS SimpleDb service',
+                    'description'    => 'NoSQL database service supporting the AWS SimpleDb system.',
+                    'group'          => 'database, nosql',
+                    'singleton'      => 1
+                ]
+            );
+            $this->command->info( 'AWS SimpleDb database service type seeded!' );
+        }
+
+        if ( !ServiceType::whereName( 'aws_sns' )->count() )
+        {
+            // Add the service type
+            ServiceType::create(
+                [
+                    'name'           => 'aws_sns',
+                    'class_name'     => "DreamFactory\\Rave\\Aws\\Services\\Sns",
+                    'config_handler' => "DreamFactory\\Rave\\Aws\\Models\\AwsConfig",
+                    'label'          => 'AWS SNS service',
+                    'description'    => 'Push notification service supporting the AWS SNS system.',
+                    'group'          => 'push',
+                    'singleton'      => 1
+                ]
+            );
+            $this->command->info( 'AWS SNS push service type seeded!' );
         }
     }
 

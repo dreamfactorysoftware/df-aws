@@ -34,7 +34,7 @@ use DreamFactory\Rave\Resources\BaseDbTableResource;
 use DreamFactory\Rave\Aws\Services\DynamoDb;
 use DreamFactory\Rave\Utility\DbUtilities;
 
-class Table extends BaseDbTableResource
+class DynamoDbTable extends BaseDbTableResource
 {
     //*************************************************************************
     //	Constants

@@ -29,7 +29,7 @@ class FileServiceS3Test extends \DreamFactory\Rave\Testing\FileServiceTestCase
         parent::stage();
 
         Artisan::call('migrate', ['--path' => 'vendor/dreamfactory/rave-aws/database/migrations/']);
-        Artisan::call('db:seed', ['--class' => 'DreamFactory\\Rave\\Aws\\Database\\Seeds\\AwsSeeder']);
+        Artisan::call('db:seed', ['--class' => 'DreamFactory\\Rave\\Aws\\Database\\Seeds\\DatabaseSeeder']);
         if(!$this->serviceExists('s3'))
         {
             \DreamFactory\Rave\Models\Service::create(

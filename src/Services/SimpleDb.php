@@ -21,10 +21,10 @@
 namespace DreamFactory\Rave\Aws\Services;
 
 
-use Aws\DynamoDb\DynamoDbClient;
+use Aws\SimpleDb\SimpleDbClient;
 use DreamFactory\Rave\Aws\Utility\AwsSvcUtilities;
-use DreamFactory\Rave\Aws\Resources\DynamoDbSchema;
-use DreamFactory\Rave\Aws\Resources\DynamoDbTable;
+use DreamFactory\Rave\Aws\Resources\SimpleDbSchema;
+use DreamFactory\Rave\Aws\Resources\SimpleDbTable;
 use DreamFactory\Rave\Contracts\ServiceResponseInterface;
 use DreamFactory\Rave\Exceptions\BadRequestException;
 use DreamFactory\Rave\Exceptions\InternalServerErrorException;
@@ -34,41 +34,41 @@ use DreamFactory\Rave\Services\BaseNoSqlDbService;
 use DreamFactory\Library\Utility\ArrayUtils;
 
 /**
- * DynamoDb
+ * SimpleDb
  *
- * A service to handle DynamoDb NoSQL (schema-less) database
+ * A service to handle SimpleDb NoSQL (schema-less) database
  * services accessed through the REST API.
  */
-class DynamoDb extends BaseNoSqlDbService
+class SimpleDb extends BaseNoSqlDbService
 {
     //*************************************************************************
     //	Constants
     //*************************************************************************
 
-    const CLIENT_NAME = 'DynamoDb';
+    const CLIENT_NAME = 'SimpleDb';
 
-    const TABLE_INDICATOR = 'TableName';
+    const TABLE_INDICATOR = 'DomainName';
 
     //*************************************************************************
     //	Members
     //*************************************************************************
 
     /**
-     * @var DynamoDbClient|null
+     * @var SimpleDbClient|null
      */
     protected $dbConn = null;
     /**
      * @var array
      */
     protected $resources = [
-        DynamoDbSchema::RESOURCE_NAME          => [
-            'name'       => DynamoDbSchema::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\Schema',
+        SimpleDbSchema::RESOURCE_NAME          => [
+            'name'       => SimpleDbSchema::RESOURCE_NAME,
+            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\SimpleDbSchema',
             'label'      => 'Schema',
         ],
-        DynamoDbTable::RESOURCE_NAME           => [
-            'name'       => DynamoDbTable::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\Table',
+        SimpleDbTable::RESOURCE_NAME           => [
+            'name'       => SimpleDbTable::RESOURCE_NAME,
+            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\SimpleDbTable',
             'label'      => 'Table',
         ],
     ];
@@ -78,7 +78,7 @@ class DynamoDb extends BaseNoSqlDbService
     //*************************************************************************
 
     /**
-     * Create a new DynamoDb
+     * Create a new SimpleDb
      *
      * @param array $config
      *
@@ -134,16 +134,22 @@ class DynamoDb extends BaseNoSqlDbService
     public function getTables()
     {
         $out = array();
+        $token = null;
         do
         {
-            $result = $this->dbConn->listTables(
+            $result = $this->dbConn->listDomains(
                 array(
-                    'Limit'                   => 100, // arbitrary limit
-                    'ExclusiveStartTableName' => isset( $_result ) ? $_result['LastEvaluatedTableName'] : null
+                    'MxNumberOfDomains' => 100, // arbitrary limit
+                    'NextToken'         => $token
                 )
             );
+            $domains = $result['DomainNames'];
+            $token = $result['NextToken'];
 
-            $out = array_merge( $out, $result['TableNames'] );
+            if ( !empty( $domains ) )
+            {
+                $out = array_merge( $out, $domains );
+            }
         }
         while ( $result['LastEvaluatedTableName'] );
 
@@ -193,8 +199,8 @@ class DynamoDb extends BaseNoSqlDbService
             $_resource = rtrim( $main, '/' ) . '/';
             switch ( $main )
             {
-                case DynamoDbSchema::RESOURCE_NAME:
-                case DynamoDbTable::RESOURCE_NAME:
+                case SimpleDbSchema::RESOURCE_NAME:
+                case SimpleDbTable::RESOURCE_NAME:
                     if ( !empty( $sub ) )
                     {
                         $_resource .= $sub;
@@ -271,7 +277,7 @@ class DynamoDb extends BaseNoSqlDbService
 
 //        $refresh = $this->request->queryBool( 'refresh' );
 
-        $_name = DynamoDbSchema::RESOURCE_NAME . '/';
+        $_name = SimpleDbSchema::RESOURCE_NAME . '/';
         $_access = $this->getPermissions( $_name );
         if ( !empty( $_access ) )
         {
@@ -282,7 +288,7 @@ class DynamoDb extends BaseNoSqlDbService
         $_result = $this->getTables();
         foreach ( $_result as $_name )
         {
-            $_name = DynamoDbSchema::RESOURCE_NAME . '/' . $_name;
+            $_name = SimpleDbSchema::RESOURCE_NAME . '/' . $_name;
             $_access = $this->getPermissions( $_name );
             if ( !empty( $_access ) )
             {
@@ -290,7 +296,7 @@ class DynamoDb extends BaseNoSqlDbService
             }
         }
 
-        $_name = DynamoDbTable::RESOURCE_NAME . '/';
+        $_name = SimpleDbTable::RESOURCE_NAME . '/';
         $_access = $this->getPermissions( $_name );
         if ( !empty( $_access ) )
         {
@@ -300,7 +306,7 @@ class DynamoDb extends BaseNoSqlDbService
 
         foreach ( $_result as $_name )
         {
-            $_name = DynamoDbTable::RESOURCE_NAME . '/' . $_name;
+            $_name = SimpleDbTable::RESOURCE_NAME . '/' . $_name;
             $_access = $this->getPermissions( $_name );
             if ( !empty( $_access ) )
             {
