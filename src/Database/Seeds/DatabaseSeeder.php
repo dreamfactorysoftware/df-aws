@@ -104,6 +104,23 @@ class DatabaseSeeder extends Seeder
             );
             $this->command->info( 'AWS SNS push service type seeded!' );
         }
+
+        if ( !ServiceType::whereName( 'aws_ses' )->count() )
+        {
+            // Add the service type
+            ServiceType::create(
+                [
+                    'name'           => 'aws_ses',
+                    'class_name'     => "DreamFactory\\Rave\\Aws\\Services\\Ses",
+                    'config_handler' => "DreamFactory\\Rave\\Models\\EmailServiceConfig",
+                    'label'          => 'AWS SES service',
+                    'description'    => 'Email service supporting the AWS SES system.',
+                    'group'          => 'emails',
+                    'singleton'      => 1
+                ]
+            );
+            $this->command->info( 'AWS SES service type seeded!' );
+        }
     }
 
 }
