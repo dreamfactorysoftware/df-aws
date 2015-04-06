@@ -21,13 +21,20 @@ class CreateAwsTables extends Migration
             'aws_config',
             function ( Blueprint $t )
             {
-                $t->integer( 'service_id' )->unsigned()->primary();
-                $t->foreign( 'service_id' )->references( 'id' )->on( 'services' )->onDelete( 'cascade' );
-                $t->string( 'region' )->nullable();
+                $t->integer( 'id' )->unsigned()->primary();
                 $t->longText( 'key' )->nullable();
                 $t->longText( 'secret' )->nullable();
+                $t->string( 'region' )->nullable();
             }
         );
+
+        Schema::create('aws_config_to_service', function(Blueprint $t)
+        {
+            $t->integer('aws_config_id')->unsigned()->index();
+            $t->foreign('aws_config_id')->references('id')->on('aws_config')->onDelete('cascade');
+            $t->integer('service_id')->unsigned()->index();
+            $t->foreign('service_id')->references('id')->on('service')->onDelete('cascade');
+        });
     }
 
     /**
@@ -39,6 +46,7 @@ class CreateAwsTables extends Migration
     {
         // AWS Service Configuration
         Schema::dropIfExists( 'aws_config' );
+        Schema::dropIfExists( 'aws_config_to_service' );
     }
 
 }
