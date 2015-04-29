@@ -38,7 +38,7 @@ class FileServiceS3Test extends \DreamFactory\Rave\Testing\FileServiceTestCase
                     "label"       => "S3 file service",
                     "description" => "S3 file service for unit test",
                     "is_active"   => 1,
-                    "type"        => "s3_file",
+                    "type"        => "aws_s3",
                     "config"      => [
                         'key' => env('AWS_S3_KEY'),
                         'secret' => env('AWS_S3_SECRET'),
