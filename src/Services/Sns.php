@@ -126,7 +126,7 @@ class Sns extends BaseRestService
     {
         parent::__construct( $settings );
 
-        $config = ArrayUtils::clean( ArrayUtils::get( $settings, 'config', array() ) );
+        $config = ArrayUtils::clean( ArrayUtils::get( $settings, 'config', [] ) );
         AwsSvcUtilities::updateCredentials( $config, true );
 
         $this->conn = AwsSvcUtilities::createClient( $config, static::CLIENT_NAME );
@@ -201,16 +201,18 @@ class Sns extends BaseRestService
     }
 
     /**
+     * @param array $resources
+     *
+     * @return array|bool
      * @throws BadRequestException
      * @throws InternalServerErrorException
-     * @throws \Exception
-     * @return array|bool
+     * @throws NotFoundException
      */
-    protected function handleResource()
+    protected function handleResource(array $resources )
     {
         if ( empty( $this->relatedResource ) )
         {
-            return parent::handleResource();
+            return parent::handleResource($resources );
         }
 
         if ( ( ( SnsSubscription::RESOURCE_NAME == $this->relatedResource ) && ( SnsTopic::RESOURCE_NAME == $this->resource ) ) ||
@@ -249,7 +251,7 @@ class Sns extends BaseRestService
      */
     public function listResources( $include_properties = null )
     {
-        if ( !$this->request->queryBool( 'as_access_components' ) )
+        if ( !$this->request->getParameterAsBool( 'as_access_components' ) )
         {
             return parent::listResources( $include_properties );
         }
@@ -338,7 +340,7 @@ class Sns extends BaseRestService
             }
         }
 
-        return array( 'resource' => $_resources );
+        return [ 'resource' => $_resources ];
     }
 
     /**
@@ -508,7 +510,7 @@ class Sns extends BaseRestService
     public function publish( $request, $resource_type = null, $resource_id = null )
     {
         /** http://docs.aws.amazon.com/aws-sdk-php/latest/class-Aws.Sns.SnsClient.html#_publish */
-        $_data = array();
+        $_data = [];
         if ( is_array( $request ) )
         {
             if ( null !== $_message = ArrayUtils::get( $request, 'Message' ) )
@@ -571,7 +573,7 @@ class Sns extends BaseRestService
             {
                 $_id = ArrayUtils::get( $_result->toArray(), 'MessageId', '' );
 
-                return array( 'MessageId' => $_id );
+                return [ 'MessageId' => $_id ];
             }
         }
         catch ( \Exception $_ex )
@@ -584,7 +586,7 @@ class Sns extends BaseRestService
             throw new InternalServerErrorException( "Failed to push message.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     /**
