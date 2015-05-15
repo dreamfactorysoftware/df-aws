@@ -62,7 +62,7 @@ class SnsSubscription extends BaseSnsResource
      */
     protected function _getSubscriptionsAsArray()
     {
-        $_out = array();
+        $_out = [];
         $_token = null;
         try
         {
@@ -71,18 +71,18 @@ class SnsSubscription extends BaseSnsResource
                 if ( empty( $this->parentResource ) )
                 {
                     $_result = $this->service->getConnection()->listSubscriptions(
-                        array(
+                        [
                             'NextToken' => $_token
-                        )
+                        ]
                     );
                 }
                 else
                 {
                     $_result = $this->service->getConnection()->listSubscriptionsByTopic(
-                        array(
+                        [
                             'TopicArn'  => $this->parentResource,
                             'NextToken' => $_token
-                        )
+                        ]
                     );
                 }
                 $_topics = $_result['Subscriptions'];
@@ -109,17 +109,17 @@ class SnsSubscription extends BaseSnsResource
     }
 
     /**
-     * @param mixed $include_properties Use boolean, comma-delimited string, or array of properties
+     * @param mixed $fields Use boolean, comma-delimited string, or array of properties
      *
      * @return ServiceResponseInterface
      */
-    public function listResources( $include_properties = null )
+    public function listResources( $fields = null )
     {
-        $_resources = array();
+        $_resources = [];
         $_result = $this->_getSubscriptionsAsArray();
         foreach ( $_result as $_sub )
         {
-            switch ( $include_properties )
+            switch ( $fields )
             {
                 case false:
                 case Sns::FORMAT_SIMPLE:
@@ -213,7 +213,7 @@ class SnsSubscription extends BaseSnsResource
             $this->deleteSubscription( $this->resource );
         }
 
-        return array( 'success' => true );
+        return [ 'success' => true ];
     }
 
     /**
@@ -225,13 +225,13 @@ class SnsSubscription extends BaseSnsResource
      */
     public function retrieveSubscription( $resource )
     {
-        $_request = array( 'SubscriptionArn' => $this->service->addArnPrefix( $resource ) );
+        $_request = [ 'SubscriptionArn' => $this->service->addArnPrefix( $resource ) ];
 
         try
         {
             if ( null !== $_result = $this->service->getConnection()->getSubscriptionAttributes( $_request ) )
             {
-                $_out = array_merge( $_request, ArrayUtils::get( $_result->toArray(), 'Attributes', array() ) );
+                $_out = array_merge( $_request, ArrayUtils::get( $_result->toArray(), 'Attributes', [] ) );
                 $_out['Subscription'] = $this->service->stripArnPrefix( $resource );
 
                 return $_out;
@@ -247,7 +247,7 @@ class SnsSubscription extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to retrieve properties for '$resource'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function createSubscription( $request )
@@ -273,7 +273,7 @@ class SnsSubscription extends BaseSnsResource
             {
                 $_arn = ArrayUtils::get( $_result->toArray(), 'SubscriptionArn', '' );
 
-                return array( 'Subscription' => $this->service->stripArnPrefix( $_arn ), 'SubscriptionArn' => $_arn );
+                return [ 'Subscription' => $this->service->stripArnPrefix( $_arn ), 'SubscriptionArn' => $_arn ];
             }
         }
         catch ( \Exception $_ex )
@@ -286,7 +286,7 @@ class SnsSubscription extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to create subscription to  '{$request['TopicArn']}'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function updateSubscription( $request )
@@ -310,7 +310,7 @@ class SnsSubscription extends BaseSnsResource
         {
             if ( null !== $_result = $this->service->getConnection()->setSubscriptionAttributes( $request ) )
             {
-                return array( 'success' => true );
+                return [ 'success' => true ];
             }
         }
         catch ( \Exception $_ex )
@@ -323,12 +323,12 @@ class SnsSubscription extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to update subscription '{$request['SubscriptionArn']}'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function deleteSubscription( $request )
     {
-        $_data = array();
+        $_data = [];
         if ( is_array( $request ) )
         {
             $_name = ArrayUtils::get( $request, 'Subscription', ArrayUtils::get( $request, 'SubscriptionArn' ) );
@@ -348,7 +348,7 @@ class SnsSubscription extends BaseSnsResource
         {
             if ( null !== $_result = $this->service->getConnection()->unsubscribe( $_data ) )
             {
-                return array( 'success' => true );
+                return [ 'success' => true ];
             }
         }
         catch ( \Exception $_ex )
@@ -361,6 +361,6 @@ class SnsSubscription extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to delete subscription '{$_data['SubscriptionArn']}'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 }

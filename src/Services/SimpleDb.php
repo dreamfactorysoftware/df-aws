@@ -188,46 +188,6 @@ class SimpleDb extends BaseNoSqlDbService
     }
 
     /**
-     * @param string $main   Main resource or empty for service
-     * @param string $sub    Subtending resources if applicable
-     * @param string $action Action to validate permission
-     */
-    protected function validateResourceAccess( $main, $sub, $action )
-    {
-        if ( !empty( $main ) )
-        {
-            $_resource = rtrim( $main, '/' ) . '/';
-            switch ( $main )
-            {
-                case SimpleDbSchema::RESOURCE_NAME:
-                case SimpleDbTable::RESOURCE_NAME:
-                    if ( !empty( $sub ) )
-                    {
-                        $_resource .= $sub;
-                    }
-                    break;
-            }
-
-            $this->checkPermission( $action, $_resource );
-
-            return;
-        }
-
-        parent::validateResourceAccess( $main, $sub, $action );
-    }
-
-    /**
-     * @param BaseRestResource $class
-     * @param array            $info
-     *
-     * @return mixed
-     */
-    protected function instantiateResource( $class, $info = [ ] )
-    {
-        return new $class( $this, $info );
-    }
-
-    /**
      * {@InheritDoc}
      */
     protected function handleResource( array $resources )
@@ -266,11 +226,11 @@ class SimpleDb extends BaseNoSqlDbService
     /**
      * {@inheritdoc}
      */
-    public function listResources( $include_properties = null )
+    public function listResources( $fields = null )
     {
         if ( !$this->request->getParameterAsBool( 'as_access_components' ) )
         {
-            return parent::listResources( $include_properties );
+            return parent::listResources( $fields );
         }
 
         $_resources = [ ];
@@ -314,7 +274,7 @@ class SimpleDb extends BaseNoSqlDbService
             }
         }
 
-        return array( 'resource' => $_resources );
+        return [ 'resource' => $_resources ];
     }
 
     /**

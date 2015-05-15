@@ -62,16 +62,16 @@ class SnsTopic extends BaseSnsResource
      */
     protected function _getTopicsAsArray()
     {
-        $_out = array();
+        $_out = [];
         $_token = null;
         try
         {
             do
             {
                 $_result = $this->service->getConnection()->listTopics(
-                    array(
+                    [
                         'NextToken' => $_token
-                    )
+                    ]
                 );
                 $_topics = $_result['Topics'];
                 $_token = $_result['NextToken'];
@@ -97,17 +97,17 @@ class SnsTopic extends BaseSnsResource
     }
 
     /**
-     * @param mixed $include_properties Use boolean, comma-delimited string, or array of properties
+     * @param mixed $fields Use boolean, comma-delimited string, or array of properties
      *
      * @return ServiceResponseInterface
      */
-    public function listResources( $include_properties = null )
+    public function listResources( $fields = null )
     {
-        $_resources = array();
+        $_resources = [];
         $_result = $this->_getTopicsAsArray();
         foreach ( $_result as $_topic )
         {
-            switch ( $include_properties )
+            switch ( $fields )
             {
                 case false:
                 case Sns::FORMAT_SIMPLE:
@@ -196,7 +196,7 @@ class SnsTopic extends BaseSnsResource
             $this->deleteTopic( $this->resource );
         }
 
-        return array( 'success' => true );
+        return [ 'success' => true ];
     }
 
     /**
@@ -208,7 +208,7 @@ class SnsTopic extends BaseSnsResource
      */
     public function retrieveTopic( $resource )
     {
-        $_request = array( 'TopicArn' => $this->service->addArnPrefix( $resource ) );
+        $_request = [ 'TopicArn' => $this->service->addArnPrefix( $resource ) ];
 
         try
         {
@@ -230,12 +230,12 @@ class SnsTopic extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to retrieve properties for '$resource'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function createTopic( $request )
     {
-        $_data = array();
+        $_data = [];
         if ( is_array( $request ) )
         {
             $_name = ArrayUtils::get( $request, 'Name' );
@@ -257,7 +257,7 @@ class SnsTopic extends BaseSnsResource
             {
                 $_arn = ArrayUtils::get( $_result->toArray(), 'TopicArn', '' );
 
-                return array( 'Topic' => $this->service->stripArnPrefix( $_arn ), 'TopicArn' => $_arn );
+                return [ 'Topic' => $this->service->stripArnPrefix( $_arn ), 'TopicArn' => $_arn ];
             }
         }
         catch ( \Exception $_ex )
@@ -270,7 +270,7 @@ class SnsTopic extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to create topic '{$_data['Name']}'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function updateTopic( $request )
@@ -294,7 +294,7 @@ class SnsTopic extends BaseSnsResource
         {
             if ( null !== $_result = $this->service->getConnection()->setTopicAttributes( $request ) )
             {
-                return array( 'success' => true );
+                return [ 'success' => true ];
             }
         }
         catch ( \Exception $_ex )
@@ -307,12 +307,12 @@ class SnsTopic extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to update topic '{$request['TopicArn']}'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function deleteTopic( $request )
     {
-        $_data = array();
+        $_data = [];
         if ( is_array( $request ) )
         {
             $_name = ArrayUtils::get( $request, 'Topic', ArrayUtils::get( $request, 'TopicArn' ) );
@@ -332,7 +332,7 @@ class SnsTopic extends BaseSnsResource
         {
             if ( null !== $_result = $this->service->getConnection()->deleteTopic( $_data ) )
             {
-                return array( 'success' => true );
+                return [ 'success' => true ];
             }
         }
         catch ( \Exception $_ex )
@@ -345,6 +345,6 @@ class SnsTopic extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to delete topic '{$_data['TopicArn']}'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 }

@@ -62,16 +62,16 @@ class SnsApplication extends BaseSnsResource
      */
     protected function _getApplicationsAsArray()
     {
-        $_out = array();
+        $_out = [];
         $_token = null;
         try
         {
             do
             {
                 $_result = $this->service->getConnection()->listPlatformApplications(
-                    array(
+                    [
                         'NextToken' => $_token
-                    )
+                    ]
                 );
                 $_topics = $_result['PlatformApplications'];
                 $_token = $_result['NextToken'];
@@ -130,17 +130,17 @@ class SnsApplication extends BaseSnsResource
     }
 
     /**
-     * @param mixed $include_properties Use boolean, comma-delimited string, or array of properties
+     * @param mixed $fields Use boolean, comma-delimited string, or array of properties
      *
      * @return ServiceResponseInterface
      */
-    public function listResources( $include_properties = null )
+    public function listResources( $fields = null )
     {
-        $_resources = array();
+        $_resources = [];
         $_result = $this->_getApplicationsAsArray();
         foreach ( $_result as $_app )
         {
-            switch ( $include_properties )
+            switch ( $fields )
             {
                 case false:
                 case Sns::FORMAT_SIMPLE:
@@ -229,7 +229,7 @@ class SnsApplication extends BaseSnsResource
             $this->deleteApplication( $this->resource );
         }
 
-        return array( 'success' => true );
+        return [ 'success' => true ];
     }
 
     /**
@@ -241,7 +241,7 @@ class SnsApplication extends BaseSnsResource
      */
     public function retrieveApplication( $resource )
     {
-        $_request = array( 'PlatformApplicationArn' => $this->service->addArnPrefix( $resource ) );
+        $_request = [ 'PlatformApplicationArn' => $this->service->addArnPrefix( $resource ) ];
 
         try
         {
@@ -249,11 +249,11 @@ class SnsApplication extends BaseSnsResource
             {
                 $_attributes = ArrayUtils::get( $_result->toArray(), 'Attributes' );
 
-                return array(
+                return [
                     'Application'            => $this->service->stripArnPrefix( $resource ),
                     'PlatformApplicationArn' => $this->service->addArnPrefix( $resource ),
                     'Attributes'             => $_attributes
-                );
+                ];
             }
         }
         catch ( \Exception $_ex )
@@ -266,7 +266,7 @@ class SnsApplication extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to retrieve properties for '$resource'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function createApplication( $request )
@@ -290,7 +290,7 @@ class SnsApplication extends BaseSnsResource
             {
                 $_arn = ArrayUtils::get( $_result->toArray(), 'PlatformApplicationArn', '' );
 
-                return array( 'Application' => $this->service->stripArnPrefix( $_arn ), 'PlatformApplicationArn' => $_arn );
+                return [ 'Application' => $this->service->stripArnPrefix( $_arn ), 'PlatformApplicationArn' => $_arn ];
             }
         }
         catch ( \Exception $_ex )
@@ -303,7 +303,7 @@ class SnsApplication extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to create application '{$request['Name']}'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function updateApplication( $request )
@@ -327,7 +327,7 @@ class SnsApplication extends BaseSnsResource
         {
             if ( null !== $_result = $this->service->getConnection()->setPlatformApplicationAttributes( $request ) )
             {
-                return array( 'success' => true );
+                return [ 'success' => true ];
             }
         }
         catch ( \Exception $_ex )
@@ -342,12 +342,12 @@ class SnsApplication extends BaseSnsResource
             );
         }
 
-        return array();
+        return [];
     }
 
     public function deleteApplication( $request )
     {
-        $_data = array();
+        $_data = [];
         if ( is_array( $request ) )
         {
             $_name = ArrayUtils::get( $request, 'Application', ArrayUtils::get( $request, 'PlatformApplicationArn' ) );
@@ -367,7 +367,7 @@ class SnsApplication extends BaseSnsResource
         {
             if ( null !== $_result = $this->service->getConnection()->deletePlatformApplication( $_data ) )
             {
-                return array( 'success' => true );
+                return [ 'success' => true ];
             }
         }
         catch ( \Exception $_ex )
@@ -382,6 +382,6 @@ class SnsApplication extends BaseSnsResource
             );
         }
 
-        return array();
+        return [];
     }
 }

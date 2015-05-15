@@ -68,17 +68,17 @@ class SnsEndpoint extends BaseSnsResource
         }
 
         $application = $this->service->addArnPrefix( $application );
-        $_out = array();
+        $_out = [];
         $_token = null;
         try
         {
             do
             {
                 $_result = $this->service->getConnection()->listEndpointsByPlatformApplication(
-                    array(
+                    [
                         'PlatformApplicationArn' => $application,
                         'NextToken'              => $_token
-                    )
+                    ]
                 );
                 $_topics = $_result['Endpoints'];
                 $_token = $_result['NextToken'];
@@ -135,27 +135,27 @@ class SnsEndpoint extends BaseSnsResource
     }
 
     /**
-     * @param mixed $include_properties Use boolean, comma-delimited string, or array of properties
+     * @param mixed $fields Use boolean, comma-delimited string, or array of properties
      *
      * @return ServiceResponseInterface
      * @throws BadRequestException|InternalServerErrorException|NotFoundException
      */
-    public function listResources( $include_properties = null )
+    public function listResources( $fields = null )
     {
-        $_resources = array();
+        $_resources = [];
         if ( empty( $this->parentResource ) )
         {
             $applications = [ ];
             try
             {
-                $_out = array();
+                $_out = [];
                 $_token = null;
                 do
                 {
                     $_result = $this->service->getConnection()->listPlatformApplications(
-                        array(
+                        [
                             'NextToken' => $_token
-                        )
+                        ]
                     );
                     $_topics = $_result['PlatformApplications'];
                     $_token = $_result['NextToken'];
@@ -184,7 +184,7 @@ class SnsEndpoint extends BaseSnsResource
         }
         else
         {
-            $applications = array( $this->parentResource );
+            $applications = [ $this->parentResource ];
         }
 
         foreach ( $applications as $application )
@@ -192,7 +192,7 @@ class SnsEndpoint extends BaseSnsResource
             $_result = $this->_getEndpointsAsArray( $application );
             foreach ( $_result as $_end )
             {
-                switch ( $include_properties )
+                switch ( $fields )
                 {
                     case false:
                     case Sns::FORMAT_SIMPLE:
@@ -282,7 +282,7 @@ class SnsEndpoint extends BaseSnsResource
             $this->deleteEndpoint( $this->resource );
         }
 
-        return array( 'success' => true );
+        return [ 'success' => true ];
     }
 
     /**
@@ -294,7 +294,7 @@ class SnsEndpoint extends BaseSnsResource
      */
     public function retrieveEndpoint( $resource )
     {
-        $_request = array( 'EndpointArn' => $this->service->addArnPrefix( $resource ) );
+        $_request = [ 'EndpointArn' => $this->service->addArnPrefix( $resource ) ];
 
         try
         {
@@ -302,11 +302,11 @@ class SnsEndpoint extends BaseSnsResource
             {
                 $_attributes = ArrayUtils::get( $_result->toArray(), 'Attributes' );
 
-                return array(
+                return [
                     'Endpoint'    => $this->service->stripArnPrefix( $resource ),
                     'EndpointArn' => $this->service->addArnPrefix( $resource ),
                     'Attributes'  => $_attributes
-                );
+                ];
             }
         }
         catch ( \Exception $_ex )
@@ -319,7 +319,7 @@ class SnsEndpoint extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to retrieve properties for '$resource'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function createEndpoint( $request )
@@ -349,7 +349,7 @@ class SnsEndpoint extends BaseSnsResource
             {
                 $_arn = ArrayUtils::get( $_result->toArray(), 'EndpointArn', '' );
 
-                return array( 'Endpoint' => $this->service->stripArnPrefix( $_arn ), 'EndpointArn' => $_arn );
+                return [ 'Endpoint' => $this->service->stripArnPrefix( $_arn ), 'EndpointArn' => $_arn ];
             }
         }
         catch ( \Exception $_ex )
@@ -364,7 +364,7 @@ class SnsEndpoint extends BaseSnsResource
             );
         }
 
-        return array();
+        return [];
     }
 
     public function updateEndpoint( $request )
@@ -388,7 +388,7 @@ class SnsEndpoint extends BaseSnsResource
         {
             if ( null !== $_result = $this->service->getConnection()->setEndpointAttributes( $request ) )
             {
-                return array( 'success' => true );
+                return [ 'success' => true ];
             }
         }
         catch ( \Exception $_ex )
@@ -401,12 +401,12 @@ class SnsEndpoint extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to update endpoint '{$request['EndpointArn']}'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 
     public function deleteEndpoint( $request )
     {
-        $_data = array();
+        $_data = [];
         if ( is_array( $request ) )
         {
             $_name = ArrayUtils::get( $request, 'Endpoint', ArrayUtils::get( $request, 'EndpointArn' ) );
@@ -426,7 +426,7 @@ class SnsEndpoint extends BaseSnsResource
         {
             if ( null !== $_result = $this->service->getConnection()->deleteEndpoint( $_data ) )
             {
-                return array( 'success' => true );
+                return [ 'success' => true ];
             }
         }
         catch ( \Exception $_ex )
@@ -439,6 +439,6 @@ class SnsEndpoint extends BaseSnsResource
             throw new InternalServerErrorException( "Failed to delete endpoint '{$_data['EndpointArn']}'.\n{$_ex->getMessage()}", $_ex->getCode() );
         }
 
-        return array();
+        return [];
     }
 }

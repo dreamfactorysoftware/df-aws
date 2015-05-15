@@ -48,20 +48,20 @@ class SimpleDbSchema extends BaseNoSqlDbSchemaResource
     /**
      * {@inheritdoc}
      */
-    public function listResources($include_properties = null)
+    public function listResources($fields = null)
     {
 //        $refresh = $this->request->queryBool('refresh');
 
         $_names = $this->service->getTables();
 
-        if (empty($include_properties))
+        if (empty($fields))
         {
-            return array('resource' => $_names);
+            return ['resource' => $_names];
         }
 
         $_extras = DbUtilities::getSchemaExtrasForTables( $this->service->getServiceId(), $_names, false, 'table,label,plural' );
 
-        $_tables = array();
+        $_tables = [];
         foreach ( $_names as $name )
         {
             $label = '';
@@ -86,10 +86,10 @@ class SimpleDbSchema extends BaseNoSqlDbSchemaResource
                 $plural = Inflector::pluralize( $label );
             }
 
-            $_tables[] = array('name' => $name, 'label' => $label, 'plural' => $plural);
+            $_tables[] = ['name' => $name, 'label' => $label, 'plural' => $plural];
         }
 
-        return $this->makeResourceList($_tables, $include_properties, true);
+        return $this->makeResourceList($_tables, 'name', $fields, 'resource' );
     }
 
     /**

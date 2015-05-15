@@ -249,11 +249,11 @@ class Sns extends BaseRestService
     /**
      * {@inheritdoc}
      */
-    public function listResources( $include_properties = null )
+    public function listResources( $fields = null )
     {
         if ( !$this->request->getParameterAsBool( 'as_access_components' ) )
         {
-            return parent::listResources( $include_properties );
+            return parent::listResources( $fields );
         }
 
         $_resources = [ ];
@@ -269,7 +269,7 @@ class Sns extends BaseRestService
         }
 
         $topic = new SnsTopic( $this, $this->resources[SnsTopic::RESOURCE_NAME] );
-        $_result = $topic->listResources( $include_properties );
+        $_result = $topic->listResources( $fields );
         foreach ( $_result as $_name )
         {
             $_name = SnsTopic::RESOURCE_NAME . '/' . $_name;
@@ -289,7 +289,7 @@ class Sns extends BaseRestService
         }
 
         $topic = new SnsSubscription( $this, $this->resources[SnsSubscription::RESOURCE_NAME] );
-        $_result = $topic->listResources( $include_properties );
+        $_result = $topic->listResources( $fields );
         foreach ( $_result as $_name )
         {
             $_name = SnsSubscription::RESOURCE_NAME . '/' . $_name;
@@ -309,7 +309,7 @@ class Sns extends BaseRestService
         }
 
         $topic = new SnsApplication( $this, $this->resources[SnsApplication::RESOURCE_NAME] );
-        $_result = $topic->listResources( $include_properties );
+        $_result = $topic->listResources( $fields );
         foreach ( $_result as $_name )
         {
             $_name = SnsApplication::RESOURCE_NAME . '/' . $_name;
@@ -329,7 +329,7 @@ class Sns extends BaseRestService
         }
 
         $topic = new SnsEndpoint( $this, $this->resources[SnsEndpoint::RESOURCE_NAME] );
-        $_result = $topic->listResources( $include_properties );
+        $_result = $topic->listResources( $fields );
         foreach ( $_result as $_name )
         {
             $_name = SnsEndpoint::RESOURCE_NAME . '/' . $_name;
