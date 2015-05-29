@@ -239,7 +239,7 @@ class Sns extends BaseRestService
                 array_shift( $newPath );
                 $newPath = implode( '/', $newPath );
 
-                return $resource->handleRequest( $this->request, $newPath, $this->outputFormat );
+                return $resource->handleRequest( $this->request, $newPath );
             }
         }
 
