@@ -1,2 +1,2 @@
-# rave-aws
-AWS package containing AWS components for the DreamFactory Rave(tm) core.
+# df-aws
+AWS package containing AWS components for the DreamFactory(tm) core.

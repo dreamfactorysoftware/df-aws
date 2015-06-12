@@ -1,11 +1,11 @@
 {
-  "name": "dreamfactory/rave-aws",
-  "description": "AWS package containing AWS components for the rave core.",
+  "name": "dreamfactory/df-aws",
+  "description": "AWS package containing services for the DreamFactory Platform 2.0.",
   "minimum-stability": "dev",
   "keywords": [
     "dreamfactory",
     "dsp",
-    "rave",
+    "rest",
     "aws",
     "s3",
     "dynamodb"
@@ -28,17 +28,17 @@
   ],
   "support": {
     "email": "support@dreamfactory.com",
-    "issues": "https://github.com/dreamfactorysoftware/rave/issues",
-    "wiki": "https://github.com/dreamfactorysoftware/rave/wiki",
-    "source": "https://github.com/dreamfactorysoftware/rave"
+    "source": "https://github.com/dreamfactorysoftware/df-aws",
+    "issues": "https://github.com/dreamfactorysoftware/df-aws/issues",
+    "wiki": "https://wiki.dreamfactory.com"
   },
   "require": {
-    "dreamfactory/rave": "dev-develop as dev-master",
+    "dreamfactory/df-core": "dev-develop as dev-master",
     "aws/aws-sdk-php": "~2.7.0"
   },
   "autoload":{
     "psr-4": {
-      "DreamFactory\\Rave\\Aws\\":"src/"
+      "DreamFactory\\Core\\Aws\\":"src/"
     }
   }
 }

@@ -17,12 +17,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace DreamFactory\Rave\Aws\Utility;
+namespace DreamFactory\Core\Aws\Utility;
 
 use Aws\Common\Aws;
 use Aws\Common\Client\AbstractClient;
 use Aws\Common\Enum\Region;
-use DreamFactory\Rave\Exceptions\InternalServerErrorException;
+use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Library\Utility\ArrayUtils;
 
 /**
@@ -50,7 +50,6 @@ class AwsSvcUtilities
      */
     public static function updateCredentials( &$credentials, $require_region = true )
     {
-        //Todo:Need to figure this out for rave.
         //  Replace any private lookups
         //Session::replaceLookups( $credentials, true );
 

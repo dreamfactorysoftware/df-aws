@@ -1,8 +1,8 @@
 <?php
 /**
- * This file is part of the DreamFactory Rave(tm)
+ * This file is part of the DreamFactory(tm)
  *
- * DreamFactory Rave(tm) <http://github.com/dreamfactorysoftware/rave>
+ * DreamFactory(tm) <http://github.com/dreamfactorysoftware/rave>
  * Copyright 2012-2014 DreamFactory Software, Inc. <support@dreamfactory.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,19 +18,19 @@
  * limitations under the License.
  */
 
-namespace DreamFactory\Rave\Aws\Services;
+namespace DreamFactory\Core\Aws\Services;
 
 
 use Aws\SimpleDb\SimpleDbClient;
-use DreamFactory\Rave\Aws\Utility\AwsSvcUtilities;
-use DreamFactory\Rave\Aws\Resources\SimpleDbSchema;
-use DreamFactory\Rave\Aws\Resources\SimpleDbTable;
-use DreamFactory\Rave\Contracts\ServiceResponseInterface;
-use DreamFactory\Rave\Exceptions\BadRequestException;
-use DreamFactory\Rave\Exceptions\InternalServerErrorException;
-use DreamFactory\Rave\Exceptions\NotFoundException;
-use DreamFactory\Rave\Resources\BaseRestResource;
-use DreamFactory\Rave\Services\BaseNoSqlDbService;
+use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
+use DreamFactory\Core\Aws\Resources\SimpleDbSchema;
+use DreamFactory\Core\Aws\Resources\SimpleDbTable;
+use DreamFactory\Core\Contracts\ServiceResponseInterface;
+use DreamFactory\Core\Exceptions\BadRequestException;
+use DreamFactory\Core\Exceptions\InternalServerErrorException;
+use DreamFactory\Core\Exceptions\NotFoundException;
+use DreamFactory\Core\Resources\BaseRestResource;
+use DreamFactory\Core\Services\BaseNoSqlDbService;
 use DreamFactory\Library\Utility\ArrayUtils;
 
 /**
@@ -63,12 +63,12 @@ class SimpleDb extends BaseNoSqlDbService
     protected $resources = [
         SimpleDbSchema::RESOURCE_NAME          => [
             'name'       => SimpleDbSchema::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\SimpleDbSchema',
+            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SimpleDbSchema',
             'label'      => 'Schema',
         ],
         SimpleDbTable::RESOURCE_NAME           => [
             'name'       => SimpleDbTable::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\SimpleDbTable',
+            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SimpleDbTable',
             'label'      => 'Table',
         ],
     ];
@@ -201,7 +201,7 @@ class SimpleDb extends BaseNoSqlDbService
             // If version 1.x, the resource could be a table
 //            if ($this->request->getApiVersion())
 //            {
-//                $resource = $this->instantiateResource( 'DreamFactory\\Rave\\MongoDb\\Resources\\Table', [ 'name' => $this->resource ] );
+//                $resource = $this->instantiateResource( 'DreamFactory\\Core\\MongoDb\\Resources\\Table', [ 'name' => $this->resource ] );
 //                $newPath = $this->resourceArray;
 //                array_shift( $newPath );
 //                $newPath = implode( '/', $newPath );

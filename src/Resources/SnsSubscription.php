@@ -1,8 +1,8 @@
 <?php
 /**
- * This file is part of the DreamFactory Rave(tm)
+ * This file is part of the DreamFactory(tm)
  *
- * DreamFactory Rave(tm) <http://github.com/dreamfactorysoftware/rave>
+ * DreamFactory(tm) <http://github.com/dreamfactorysoftware/rave>
  * Copyright 2012-2014 DreamFactory Software, Inc. <support@dreamfactory.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,21 +18,21 @@
  * limitations under the License.
  */
 
-namespace DreamFactory\Rave\Aws\Resources;
+namespace DreamFactory\Core\Aws\Resources;
 
 use DreamFactory\Library\Utility\ArrayUtils;
-use DreamFactory\Rave\Aws\Services\Sns;
-use DreamFactory\Rave\Aws\Utility\AwsSvcUtilities;
-use DreamFactory\Rave\Exceptions\BadRequestException;
-use DreamFactory\Rave\Exceptions\InternalServerErrorException;
-use DreamFactory\Rave\Exceptions\NotFoundException;
-use DreamFactory\Rave\Exceptions\RestException;
-use DreamFactory\Rave\Contracts\ServiceResponseInterface;
+use DreamFactory\Core\Aws\Services\Sns;
+use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
+use DreamFactory\Core\Exceptions\BadRequestException;
+use DreamFactory\Core\Exceptions\InternalServerErrorException;
+use DreamFactory\Core\Exceptions\NotFoundException;
+use DreamFactory\Core\Exceptions\RestException;
+use DreamFactory\Core\Contracts\ServiceResponseInterface;
 
 /**
  * Class SnsSubscription
  *
- * @package DreamFactory\Rave\Aws\Resources
+ * @package DreamFactory\Core\Aws\Resources
  */
 class SnsSubscription extends BaseSnsResource
 {

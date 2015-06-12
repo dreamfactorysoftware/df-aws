@@ -1,8 +1,8 @@
 <?php
 /**
- * This file is part of the DreamFactory Rave(tm)
+ * This file is part of the DreamFactory(tm)
  *
- * DreamFactory Rave(tm) <http://github.com/dreamfactorysoftware/rave>
+ * DreamFactory(tm) <http://github.com/dreamfactorysoftware/rave>
  * Copyright 2012-2014 DreamFactory Software, Inc. <support@dreamfactory.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,16 +18,16 @@
  * limitations under the License.
  */
 
-namespace DreamFactory\Rave\Aws\Services;
+namespace DreamFactory\Core\Aws\Services;
 
-use DreamFactory\Rave\Aws\Utility\AwsSvcUtilities;
-use DreamFactory\Rave\Aws\Components\S3FileSystem;
-use DreamFactory\Rave\Services\RemoteFileService;
+use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
+use DreamFactory\Core\Aws\Components\S3FileSystem;
+use DreamFactory\Core\Services\RemoteFileService;
 
 /**
  * Class S3
  *
- * @package DreamFactory\Rave\Aws\Services
+ * @package DreamFactory\Core\Aws\Services
  */
 class S3 extends RemoteFileService
 {

@@ -1,8 +1,8 @@
 <?php
 /**
- * This file is part of the DreamFactory Rave(tm)
+ * This file is part of the DreamFactory(tm)
  *
- * DreamFactory Rave(tm) <http://github.com/dreamfactorysoftware/rave>
+ * DreamFactory(tm) <http://github.com/dreamfactorysoftware/rave>
  * Copyright 2012-2014 DreamFactory Software, Inc. <support@dreamfactory.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,19 +18,19 @@
  * limitations under the License.
  */
 
-namespace DreamFactory\Rave\Aws\Components;
+namespace DreamFactory\Core\Aws\Components;
 
 use DreamFactory\Library\Utility\ArrayUtils;
-use DreamFactory\Rave\Aws\Utility\AwsSvcUtilities;
-use DreamFactory\Rave\Components\RemoteFileSystem;
-use DreamFactory\Rave\Exceptions\RaveException;
-use DreamFactory\Rave\Exceptions\BadRequestException;
+use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
+use DreamFactory\Core\Components\RemoteFileSystem;
+use DreamFactory\Core\Exceptions\RaveException;
+use DreamFactory\Core\Exceptions\BadRequestException;
 use Aws\S3\S3Client;
 
 /**
- * Class S3FileSystem (a copy of dsp's AwsS3Svc class)
+ * Class S3FileSystem
  *
- * @package DreamFactory\Rave\Aws\Components
+ * @package DreamFactory\Core\Aws\Components
  */
 class S3FileSystem extends RemoteFileSystem
 {

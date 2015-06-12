@@ -1,8 +1,8 @@
 <?php
 /**
- * This file is part of the DreamFactory Rave(tm)
+ * This file is part of the DreamFactory(tm)
  *
- * DreamFactory Rave(tm) <http://github.com/dreamfactorysoftware/rave>
+ * DreamFactory(tm) <http://github.com/dreamfactorysoftware/rave>
  * Copyright 2012-2014 DreamFactory Software, Inc. <support@dreamfactory.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,22 +18,22 @@
  * limitations under the License.
  */
 
-namespace DreamFactory\Rave\Aws\Services;
+namespace DreamFactory\Core\Aws\Services;
 
 use Aws\Sns\SnsClient;
 use DreamFactory\Library\Utility\ArrayUtils;
-use DreamFactory\Rave\Aws\Utility\AwsSvcUtilities;
-use DreamFactory\Rave\Aws\Resources\BaseSnsResource;
-use DreamFactory\Rave\Aws\Resources\SnsApplication;
-use DreamFactory\Rave\Aws\Resources\SnsEndpoint;
-use DreamFactory\Rave\Aws\Resources\SnsSubscription;
-use DreamFactory\Rave\Aws\Resources\SnsTopic;
-use DreamFactory\Rave\Exceptions\BadRequestException;
-use DreamFactory\Rave\Exceptions\InternalServerErrorException;
-use DreamFactory\Rave\Exceptions\NotFoundException;
-use DreamFactory\Rave\Exceptions\RestException;
-use DreamFactory\Rave\Services\BaseRestService;
-use DreamFactory\Rave\Resources\BaseRestResource;
+use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
+use DreamFactory\Core\Aws\Resources\BaseSnsResource;
+use DreamFactory\Core\Aws\Resources\SnsApplication;
+use DreamFactory\Core\Aws\Resources\SnsEndpoint;
+use DreamFactory\Core\Aws\Resources\SnsSubscription;
+use DreamFactory\Core\Aws\Resources\SnsTopic;
+use DreamFactory\Core\Exceptions\BadRequestException;
+use DreamFactory\Core\Exceptions\InternalServerErrorException;
+use DreamFactory\Core\Exceptions\NotFoundException;
+use DreamFactory\Core\Exceptions\RestException;
+use DreamFactory\Core\Services\BaseRestService;
+use DreamFactory\Core\Resources\BaseRestResource;
 
 /**
  * Class Sns
@@ -41,7 +41,7 @@ use DreamFactory\Rave\Resources\BaseRestResource;
  * A service to handle Amazon Web Services SNS push notifications services
  * accessed through the REST API.
  *
- * @package DreamFactory\Rave\Aws\Services
+ * @package DreamFactory\Core\Aws\Services
  */
 class Sns extends BaseRestService
 {
@@ -78,22 +78,22 @@ class Sns extends BaseRestService
     protected $resources = [
         SnsTopic::RESOURCE_NAME        => [
             'name'       => SnsTopic::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\SnsTopic',
+            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SnsTopic',
             'label'      => 'SNS Topic',
         ],
         SnsSubscription::RESOURCE_NAME => [
             'name'       => SnsSubscription::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\SnsSubscription',
+            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SnsSubscription',
             'label'      => 'SNS Subscription',
         ],
         SnsApplication::RESOURCE_NAME  => [
             'name'       => SnsApplication::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\SnsApplication',
+            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SnsApplication',
             'label'      => 'SNS Application',
         ],
         SnsEndpoint::RESOURCE_NAME     => [
             'name'       => SnsEndpoint::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Rave\\Aws\\Resources\\SnsEndpoint',
+            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SnsEndpoint',
             'label'      => 'SNS Endpoint',
         ],
     ];
