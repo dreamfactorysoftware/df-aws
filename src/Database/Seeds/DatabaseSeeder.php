@@ -11,7 +11,7 @@ class DatabaseSeeder extends BaseModelSeeder
         [
             'name'           => 'aws_s3',
             'class_name'     => "DreamFactory\\Core\\Aws\\Services\\S3",
-            'config_handler' => "DreamFactory\\Core\\Aws\\Models\\AwsConfig",
+            'config_handler' => "DreamFactory\\Core\\Aws\\Models\\AwsS3Config",
             'label'          => 'AWS S3 file service',
             'description'    => 'File service supporting the AWS S3 file system.',
             'group'          => 'files',
