@@ -9,7 +9,6 @@ use DreamFactory\Core\Contracts\ServiceResponseInterface;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
-use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\Services\BaseNoSqlDbService;
 use DreamFactory\Library\Utility\ArrayUtils;
 
@@ -43,12 +42,12 @@ class DynamoDb extends BaseNoSqlDbService
     protected $resources = [
         DynamoDbSchema::RESOURCE_NAME => [
             'name'       => DynamoDbSchema::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\Schema',
+            'class_name' => DynamoDbSchema::class,
             'label'      => 'Schema',
         ],
         DynamoDbTable::RESOURCE_NAME  => [
             'name'       => DynamoDbTable::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\Table',
+            'class_name' => DynamoDbTable::class,
             'label'      => 'Table',
         ],
     ];
@@ -60,7 +59,7 @@ class DynamoDb extends BaseNoSqlDbService
     /**
      * Create a new DynamoDb
      *
-     * @param array $config
+     * @param array $settings
      *
      * @throws \InvalidArgumentException
      * @throws \Exception
@@ -162,7 +161,7 @@ class DynamoDb extends BaseNoSqlDbService
             // If version 1.x, the resource could be a table
 //            if ($this->request->getApiVersion())
 //            {
-//                $resource = $this->instantiateResource( 'DreamFactory\\Core\\MongoDb\\Resources\\Table', [ 'name' => $this->resource ] );
+//                $resource = $this->instantiateResource( Table::class, [ 'name' => $this->resource ] );
 //                $newPath = $this->resourceArray;
 //                array_shift( $newPath );
 //                $newPath = implode( '/', $newPath );

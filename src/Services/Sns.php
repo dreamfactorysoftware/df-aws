@@ -12,7 +12,6 @@ use DreamFactory\Core\Aws\Resources\SnsTopic;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
-use DreamFactory\Core\Exceptions\RestException;
 use DreamFactory\Core\Services\BaseRestService;
 use DreamFactory\Core\Resources\BaseRestResource;
 
@@ -59,22 +58,22 @@ class Sns extends BaseRestService
     protected $resources = [
         SnsTopic::RESOURCE_NAME        => [
             'name'       => SnsTopic::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SnsTopic',
+            'class_name' => SnsTopic::class,
             'label'      => 'SNS Topic',
         ],
         SnsSubscription::RESOURCE_NAME => [
             'name'       => SnsSubscription::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SnsSubscription',
+            'class_name' => SnsSubscription::class,
             'label'      => 'SNS Subscription',
         ],
         SnsApplication::RESOURCE_NAME  => [
             'name'       => SnsApplication::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SnsApplication',
+            'class_name' => SnsApplication::class,
             'label'      => 'SNS Application',
         ],
         SnsEndpoint::RESOURCE_NAME     => [
             'name'       => SnsEndpoint::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SnsEndpoint',
+            'class_name' => SnsEndpoint::class,
             'label'      => 'SNS Endpoint',
         ],
     ];

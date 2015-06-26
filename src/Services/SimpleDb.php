@@ -9,7 +9,6 @@ use DreamFactory\Core\Contracts\ServiceResponseInterface;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
-use DreamFactory\Core\Resources\BaseRestResource;
 use DreamFactory\Core\Services\BaseNoSqlDbService;
 use DreamFactory\Library\Utility\ArrayUtils;
 
@@ -43,12 +42,12 @@ class SimpleDb extends BaseNoSqlDbService
     protected $resources = [
         SimpleDbSchema::RESOURCE_NAME => [
             'name'       => SimpleDbSchema::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SimpleDbSchema',
+            'class_name' => SimpleDbSchema::class,
             'label'      => 'Schema',
         ],
         SimpleDbTable::RESOURCE_NAME  => [
             'name'       => SimpleDbTable::RESOURCE_NAME,
-            'class_name' => 'DreamFactory\\Core\\Aws\\Resources\\SimpleDbTable',
+            'class_name' => SimpleDbTable::class,
             'label'      => 'Table',
         ],
     ];
@@ -60,7 +59,7 @@ class SimpleDb extends BaseNoSqlDbService
     /**
      * Create a new SimpleDb
      *
-     * @param array $config
+     * @param array $settings
      *
      * @throws \InvalidArgumentException
      * @throws \Exception
@@ -167,7 +166,7 @@ class SimpleDb extends BaseNoSqlDbService
             // If version 1.x, the resource could be a table
 //            if ($this->request->getApiVersion())
 //            {
-//                $resource = $this->instantiateResource( 'DreamFactory\\Core\\MongoDb\\Resources\\Table', [ 'name' => $this->resource ] );
+//                $resource = $this->instantiateResource( Table::class, [ 'name' => $this->resource ] );
 //                $newPath = $this->resourceArray;
 //                array_shift( $newPath );
 //                $newPath = implode( '/', $newPath );
