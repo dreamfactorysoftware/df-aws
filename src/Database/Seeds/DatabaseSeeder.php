@@ -1,6 +1,7 @@
 <?php
 namespace DreamFactory\Core\Aws\Database\Seeds;
 
+use DreamFactory\Core\Aws\Components\AwsS3Config;
 use DreamFactory\Core\Aws\Models\AwsConfig;
 use DreamFactory\Core\Aws\Services\DynamoDb;
 use DreamFactory\Core\Aws\Services\S3;
@@ -19,7 +20,7 @@ class DatabaseSeeder extends BaseModelSeeder
         [
             'name'           => 'aws_s3',
             'class_name'     => S3::class,
-            'config_handler' => AwsConfig::class,
+            'config_handler' => AwsS3Config::class,
             'label'          => 'AWS S3 file service',
             'description'    => 'File service supporting the AWS S3 file system.',
             'group'          => 'files',
