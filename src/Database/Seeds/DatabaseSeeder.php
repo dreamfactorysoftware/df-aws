@@ -24,7 +24,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'label'          => 'AWS S3 file service',
             'description'    => 'File service supporting the AWS S3 file system.',
             'group'          => 'files',
-            'singleton'      => 1
+            'singleton'      => false
         ],
         [
             'name'           => 'aws_dynamodb',
@@ -33,7 +33,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'label'          => 'AWS DynamoDb service',
             'description'    => 'NoSQL database service supporting the AWS DynamoDb system.',
             'group'          => 'database, nosql',
-            'singleton'      => 1
+            'singleton'      => false
         ],
         [
             'name'           => 'aws_simpledb',
@@ -42,7 +42,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'label'          => 'AWS SimpleDb service',
             'description'    => 'NoSQL database service supporting the AWS SimpleDb system.',
             'group'          => 'database, nosql',
-            'singleton'      => 1
+            'singleton'      => false
         ],
         [
             'name'           => 'aws_sns',
@@ -51,7 +51,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'label'          => 'AWS SNS service',
             'description'    => 'Push notification service supporting the AWS SNS system.',
             'group'          => 'push',
-            'singleton'      => 1
+            'singleton'      => false
         ],
         [
             'name'           => 'aws_ses',
@@ -60,7 +60,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'label'          => 'AWS SES service',
             'description'    => 'Email service supporting the AWS SES system.',
             'group'          => 'emails',
-            'singleton'      => 1
+            'singleton'      => false
         ]
     ];
 }
