@@ -23,7 +23,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => AwsS3Config::class,
             'label'          => 'AWS S3 file service',
             'description'    => 'File service supporting the AWS S3 file system.',
-            'group'          => 'files',
+            'group'          => 'File',
             'singleton'      => false
         ],
         [
@@ -32,7 +32,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => AwsConfig::class,
             'label'          => 'AWS DynamoDb service',
             'description'    => 'NoSQL database service supporting the AWS DynamoDb system.',
-            'group'          => 'database, nosql',
+            'group'          => 'Database',
             'singleton'      => false
         ],
         [
@@ -41,7 +41,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => AwsConfig::class,
             'label'          => 'AWS SimpleDb service',
             'description'    => 'NoSQL database service supporting the AWS SimpleDb system.',
-            'group'          => 'database, nosql',
+            'group'          => 'Database',
             'singleton'      => false
         ],
         [
@@ -50,7 +50,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => AwsConfig::class,
             'label'          => 'AWS SNS service',
             'description'    => 'Push notification service supporting the AWS SNS system.',
-            'group'          => 'push',
+            'group'          => 'Notification',
             'singleton'      => false
         ],
         [
@@ -59,7 +59,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => EmailServiceConfig::class,
             'label'          => 'AWS SES service',
             'description'    => 'Email service supporting the AWS SES system.',
-            'group'          => 'emails',
+            'group'          => 'Email',
             'singleton'      => false
         ]
     ];
