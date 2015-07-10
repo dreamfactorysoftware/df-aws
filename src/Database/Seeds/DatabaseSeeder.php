@@ -9,6 +9,7 @@ use DreamFactory\Core\Aws\Services\Ses;
 use DreamFactory\Core\Aws\Services\SimpleDb;
 use DreamFactory\Core\Aws\Services\Sns;
 use DreamFactory\Core\Database\Seeds\BaseModelSeeder;
+use DreamFactory\Core\Enums\ServiceTypeGroups;
 use DreamFactory\Core\Models\EmailServiceConfig;
 use DreamFactory\Core\Models\ServiceType;
 
@@ -23,7 +24,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => AwsS3Config::class,
             'label'          => 'AWS S3',
             'description'    => 'File storage service supporting the AWS S3 file system.',
-            'group'          => 'File',
+            'group'          => ServiceTypeGroups::FILE,
             'singleton'      => false
         ],
         [
@@ -32,7 +33,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => AwsConfig::class,
             'label'          => 'AWS DynamoDb',
             'description'    => 'A database service supporting the AWS DynamoDb system.',
-            'group'          => 'Database',
+            'group'          => ServiceTypeGroups::DATABASE,
             'singleton'      => false
         ],
         [
@@ -41,7 +42,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => AwsConfig::class,
             'label'          => 'AWS SimpleDb',
             'description'    => 'A database service supporting the AWS SimpleDb system.',
-            'group'          => 'Database',
+            'group'          => ServiceTypeGroups::DATABASE,
             'singleton'      => false
         ],
         [
@@ -50,7 +51,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => AwsConfig::class,
             'label'          => 'AWS SNS',
             'description'    => 'Push notification service supporting the AWS SNS system.',
-            'group'          => 'Notification',
+            'group'          => ServiceTypeGroups::NOTIFICATION,
             'singleton'      => false
         ],
         [
@@ -59,7 +60,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => EmailServiceConfig::class,
             'label'          => 'AWS SES',
             'description'    => 'Email service supporting the AWS SES system.',
-            'group'          => 'Email',
+            'group'          => ServiceTypeGroups::EMAIL,
             'singleton'      => false
         ]
     ];
