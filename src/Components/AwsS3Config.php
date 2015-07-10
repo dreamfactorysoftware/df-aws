@@ -4,7 +4,6 @@ namespace DreamFactory\Core\Aws\Components;
 use DreamFactory\Core\Aws\Models\AwsConfig;
 use DreamFactory\Core\Contracts\ServiceConfigHandlerInterface;
 use DreamFactory\Core\Models\FilePublicPath;
-use DreamFactory\Core\SqlDbCore\ColumnSchema;
 use DreamFactory\Library\Utility\ArrayUtils;
 
 class AwsS3Config implements ServiceConfigHandlerInterface
@@ -110,37 +109,18 @@ class AwsS3Config implements ServiceConfigHandlerInterface
     {
         $awsConfig = new AwsConfig();
         $pathConfig = new FilePublicPath();
-        $out = [];
+        $out = null;
 
-        $awsSchema = $awsConfig->getTableSchema();
-        if ($awsSchema) {
-            foreach ($awsSchema->columns as $name => $column) {
-                if ('service_id' === $name) {
-                    continue;
-                }
+        $awsSchema = $awsConfig->getConfigSchema();
+        $pathSchema = $pathConfig->getConfigSchema();
 
-                /** @var ColumnSchema $column */
-                $out[$name] = $column->toArray();
-            }
-            //return $out;
+        if (!empty($awsSchema)) {
+            $out = $awsSchema;
+        }
+        if (!empty($pathSchema)) {
+            $out = ($out) ? array_merge($out, $pathSchema) : $pathSchema;
         }
 
-        $pathSchema = $pathConfig->getTableSchema();
-        if ($pathSchema) {
-            foreach ($pathSchema->columns as $name => $column) {
-                if ('service_id' === $name) {
-                    continue;
-                }
-
-                /** @var ColumnSchema $column */
-                $out[$name] = $column->toArray();
-            }
-        }
-
-        if (!empty($out)) {
-            return $out;
-        }
-
-        return null;
+        return $out;
     }
 }

@@ -21,8 +21,8 @@ class DatabaseSeeder extends BaseModelSeeder
             'name'           => 'aws_s3',
             'class_name'     => S3::class,
             'config_handler' => AwsS3Config::class,
-            'label'          => 'AWS S3 file service',
-            'description'    => 'File service supporting the AWS S3 file system.',
+            'label'          => 'AWS S3',
+            'description'    => 'File storage service supporting the AWS S3 file system.',
             'group'          => 'File',
             'singleton'      => false
         ],
@@ -30,8 +30,8 @@ class DatabaseSeeder extends BaseModelSeeder
             'name'           => 'aws_dynamodb',
             'class_name'     => DynamoDb::class,
             'config_handler' => AwsConfig::class,
-            'label'          => 'AWS DynamoDb service',
-            'description'    => 'NoSQL database service supporting the AWS DynamoDb system.',
+            'label'          => 'AWS DynamoDb',
+            'description'    => 'A database service supporting the AWS DynamoDb system.',
             'group'          => 'Database',
             'singleton'      => false
         ],
@@ -39,8 +39,8 @@ class DatabaseSeeder extends BaseModelSeeder
             'name'           => 'aws_simpledb',
             'class_name'     => SimpleDb::class,
             'config_handler' => AwsConfig::class,
-            'label'          => 'AWS SimpleDb service',
-            'description'    => 'NoSQL database service supporting the AWS SimpleDb system.',
+            'label'          => 'AWS SimpleDb',
+            'description'    => 'A database service supporting the AWS SimpleDb system.',
             'group'          => 'Database',
             'singleton'      => false
         ],
@@ -48,7 +48,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'name'           => 'aws_sns',
             'class_name'     => Sns::class,
             'config_handler' => AwsConfig::class,
-            'label'          => 'AWS SNS service',
+            'label'          => 'AWS SNS',
             'description'    => 'Push notification service supporting the AWS SNS system.',
             'group'          => 'Notification',
             'singleton'      => false
@@ -57,7 +57,7 @@ class DatabaseSeeder extends BaseModelSeeder
             'name'           => 'aws_ses',
             'class_name'     => Ses::class,
             'config_handler' => EmailServiceConfig::class,
-            'label'          => 'AWS SES service',
+            'label'          => 'AWS SES',
             'description'    => 'Email service supporting the AWS SES system.',
             'group'          => 'Email',
             'singleton'      => false
