@@ -36,7 +36,7 @@ class SimpleDbSchema extends BaseNoSqlDbSchemaResource
         $_names = $this->service->getTables();
 
         if (empty($fields)) {
-            return ['resource' => $_names];
+            return $this->cleanResources($_names);
         }
 
         $_extras =
@@ -65,7 +65,7 @@ class SimpleDbSchema extends BaseNoSqlDbSchemaResource
             $_tables[] = ['name' => $name, 'label' => $label, 'plural' => $plural];
         }
 
-        return $this->makeResourceList($_tables, 'name', $fields, 'resource');
+        return $this->cleanResources($_tables, 'name', $fields);
     }
 
     /**

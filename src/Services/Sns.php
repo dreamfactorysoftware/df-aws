@@ -300,7 +300,7 @@ class Sns extends BaseRestService
             }
         }
 
-        return ['resource' => $_resources];
+        return $this->cleanResources($_resources);
     }
 
     /**
