@@ -50,6 +50,11 @@ class S3FileSystem extends RemoteFileSystem
     public function __construct($config)
     {
         $this->_blobConn = AwsSvcUtilities::createClient($config, static::CLIENT_NAME);
+        $this->container = ArrayUtils::get($config, 'container');
+
+        if (!$this->containerExists($this->container)) {
+            $this->createContainer(['name' => $this->container]);
+        }
     }
 
     /**
@@ -71,6 +76,10 @@ class S3FileSystem extends RemoteFileSystem
     public function listContainers($include_properties = false)
     {
         $this->checkConnection();
+
+        if (!empty($this->container)) {
+            return $this->listResource($include_properties);
+        }
 
         /** @noinspection PhpUndefinedMethodInspection */
         $_buckets = $this->_blobConn->listBuckets()->get('Buckets');

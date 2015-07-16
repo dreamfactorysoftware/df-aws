@@ -3,7 +3,9 @@ namespace DreamFactory\Core\Aws\Services;
 
 use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
 use DreamFactory\Core\Aws\Components\S3FileSystem;
+use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Services\RemoteFileService;
+use DreamFactory\Library\Utility\ArrayUtils;
 
 /**
  * Class S3
@@ -18,6 +20,13 @@ class S3 extends RemoteFileService
     protected function setDriver($config)
     {
         AwsSvcUtilities::updateCredentials($config, false);
+        $this->container = ArrayUtils::get($config, 'container');
+
+        if (empty($this->container)) {
+            throw new InternalServerErrorException('S3 file service bucket not specified. Please check configuration for file service - ' .
+                $this->name);
+        }
+
         $this->driver = new S3FileSystem($config);
     }
 }

@@ -2,12 +2,15 @@
 namespace DreamFactory\Core\Aws\Components;
 
 use DreamFactory\Core\Aws\Models\AwsConfig;
+use DreamFactory\Core\Components\FileServiceWithContainer;
 use DreamFactory\Core\Contracts\ServiceConfigHandlerInterface;
 use DreamFactory\Core\Models\FilePublicPath;
 use DreamFactory\Library\Utility\ArrayUtils;
 
 class AwsS3Config implements ServiceConfigHandlerInterface
 {
+    use FileServiceWithContainer;
+
     /**
      * @param int $id
      *
@@ -47,7 +50,8 @@ class AwsS3Config implements ServiceConfigHandlerInterface
         $awsConfig = AwsConfig::find($id);
         $pathConfig = FilePublicPath::find($id);
         $configPath = [
-            'public_path' => ArrayUtils::get($config, 'public_path')
+            'public_path' => ArrayUtils::get($config, 'public_path'),
+            'container'   => ArrayUtils::get($config, 'container')
         ];
         $configAws = [
             'service_id' => ArrayUtils::get($config, 'service_id'),
@@ -100,27 +104,5 @@ class AwsS3Config implements ServiceConfigHandlerInterface
     public static function getAvailableConfigs()
     {
         return null;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function getConfigSchema()
-    {
-        $awsConfig = new AwsConfig();
-        $pathConfig = new FilePublicPath();
-        $out = null;
-
-        $awsSchema = $awsConfig->getConfigSchema();
-        $pathSchema = $pathConfig->getConfigSchema();
-
-        if (!empty($awsSchema)) {
-            $out = $awsSchema;
-        }
-        if (!empty($pathSchema)) {
-            $out = ($out) ? array_merge($out, $pathSchema) : $pathSchema;
-        }
-
-        return $out;
     }
 }
