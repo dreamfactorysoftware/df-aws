@@ -26,7 +26,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
     /**
      * @var null|DynamoDb
      */
-    protected $service = null;
+    protected $parent = null;
     /**
      * @var array
      */
@@ -59,10 +59,10 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
         }
 //        $refresh = $this->request->queryBool('refresh');
 
-        $_names = $this->service->getTables();
+        $_names = $this->parent->getTables();
 
         $_extras =
-            DbUtilities::getSchemaExtrasForTables($this->service->getServiceId(), $_names, false, 'table,label,plural');
+            DbUtilities::getSchemaExtrasForTables($this->parent->getServiceId(), $_names, false, 'table,label,plural');
 
         $_tables = [];
         foreach ($_names as $name) {
@@ -99,7 +99,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
             (is_array($table)) ? ArrayUtils::get($table, 'name', ArrayUtils::get($table, static::TABLE_INDICATOR))
                 : $table;
         try {
-            $_result = $this->service->getConnection()->describeTable(array(static::TABLE_INDICATOR => $_name));
+            $_result = $this->parent->getConnection()->describeTable(array(static::TABLE_INDICATOR => $_name));
 
             // The result of an operation can be used like an array
             $_out = $_result['Table'];
@@ -131,10 +131,10 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
                 $this->_defaultCreateTable,
                 $properties
             );
-            $_result = $this->service->getConnection()->createTable($_properties);
+            $_result = $this->parent->getConnection()->createTable($_properties);
 
             // Wait until the table is created and active
-            $this->service->getConnection()->waitUntilTableExists(array(static::TABLE_INDICATOR => $table));
+            $this->parent->getConnection()->waitUntilTableExists(array(static::TABLE_INDICATOR => $table));
 
             $_out = array_merge(array('name' => $table), $_result['TableDescription']);
 
@@ -162,10 +162,10 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
                 array(static::TABLE_INDICATOR => $table),
                 $properties
             );
-            $_result = $this->service->getConnection()->updateTable($_properties);
+            $_result = $this->parent->getConnection()->updateTable($_properties);
 
             // Wait until the table is active again after updating
-            $this->service->getConnection()->waitUntilTableExists(array(static::TABLE_INDICATOR => $table));
+            $this->parent->getConnection()->waitUntilTableExists(array(static::TABLE_INDICATOR => $table));
 
             return array_merge(array('name' => $table), $_result['TableDescription']);
         } catch (\Exception $_ex) {
@@ -186,10 +186,10 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
         }
 
         try {
-            $_result = $this->service->getConnection()->deleteTable(array(static::TABLE_INDICATOR => $_name));
+            $_result = $this->parent->getConnection()->deleteTable(array(static::TABLE_INDICATOR => $_name));
 
             // Wait until the table is truly gone
-            $this->service->getConnection()->waitUntilTableNotExists(array(static::TABLE_INDICATOR => $_name));
+            $this->parent->getConnection()->waitUntilTableNotExists(array(static::TABLE_INDICATOR => $_name));
 
             return array_merge(array('name' => $_name), $_result['TableDescription']);
         } catch (\Exception $_ex) {

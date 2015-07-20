@@ -30,7 +30,7 @@ class DynamoDbTable extends BaseDbTableResource
     /**
      * @var null|DynamoDb
      */
-    protected $service = null;
+    protected $parent = null;
 
     //*************************************************************************
     //	Methods
@@ -44,7 +44,7 @@ class DynamoDbTable extends BaseDbTableResource
         static $_existing = null;
 
         if (!$_existing) {
-            $_existing = $this->service->getTables();
+            $_existing = $this->parent->getTables();
         }
 
         if (empty($name)) {
@@ -68,10 +68,10 @@ class DynamoDbTable extends BaseDbTableResource
         }
 //        $refresh = $this->request->queryBool('refresh');
 
-        $_names = $this->service->getTables();
+        $_names = $this->parent->getTables();
 
         $_extras =
-            DbUtilities::getSchemaExtrasForTables($this->service->getServiceId(), $_names, false, 'table,label,plural');
+            DbUtilities::getSchemaExtrasForTables($this->parent->getServiceId(), $_names, false, 'table,label,plural');
 
         $_tables = [];
         foreach ($_names as $name) {
@@ -125,7 +125,7 @@ class DynamoDbTable extends BaseDbTableResource
         }
 
         try {
-            $_result = $this->service->getConnection()->scan($_scanProperties);
+            $_result = $this->parent->getConnection()->scan($_scanProperties);
             $_items = ArrayUtils::clean($_result['Items']);
 
             $_out = array();
@@ -228,7 +228,7 @@ class DynamoDbTable extends BaseDbTableResource
     {
         $_format = ($for_update) ? Attribute::FORMAT_UPDATE : Attribute::FORMAT_PUT;
 
-        return $this->service->getConnection()->formatAttributes($record, $_format);
+        return $this->parent->getConnection()->formatAttributes($record, $_format);
     }
 
     /**
@@ -308,7 +308,7 @@ class DynamoDbTable extends BaseDbTableResource
     protected function getIdsInfo($table, $fields_info = null, &$requested_fields = null, $requested_types = null)
     {
         $requested_fields = array();
-        $_result = $this->service->getConnection()->describeTable(array(static::TABLE_INDICATOR => $table));
+        $_result = $this->parent->getConnection()->describeTable(array(static::TABLE_INDICATOR => $table));
         $_result = $_result['Table'];
         $_keys = ArrayUtils::get($_result, 'KeySchema', array());
         $_definitions = ArrayUtils::get($_result, 'AttributeDefinitions', array());
@@ -697,7 +697,7 @@ class DynamoDbTable extends BaseDbTableResource
                 $_native = $this->_formatAttributes($_parsed);
 
                 /*$_result = */
-                $this->service->getConnection()->putItem(
+                $this->parent->getConnection()->putItem(
                     array(
                         static::TABLE_INDICATOR => $this->_transactionTable,
                         'Item'                  => $_native,
@@ -731,7 +731,7 @@ class DynamoDbTable extends BaseDbTableResource
                 }
 
                 $_options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::NONE;
-                $_result = $this->service->getConnection()->putItem(
+                $_result = $this->parent->getConnection()->putItem(
                     array(
                         static::TABLE_INDICATOR => $this->_transactionTable,
                         'Item'                  => $_native,
@@ -768,7 +768,7 @@ class DynamoDbTable extends BaseDbTableResource
                 // simple insert request
                 $_options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::ALL_NEW;
 
-                $_result = $this->service->getConnection()->updateItem(
+                $_result = $this->parent->getConnection()->updateItem(
                     array(
                         static::TABLE_INDICATOR => $this->_transactionTable,
                         'Key'                   => $_key,
@@ -798,7 +798,7 @@ class DynamoDbTable extends BaseDbTableResource
                 $_record = array($_idFields[0] => $id);
                 $_key = static::_buildKey($_idsInfo, $_record);
 
-                $_result = $this->service->getConnection()->deleteItem(
+                $_result = $this->parent->getConnection()->deleteItem(
                     array(
                         static::TABLE_INDICATOR => $this->_transactionTable,
                         'Key'                   => $_key,
@@ -830,7 +830,7 @@ class DynamoDbTable extends BaseDbTableResource
                     $_scanProperties['AttributesToGet'] = $_fields;
                 }
 
-                $_result = $this->service->getConnection()->getItem($_scanProperties);
+                $_result = $this->parent->getConnection()->getItem($_scanProperties);
                 $_result = $_result['Item'];
                 if (empty($_result)) {
                     throw new NotFoundException('Record not found.');
@@ -870,7 +870,7 @@ class DynamoDbTable extends BaseDbTableResource
                 }
 
                 /*$_result = */
-                $this->service->getConnection()->batchWriteItem(
+                $this->parent->getConnection()->batchWriteItem(
                     array('RequestItems' => array($this->_transactionTable => $_requests))
                 );
 
@@ -888,7 +888,7 @@ class DynamoDbTable extends BaseDbTableResource
                 }
 
                 /*$_result = */
-                $this->service->getConnection()->batchWriteItem(
+                $this->parent->getConnection()->batchWriteItem(
                     array('RequestItems' => array($this->_transactionTable => $_requests))
                 );
 
@@ -924,7 +924,7 @@ class DynamoDbTable extends BaseDbTableResource
                     }
 
                     // Get multiple items by key in a BatchGetItem request
-                    $_result = $this->service->getConnection()->batchGetItem(
+                    $_result = $this->parent->getConnection()->batchGetItem(
                         array(
                             'RequestItems' => array(
                                 $this->_transactionTable => $_scanProperties
@@ -940,7 +940,7 @@ class DynamoDbTable extends BaseDbTableResource
                 }
 
                 /*$_result = */
-                $this->service->getConnection()->batchWriteItem(
+                $this->parent->getConnection()->batchWriteItem(
                     array('RequestItems' => array($this->_transactionTable => $_requests))
                 );
 
@@ -966,7 +966,7 @@ class DynamoDbTable extends BaseDbTableResource
                 }
 
                 // Get multiple items by key in a BatchGetItem request
-                $_result = $this->service->getConnection()->batchGetItem(
+                $_result = $this->parent->getConnection()->batchGetItem(
                     array(
                         'RequestItems' => array(
                             $this->_transactionTable => $_scanProperties
@@ -1011,7 +1011,7 @@ class DynamoDbTable extends BaseDbTableResource
                     }
 
                     /* $_result = */
-                    $this->service->getConnection()->batchWriteItem(
+                    $this->parent->getConnection()->batchWriteItem(
                         array('RequestItems' => array($this->_transactionTable => $_requests))
                     );
 
@@ -1028,7 +1028,7 @@ class DynamoDbTable extends BaseDbTableResource
                     }
 
                     /* $_result = */
-                    $this->service->getConnection()->batchWriteItem(
+                    $this->parent->getConnection()->batchWriteItem(
                         array('RequestItems' => array($this->_transactionTable => $_requests))
                     );
 

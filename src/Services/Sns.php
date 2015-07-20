@@ -206,90 +206,89 @@ class Sns extends BaseRestService
         throw new BadRequestException("Invalid related resource '{$this->relatedResource}' for resource '{$this->resource}'.");
     }
 
+    public function getAccessList()
+    {
+        $_resources = parent::getAccessList();
+
+//        $refresh = $this->request->getParameterAsBool( 'refresh' );
+
+        $_name = SnsTopic::RESOURCE_NAME . '/';
+        $_access = $this->getPermissions($_name);
+        if (!empty($_access)) {
+            $_resources[] = $_name;
+            $_resources[] = $_name . '*';
+        }
+
+        $topic = new SnsTopic($this, $this->resources[SnsTopic::RESOURCE_NAME]);
+        $_result = $topic->listResources();
+        foreach ($_result as $_name) {
+            $_name = SnsTopic::RESOURCE_NAME . '/' . $_name;
+            $_access = $this->getPermissions($_name);
+            if (!empty($_access)) {
+                $_resources[] = $_name;
+            }
+        }
+
+        $_name = SnsSubscription::RESOURCE_NAME . '/';
+        $_access = $this->getPermissions($_name);
+        if (!empty($_access)) {
+            $_resources[] = $_name;
+            $_resources[] = $_name . '*';
+        }
+
+        $topic = new SnsSubscription($this, $this->resources[SnsSubscription::RESOURCE_NAME]);
+        $_result = $topic->listResources();
+        foreach ($_result as $_name) {
+            $_name = SnsSubscription::RESOURCE_NAME . '/' . $_name;
+            $_access = $this->getPermissions($_name);
+            if (!empty($_access)) {
+                $_resources[] = $_name;
+            }
+        }
+
+        $_name = SnsApplication::RESOURCE_NAME . '/';
+        $_access = $this->getPermissions($_name);
+        if (!empty($_access)) {
+            $_resources[] = $_name;
+            $_resources[] = $_name . '*';
+        }
+
+        $topic = new SnsApplication($this, $this->resources[SnsApplication::RESOURCE_NAME]);
+        $_result = $topic->listResources();
+        foreach ($_result as $_name) {
+            $_name = SnsApplication::RESOURCE_NAME . '/' . $_name;
+            $_access = $this->getPermissions($_name);
+            if (!empty($_access)) {
+                $_resources[] = $_name;
+            }
+        }
+
+        $_name = SnsEndpoint::RESOURCE_NAME . '/';
+        $_access = $this->getPermissions($_name);
+        if (!empty($_access)) {
+            $_resources[] = $_name;
+            $_resources[] = $_name . '*';
+        }
+
+        $topic = new SnsEndpoint($this, $this->resources[SnsEndpoint::RESOURCE_NAME]);
+        $_result = $topic->listResources();
+        foreach ($_result as $_name) {
+            $_name = SnsEndpoint::RESOURCE_NAME . '/' . $_name;
+            $_access = $this->getPermissions($_name);
+            if (!empty($_access)) {
+                $_resources[] = $_name;
+            }
+        }
+
+        return $_resources;
+    }
+
     /**
      * {@inheritdoc}
      */
     public function getResources($only_handlers = false)
     {
-        if (!$only_handlers) {
-            if ($this->request->getParameterAsBool('as_access_component')) {
-                $_resources = [];
-
-//        $refresh = $this->request->getParameterAsBool( 'refresh' );
-
-                $_name = SnsTopic::RESOURCE_NAME . '/';
-                $_access = $this->getPermissions($_name);
-                if (!empty($_access)) {
-                    $_resources[] = $_name;
-                    $_resources[] = $_name . '*';
-                }
-
-                $topic = new SnsTopic($this, $this->resources[SnsTopic::RESOURCE_NAME]);
-                $_result = $topic->listResources();
-                foreach ($_result as $_name) {
-                    $_name = SnsTopic::RESOURCE_NAME . '/' . $_name;
-                    $_access = $this->getPermissions($_name);
-                    if (!empty($_access)) {
-                        $_resources[] = $_name;
-                    }
-                }
-
-                $_name = SnsSubscription::RESOURCE_NAME . '/';
-                $_access = $this->getPermissions($_name);
-                if (!empty($_access)) {
-                    $_resources[] = $_name;
-                    $_resources[] = $_name . '*';
-                }
-
-                $topic = new SnsSubscription($this, $this->resources[SnsSubscription::RESOURCE_NAME]);
-                $_result = $topic->listResources();
-                foreach ($_result as $_name) {
-                    $_name = SnsSubscription::RESOURCE_NAME . '/' . $_name;
-                    $_access = $this->getPermissions($_name);
-                    if (!empty($_access)) {
-                        $_resources[] = $_name;
-                    }
-                }
-
-                $_name = SnsApplication::RESOURCE_NAME . '/';
-                $_access = $this->getPermissions($_name);
-                if (!empty($_access)) {
-                    $_resources[] = $_name;
-                    $_resources[] = $_name . '*';
-                }
-
-                $topic = new SnsApplication($this, $this->resources[SnsApplication::RESOURCE_NAME]);
-                $_result = $topic->listResources();
-                foreach ($_result as $_name) {
-                    $_name = SnsApplication::RESOURCE_NAME . '/' . $_name;
-                    $_access = $this->getPermissions($_name);
-                    if (!empty($_access)) {
-                        $_resources[] = $_name;
-                    }
-                }
-
-                $_name = SnsEndpoint::RESOURCE_NAME . '/';
-                $_access = $this->getPermissions($_name);
-                if (!empty($_access)) {
-                    $_resources[] = $_name;
-                    $_resources[] = $_name . '*';
-                }
-
-                $topic = new SnsEndpoint($this, $this->resources[SnsEndpoint::RESOURCE_NAME]);
-                $_result = $topic->listResources();
-                foreach ($_result as $_name) {
-                    $_name = SnsEndpoint::RESOURCE_NAME . '/' . $_name;
-                    $_access = $this->getPermissions($_name);
-                    if (!empty($_access)) {
-                        $_resources[] = $_name;
-                    }
-                }
-
-                return $_resources;
-            }
-        }
-
-        return $this->resources;
+        return ($only_handlers) ? $this->resources : array_values($this->resources);
     }
 
     /**
