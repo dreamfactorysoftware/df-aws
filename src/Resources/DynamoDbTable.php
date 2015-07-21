@@ -102,6 +102,20 @@ class DynamoDbTable extends BaseDbTableResource
     /**
      * {@inheritdoc}
      */
+    public function listAccessComponents($schema = null, $refresh = false)
+    {
+        $output = [];
+        $result = $this->parent->getTables();
+        foreach ($result as $name) {
+            $output[] = static::RESOURCE_NAME . '/' . $name;
+        }
+
+        return $output;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function retrieveRecordsByFilter($table, $filter = null, $params = array(), $extras = array())
     {
         $_fields = ArrayUtils::get($extras, 'fields');

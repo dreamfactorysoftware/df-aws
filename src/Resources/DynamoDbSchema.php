@@ -93,6 +93,20 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
     /**
      * {@inheritdoc}
      */
+    public function listAccessComponents($schema = null, $refresh = false)
+    {
+        $output = [];
+        $result = $this->parent->getTables();
+        foreach ($result as $name) {
+            $output[] = static::RESOURCE_NAME . '/' . $name;
+        }
+
+        return $output;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function describeTable($table, $refresh = true)
     {
         $_name =
