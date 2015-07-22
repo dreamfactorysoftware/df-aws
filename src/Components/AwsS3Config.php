@@ -93,6 +93,30 @@ class AwsS3Config implements ServiceConfigHandlerInterface
     /**
      * {@inheritdoc}
      */
+    public static function getConfigSchema()
+    {
+        $awsConfig = new AwsConfig();
+        $pathConfig = new FilePublicPath();
+        $out = null;
+
+        $awsSchema = $awsConfig->getConfigSchema();
+        $pathSchema = $pathConfig->getConfigSchema();
+
+        static::updatePathSchema($pathSchema);
+
+        if (!empty($awsSchema)) {
+            $out = $awsSchema;
+        }
+        if (!empty($pathSchema)) {
+            $out = ($out) ? array_merge($out, $pathSchema) : $pathSchema;
+        }
+
+        return $out;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public static function removeConfig($id)
     {
         // deleting is not necessary here due to cascading on_delete relationship in database
