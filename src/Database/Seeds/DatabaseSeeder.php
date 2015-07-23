@@ -10,7 +10,6 @@ use DreamFactory\Core\Aws\Services\SimpleDb;
 use DreamFactory\Core\Aws\Services\Sns;
 use DreamFactory\Core\Database\Seeds\BaseModelSeeder;
 use DreamFactory\Core\Enums\ServiceTypeGroups;
-use DreamFactory\Core\Models\EmailServiceConfig;
 use DreamFactory\Core\Models\ServiceType;
 
 class DatabaseSeeder extends BaseModelSeeder
@@ -57,7 +56,7 @@ class DatabaseSeeder extends BaseModelSeeder
         [
             'name'           => 'aws_ses',
             'class_name'     => Ses::class,
-            'config_handler' => EmailServiceConfig::class,
+            'config_handler' => AwsConfig::class,
             'label'          => 'AWS SES',
             'description'    => 'Email service supporting the AWS SES system.',
             'group'          => ServiceTypeGroups::EMAIL,

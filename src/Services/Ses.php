@@ -13,13 +13,21 @@ class Ses extends BaseService
      */
     protected function setTransport($config)
     {
-        $sesConfig = [
-            'key'    => ArrayUtils::get($config, 'key'),
-            'secret' => ArrayUtils::get($config, 'secret'),
-            'region' => ArrayUtils::get($config, 'region', 'us-east-1')
-        ];
-        $sesClient = SesClient::factory($sesConfig);
+        $key = ArrayUtils::get($config, 'key');
+        $secret = ArrayUtils::get($config, 'secret');
+        $region = ArrayUtils::get($config, 'region', 'us-east-1');
 
-        $this->transport = new SesTransport($sesClient);
+        $this->transport = static::getTransport($key, $secret, $region);
+    }
+
+    public static function getTransport($key, $secret, $region)
+    {
+        $sesClient = SesClient::factory([
+            'key'    => $key,
+            'secret' => $secret,
+            'region' => $region
+        ]);
+
+        return new SesTransport($sesClient);
     }
 }
