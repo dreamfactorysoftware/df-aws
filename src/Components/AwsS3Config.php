@@ -37,9 +37,9 @@ class AwsS3Config implements ServiceConfigHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public static function validateConfig($config)
+    public static function validateConfig($config, $create=true)
     {
-        return true;
+        return (AwsConfig::validateConfig($config, $create) && FilePublicPath::validateConfig($config, $create));
     }
 
     /**
