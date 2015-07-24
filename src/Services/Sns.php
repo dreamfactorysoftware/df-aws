@@ -120,8 +120,8 @@ class Sns extends BaseRestService
     {
         try {
             $this->conn = null;
-        } catch (\Exception $_ex) {
-            error_log("Failed to disconnect from service.\n{$_ex->getMessage()}");
+        } catch (\Exception $ex) {
+            error_log("Failed to disconnect from service.\n{$ex->getMessage()}");
         }
     }
 
@@ -208,79 +208,79 @@ class Sns extends BaseRestService
 
     public function getAccessList()
     {
-        $_resources = parent::getAccessList();
+        $resources = parent::getAccessList();
 
 //        $refresh = $this->request->getParameterAsBool( 'refresh' );
 
-        $_name = SnsTopic::RESOURCE_NAME . '/';
-        $_access = $this->getPermissions($_name);
-        if (!empty($_access)) {
-            $_resources[] = $_name;
-            $_resources[] = $_name . '*';
+        $name = SnsTopic::RESOURCE_NAME . '/';
+        $access = $this->getPermissions($name);
+        if (!empty($access)) {
+            $resources[] = $name;
+            $resources[] = $name . '*';
         }
 
         $topic = new SnsTopic($this, $this->resources[SnsTopic::RESOURCE_NAME]);
-        $_result = $topic->listResources();
-        foreach ($_result as $_name) {
-            $_name = SnsTopic::RESOURCE_NAME . '/' . $_name;
-            $_access = $this->getPermissions($_name);
-            if (!empty($_access)) {
-                $_resources[] = $_name;
+        $result = $topic->listResources();
+        foreach ($result as $name) {
+            $name = SnsTopic::RESOURCE_NAME . '/' . $name;
+            $access = $this->getPermissions($name);
+            if (!empty($access)) {
+                $resources[] = $name;
             }
         }
 
-        $_name = SnsSubscription::RESOURCE_NAME . '/';
-        $_access = $this->getPermissions($_name);
-        if (!empty($_access)) {
-            $_resources[] = $_name;
-            $_resources[] = $_name . '*';
+        $name = SnsSubscription::RESOURCE_NAME . '/';
+        $access = $this->getPermissions($name);
+        if (!empty($access)) {
+            $resources[] = $name;
+            $resources[] = $name . '*';
         }
 
         $topic = new SnsSubscription($this, $this->resources[SnsSubscription::RESOURCE_NAME]);
-        $_result = $topic->listResources();
-        foreach ($_result as $_name) {
-            $_name = SnsSubscription::RESOURCE_NAME . '/' . $_name;
-            $_access = $this->getPermissions($_name);
-            if (!empty($_access)) {
-                $_resources[] = $_name;
+        $result = $topic->listResources();
+        foreach ($result as $name) {
+            $name = SnsSubscription::RESOURCE_NAME . '/' . $name;
+            $access = $this->getPermissions($name);
+            if (!empty($access)) {
+                $resources[] = $name;
             }
         }
 
-        $_name = SnsApplication::RESOURCE_NAME . '/';
-        $_access = $this->getPermissions($_name);
-        if (!empty($_access)) {
-            $_resources[] = $_name;
-            $_resources[] = $_name . '*';
+        $name = SnsApplication::RESOURCE_NAME . '/';
+        $access = $this->getPermissions($name);
+        if (!empty($access)) {
+            $resources[] = $name;
+            $resources[] = $name . '*';
         }
 
         $topic = new SnsApplication($this, $this->resources[SnsApplication::RESOURCE_NAME]);
-        $_result = $topic->listResources();
-        foreach ($_result as $_name) {
-            $_name = SnsApplication::RESOURCE_NAME . '/' . $_name;
-            $_access = $this->getPermissions($_name);
-            if (!empty($_access)) {
-                $_resources[] = $_name;
+        $result = $topic->listResources();
+        foreach ($result as $name) {
+            $name = SnsApplication::RESOURCE_NAME . '/' . $name;
+            $access = $this->getPermissions($name);
+            if (!empty($access)) {
+                $resources[] = $name;
             }
         }
 
-        $_name = SnsEndpoint::RESOURCE_NAME . '/';
-        $_access = $this->getPermissions($_name);
-        if (!empty($_access)) {
-            $_resources[] = $_name;
-            $_resources[] = $_name . '*';
+        $name = SnsEndpoint::RESOURCE_NAME . '/';
+        $access = $this->getPermissions($name);
+        if (!empty($access)) {
+            $resources[] = $name;
+            $resources[] = $name . '*';
         }
 
         $topic = new SnsEndpoint($this, $this->resources[SnsEndpoint::RESOURCE_NAME]);
-        $_result = $topic->listResources();
-        foreach ($_result as $_name) {
-            $_name = SnsEndpoint::RESOURCE_NAME . '/' . $_name;
-            $_access = $this->getPermissions($_name);
-            if (!empty($_access)) {
-                $_resources[] = $_name;
+        $result = $topic->listResources();
+        foreach ($result as $name) {
+            $name = SnsEndpoint::RESOURCE_NAME . '/' . $name;
+            $access = $this->getPermissions($name);
+            if (!empty($access)) {
+                $resources[] = $name;
             }
         }
 
-        return $_resources;
+        return $resources;
     }
 
     /**
@@ -306,36 +306,36 @@ class Sns extends BaseRestService
 
         $this->resourceId = ArrayUtils::get($this->resourceArray, 1);
 
-        $_pos = 2;
-        $_more = ArrayUtils::get($this->resourceArray, $_pos);
+        $pos = 2;
+        $more = ArrayUtils::get($this->resourceArray, $pos);
 
-        if (!empty($_more)) {
-            if ((SnsApplication::RESOURCE_NAME == $this->resource) && (SnsEndpoint::RESOURCE_NAME !== $_more)) {
+        if (!empty($more)) {
+            if ((SnsApplication::RESOURCE_NAME == $this->resource) && (SnsEndpoint::RESOURCE_NAME !== $more)) {
                 do {
-                    $this->resourceId .= '/' . $_more;
-                    $_pos++;
-                    $_more = ArrayUtils::get($this->resourceArray, $_pos);
-                } while (!empty($_more) && (SnsEndpoint::RESOURCE_NAME !== $_more));
+                    $this->resourceId .= '/' . $more;
+                    $pos++;
+                    $more = ArrayUtils::get($this->resourceArray, $pos);
+                } while (!empty($more) && (SnsEndpoint::RESOURCE_NAME !== $more));
             } elseif (SnsEndpoint::RESOURCE_NAME == $this->resource) {
                 //  This will be the full resource path
                 do {
-                    $this->resourceId .= '/' . $_more;
-                    $_pos++;
-                    $_more = ArrayUtils::get($this->resourceArray, $_pos);
-                } while (!empty($_more));
+                    $this->resourceId .= '/' . $more;
+                    $pos++;
+                    $more = ArrayUtils::get($this->resourceArray, $pos);
+                } while (!empty($more));
             }
         }
 
-        $this->relatedResource = ArrayUtils::get($this->resourceArray, $_pos++);
-        $this->relatedResourceId = ArrayUtils::get($this->resourceArray, $_pos++);
-        $_more = ArrayUtils::get($this->resourceArray, $_pos);
+        $this->relatedResource = ArrayUtils::get($this->resourceArray, $pos++);
+        $this->relatedResourceId = ArrayUtils::get($this->resourceArray, $pos++);
+        $more = ArrayUtils::get($this->resourceArray, $pos);
 
-        if (!empty($_more) && (SnsEndpoint::RESOURCE_NAME == $this->relatedResource)) {
+        if (!empty($more) && (SnsEndpoint::RESOURCE_NAME == $this->relatedResource)) {
             do {
-                $this->relatedResourceId .= '/' . $_more;
-                $_pos++;
-                $_more = ArrayUtils::get($this->resourceArray, $_pos);
-            } while (!empty($_more));
+                $this->relatedResourceId .= '/' . $more;
+                $pos++;
+                $more = ArrayUtils::get($this->resourceArray, $pos);
+            } while (!empty($more));
         }
 
         return $this;
@@ -346,46 +346,46 @@ class Sns extends BaseRestService
     protected
     function validateResourceAccess()
     {
-        $_reqAction = $this->getRequestedAction();
-        $_fullResourcePath = null;
+        $reqAction = $this->getRequestedAction();
+        $fullResourcePath = null;
         if (!empty($this->resource)) {
             switch ($this->resource) {
                 case SnsTopic::RESOURCE_NAME:
-                    $_fullResourcePath = $this->resource . '/';
+                    $fullResourcePath = $this->resource . '/';
                     if (!empty($this->resourceId)) {
-                        $_fullResourcePath .= $this->stripArnPrefix($this->resourceId);
+                        $fullResourcePath .= $this->stripArnPrefix($this->resourceId);
                         if (SnsSubscription::RESOURCE_NAME == $this->relatedResource) {
-                            $_relatedResourcePath = $this->relatedResource . '/';
+                            $relatedResourcePath = $this->relatedResource . '/';
                             if (!empty($this->relatedResourceId)) {
-                                $_relatedResourcePath .= $this->stripArnPrefix($this->relatedResourceId);
+                                $relatedResourcePath .= $this->stripArnPrefix($this->relatedResourceId);
                             }
-                            $this->checkPermission($_reqAction, $_relatedResourcePath);
+                            $this->checkPermission($reqAction, $relatedResourcePath);
                         }
                     }
                     break;
                 case SnsSubscription::RESOURCE_NAME:
-                    $_fullResourcePath = $this->resource . '/';
+                    $fullResourcePath = $this->resource . '/';
                     if (!empty($this->resourceId)) {
-                        $_fullResourcePath .= $this->stripArnPrefix($this->resourceId);
+                        $fullResourcePath .= $this->stripArnPrefix($this->resourceId);
                     }
                     break;
                 case SnsApplication::RESOURCE_NAME:
-                    $_fullResourcePath = $this->resource . '/';
+                    $fullResourcePath = $this->resource . '/';
                     if (!empty($this->resourceId)) {
-                        $_fullResourcePath .= $this->stripArnPrefix($this->resourceId);
+                        $fullResourcePath .= $this->stripArnPrefix($this->resourceId);
                         if (SnsEndpoint::RESOURCE_NAME == $this->relatedResource) {
-                            $_relatedResourcePath = $this->relatedResource . '/';
+                            $relatedResourcePath = $this->relatedResource . '/';
                             if (!empty($this->relatedResourceId)) {
-                                $_relatedResourcePath .= $this->stripArnPrefix($this->relatedResourceId);
+                                $relatedResourcePath .= $this->stripArnPrefix($this->relatedResourceId);
                             }
-                            $this->checkPermission($_reqAction, $_relatedResourcePath);
+                            $this->checkPermission($reqAction, $relatedResourcePath);
                         }
                     }
                     break;
                 case SnsEndpoint::RESOURCE_NAME:
-                    $_fullResourcePath = $this->resource . '/';
+                    $fullResourcePath = $this->resource . '/';
                     if (!empty($this->resourceId)) {
-                        $_fullResourcePath .= $this->stripArnPrefix($this->resourceId);
+                        $fullResourcePath .= $this->stripArnPrefix($this->resourceId);
                     }
                     break;
                 default:
@@ -393,7 +393,7 @@ class Sns extends BaseRestService
             }
         }
 
-        $this->checkPermission($_reqAction, $_fullResourcePath);
+        $this->checkPermission($reqAction, $fullResourcePath);
     }
 
     /**
@@ -422,9 +422,9 @@ class Sns extends BaseRestService
 
         $this->triggerActionEvent($this->response);
 
-        $_result = $this->publish($payload);
+        $result = $this->publish($payload);
 
-        return $_result;
+        return $result;
     }
 
     /**
@@ -445,44 +445,44 @@ class Sns extends BaseRestService
         $resource_id = null
     ){
         /** http://docs.aws.amazon.com/aws-sdk-php/latest/class-Aws.Sns.SnsClient.html#_publish */
-        $_data = [];
+        $data = [];
         if (is_array($request)) {
-            if (null !== $_message = ArrayUtils::get($request, 'Message')) {
-                $_data = array_merge($_data, $request);
-                if (is_array($_message)) {
-                    $_data['Message'] = json_encode($_message);
+            if (null !== $message = ArrayUtils::get($request, 'Message')) {
+                $data = array_merge($data, $request);
+                if (is_array($message)) {
+                    $data['Message'] = json_encode($message);
 
                     if (!ArrayUtils::has($request, 'MessageStructure')) {
-                        $_data['MessageStructure'] = 'json';
+                        $data['MessageStructure'] = 'json';
                     }
                 }
             } else {
                 //  This array is the message
-                $_data['Message'] = json_encode($request);
-                $_data['MessageStructure'] = 'json';
+                $data['Message'] = json_encode($request);
+                $data['MessageStructure'] = 'json';
             }
         } else {
             //  This string is the message
-            $_data['Message'] = $request;
+            $data['Message'] = $request;
         }
 
         switch ($resource_type) {
             case SnsTopic::RESOURCE_NAME:
-                $_data['TopicArn'] = $this->addArnPrefix($resource_id);
+                $data['TopicArn'] = $this->addArnPrefix($resource_id);
                 break;
             case SnsEndpoint::RESOURCE_NAME:
-                $_data['TargetArn'] = $this->addArnPrefix($resource_id);
+                $data['TargetArn'] = $this->addArnPrefix($resource_id);
                 break;
             default:
                 //  Must contain resource, either Topic or Endpoint ARN
-                $_topic = ArrayUtils::get($_data, 'Topic', ArrayUtils::get($_data, 'TopicArn'));
-                $_endpoint =
-                    ArrayUtils::get($_data, 'Endpoint',
-                        ArrayUtils::get($_data, 'EndpointArn', ArrayUtils::get($_data, 'TargetArn')));
-                if (!empty($_topic)) {
-                    $_data['TopicArn'] = $this->addArnPrefix($_topic);
-                } elseif (!empty($_endpoint)) {
-                    $_data['TargetArn'] = $this->addArnPrefix($_endpoint);
+                $topic = ArrayUtils::get($data, 'Topic', ArrayUtils::get($data, 'TopicArn'));
+                $endpoint =
+                    ArrayUtils::get($data, 'Endpoint',
+                        ArrayUtils::get($data, 'EndpointArn', ArrayUtils::get($data, 'TargetArn')));
+                if (!empty($topic)) {
+                    $data['TopicArn'] = $this->addArnPrefix($topic);
+                } elseif (!empty($endpoint)) {
+                    $data['TargetArn'] = $this->addArnPrefix($endpoint);
                 } else {
                     throw new BadRequestException("Publish request does not contain resource, either 'Topic' or 'Endpoint'.");
                 }
@@ -491,18 +491,18 @@ class Sns extends BaseRestService
         }
 
         try {
-            if (null !== $_result = $this->conn->publish($_data)) {
-                $_id = ArrayUtils::get($_result->toArray(), 'MessageId', '');
+            if (null !== $result = $this->conn->publish($data)) {
+                $id = ArrayUtils::get($result->toArray(), 'MessageId', '');
 
-                return ['MessageId' => $_id];
+                return ['MessageId' => $id];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = static::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = static::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to push message.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to push message.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];
@@ -519,7 +519,7 @@ class Sns extends BaseRestService
      */
     static public function translateException(\Exception $exception, $add_msg = null)
     {
-        $_msg = strval($add_msg) . $exception->getMessage();
+        $msg = strval($add_msg) . $exception->getMessage();
         switch (get_class($exception)) {
             case 'Aws\Sns\Exception\AuthorizationErrorException':
             case 'Aws\Sns\Exception\EndpointDisabledException':
@@ -527,12 +527,12 @@ class Sns extends BaseRestService
             case 'Aws\Sns\Exception\PlatformApplicationDisabledException':
             case 'Aws\Sns\Exception\SubscriptionLimitExceededException':
             case 'Aws\Sns\Exception\TopicLimitExceededException':
-                return new BadRequestException($_msg, $exception->getCode());
+                return new BadRequestException($msg, $exception->getCode());
             case 'Aws\Sns\Exception\NotFoundException':
-                return new NotFoundException($_msg, $exception->getCode());
+                return new NotFoundException($msg, $exception->getCode());
             case 'Aws\Sns\Exception\SnsException':
             case 'Aws\Sns\Exception\InternalErrorException':
-                return new InternalServerErrorException($_msg, $exception->getCode());
+                return new InternalServerErrorException($msg, $exception->getCode());
             default:
                 return null;
         }

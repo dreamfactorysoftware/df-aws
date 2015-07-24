@@ -73,9 +73,9 @@ class DynamoDb extends BaseNoSqlDbService
 
         // set up a default table schema
         $parameters = ArrayUtils::clean(ArrayUtils::get($config, 'parameters'));
-        //Session::replaceLookups( $_parameters );
-        if (null !== ($_table = ArrayUtils::get($parameters, 'default_create_table'))) {
-            $this->defaultCreateTable = $_table;
+        //Session::replaceLookups( $parameters );
+        if (null !== ($table = ArrayUtils::get($parameters, 'default_create_table'))) {
+            $this->defaultCreateTable = $table;
         }
 
         $this->dbConn = AwsSvcUtilities::createClient($config, static::CLIENT_NAME);
@@ -88,8 +88,8 @@ class DynamoDb extends BaseNoSqlDbService
     {
         try {
             $this->dbConn = null;
-        } catch (\Exception $_ex) {
-            error_log("Failed to disconnect from database.\n{$_ex->getMessage()}");
+        } catch (\Exception $ex) {
+            error_log("Failed to disconnect from database.\n{$ex->getMessage()}");
         }
     }
 
@@ -112,7 +112,7 @@ class DynamoDb extends BaseNoSqlDbService
             $result = $this->dbConn->listTables(
                 array(
                     'Limit'                   => 100, // arbitrary limit
-                    'ExclusiveStartTableName' => isset($_result) ? $_result['LastEvaluatedTableName'] : null
+                    'ExclusiveStartTableName' => isset($result) ? $result['LastEvaluatedTableName'] : null
                 )
             );
 
@@ -131,17 +131,17 @@ class DynamoDb extends BaseNoSqlDbService
      */
     public function correctTableName(&$name)
     {
-        static $_existing = null;
+        static $existing = null;
 
-        if (!$_existing) {
-            $_existing = $this->getTables();
+        if (!$existing) {
+            $existing = $this->getTables();
         }
 
         if (empty($name)) {
             throw new BadRequestException('Table name can not be empty.');
         }
 
-        if (false === array_search($name, $_existing)) {
+        if (false === array_search($name, $existing)) {
             throw new NotFoundException("Table '$name' not found.");
         }
 
@@ -155,7 +155,7 @@ class DynamoDb extends BaseNoSqlDbService
     {
         try {
             return parent::handleResource($resources);
-        } catch (NotFoundException $_ex) {
+        } catch (NotFoundException $ex) {
             // If version 1.x, the resource could be a table
 //            if ($this->request->getApiVersion())
 //            {
@@ -167,7 +167,7 @@ class DynamoDb extends BaseNoSqlDbService
 //                return $resource->handleRequest( $this->request, $newPath, $this->outputFormat );
 //            }
 
-            throw $_ex;
+            throw $ex;
         }
     }
 }

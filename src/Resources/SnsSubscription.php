@@ -3,11 +3,9 @@ namespace DreamFactory\Core\Aws\Resources;
 
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Aws\Services\Sns;
-use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
-use DreamFactory\Core\Exceptions\RestException;
 use DreamFactory\Core\Contracts\ServiceResponseInterface;
 
 /**
@@ -41,43 +39,43 @@ class SnsSubscription extends BaseSnsResource
      * @throws NotFoundException
      * @throws null
      */
-    protected function _getSubscriptionsAsArray()
+    protected function getSubscriptionsAsArray()
     {
-        $_out = [];
-        $_token = null;
+        $out = [];
+        $token = null;
         try {
             do {
                 if (empty($this->parentResource)) {
-                    $_result = $this->service->getConnection()->listSubscriptions(
+                    $result = $this->service->getConnection()->listSubscriptions(
                         [
-                            'NextToken' => $_token
+                            'NextToken' => $token
                         ]
                     );
                 } else {
-                    $_result = $this->service->getConnection()->listSubscriptionsByTopic(
+                    $result = $this->service->getConnection()->listSubscriptionsByTopic(
                         [
                             'TopicArn'  => $this->parentResource,
-                            'NextToken' => $_token
+                            'NextToken' => $token
                         ]
                     );
                 }
-                $_topics = $_result['Subscriptions'];
-                $_token = $_result['NextToken'];
+                $topics = $result['Subscriptions'];
+                $token = $result['NextToken'];
 
-                if (!empty($_topics)) {
-                    $_out = array_merge($_out, $_topics);
+                if (!empty($topics)) {
+                    $out = array_merge($out, $topics);
                 }
-            } while ($_token);
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+            } while ($token);
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to retrieve subscriptions.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to retrieve subscriptions.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -87,27 +85,27 @@ class SnsSubscription extends BaseSnsResource
      */
     public function listResources($fields = null)
     {
-        $_resources = [];
-        $_result = $this->_getSubscriptionsAsArray();
-        foreach ($_result as $_sub) {
+        $resources = [];
+        $result = $this->getSubscriptionsAsArray();
+        foreach ($result as $sub) {
             switch ($fields) {
                 case false:
                 case Sns::FORMAT_SIMPLE:
-                    $_resources[] = $this->service->stripArnPrefix(ArrayUtils::get($_sub, 'SubscriptionArn'));
+                    $resources[] = $this->service->stripArnPrefix(ArrayUtils::get($sub, 'SubscriptionArn'));
                     break;
                 case Sns::FORMAT_ARN:
-                    $_resources[] = ArrayUtils::get($_sub, 'SubscriptionArn');
+                    $resources[] = ArrayUtils::get($sub, 'SubscriptionArn');
                     break;
                 case true:
                 case Sns::FORMAT_FULL:
                 default:
-                    $_sub['Subscription'] = $this->service->stripArnPrefix(ArrayUtils::get($_sub, 'SubscriptionArn'));
-                    $_resources[] = $_sub;
+                    $sub['Subscription'] = $this->service->stripArnPrefix(ArrayUtils::get($sub, 'SubscriptionArn'));
+                    $resources[] = $sub;
                     break;
             }
         }
 
-        return $_resources;
+        return $resources;
     }
 
     protected function handleGET()
@@ -181,22 +179,22 @@ class SnsSubscription extends BaseSnsResource
      */
     public function retrieveSubscription($resource)
     {
-        $_request = ['SubscriptionArn' => $this->service->addArnPrefix($resource)];
+        $request = ['SubscriptionArn' => $this->service->addArnPrefix($resource)];
 
         try {
-            if (null !== $_result = $this->service->getConnection()->getSubscriptionAttributes($_request)) {
-                $_out = array_merge($_request, ArrayUtils::get($_result->toArray(), 'Attributes', []));
-                $_out['Subscription'] = $this->service->stripArnPrefix($resource);
+            if (null !== $result = $this->service->getConnection()->getSubscriptionAttributes($request)) {
+                $out = array_merge($request, ArrayUtils::get($result->toArray(), 'Attributes', []));
+                $out['Subscription'] = $this->service->stripArnPrefix($resource);
 
-                return $_out;
+                return $out;
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to retrieve properties for '$resource'.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to retrieve properties for '$resource'.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];
@@ -205,29 +203,29 @@ class SnsSubscription extends BaseSnsResource
     public function createSubscription($request)
     {
         if (is_array($request)) {
-            $_name = ArrayUtils::get($request, 'Topic', ArrayUtils::get($request, 'TopicArn'));
-            if (empty($_name)) {
+            $name = ArrayUtils::get($request, 'Topic', ArrayUtils::get($request, 'TopicArn'));
+            if (empty($name)) {
                 throw new BadRequestException("Create Subscription request contains no 'Topic' field.");
             }
 
-            $request['TopicArn'] = $this->service->addArnPrefix($_name);
+            $request['TopicArn'] = $this->service->addArnPrefix($name);
         } else {
             throw new BadRequestException("Create Subscription request contains no fields.");
         }
 
         try {
-            if (null !== $_result = $this->service->getConnection()->subscribe($request)) {
-                $_arn = ArrayUtils::get($_result->toArray(), 'SubscriptionArn', '');
+            if (null !== $result = $this->service->getConnection()->subscribe($request)) {
+                $arn = ArrayUtils::get($result->toArray(), 'SubscriptionArn', '');
 
-                return ['Subscription' => $this->service->stripArnPrefix($_arn), 'SubscriptionArn' => $_arn];
+                return ['Subscription' => $this->service->stripArnPrefix($arn), 'SubscriptionArn' => $arn];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to create subscription to  '{$request['TopicArn']}'.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to create subscription to  '{$request['TopicArn']}'.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];
@@ -236,27 +234,27 @@ class SnsSubscription extends BaseSnsResource
     public function updateSubscription($request)
     {
         if (is_array($request)) {
-            $_name = ArrayUtils::get($request, 'Subscription', ArrayUtils::get($request, 'SubscriptionArn'));
-            if (empty($_name)) {
+            $name = ArrayUtils::get($request, 'Subscription', ArrayUtils::get($request, 'SubscriptionArn'));
+            if (empty($name)) {
                 throw new BadRequestException("Update subscription request contains no 'Subscription' field.");
             }
 
-            $request['SubscriptionArn'] = $this->service->addArnPrefix($_name);
+            $request['SubscriptionArn'] = $this->service->addArnPrefix($name);
         } else {
             throw new BadRequestException("Update subscription request contains no fields.");
         }
 
         try {
-            if (null !== $_result = $this->service->getConnection()->setSubscriptionAttributes($request)) {
+            if (null !== $result = $this->service->getConnection()->setSubscriptionAttributes($request)) {
                 return ['success' => true];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to update subscription '{$request['SubscriptionArn']}'.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to update subscription '{$request['SubscriptionArn']}'.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];
@@ -264,29 +262,29 @@ class SnsSubscription extends BaseSnsResource
 
     public function deleteSubscription($request)
     {
-        $_data = [];
+        $data = [];
         if (is_array($request)) {
-            $_name = ArrayUtils::get($request, 'Subscription', ArrayUtils::get($request, 'SubscriptionArn'));
-            if (empty($_name)) {
+            $name = ArrayUtils::get($request, 'Subscription', ArrayUtils::get($request, 'SubscriptionArn'));
+            if (empty($name)) {
                 throw new BadRequestException("Delete subscription request contains no 'Subscription' field.");
             }
 
-            $_data['SubscriptionArn'] = $this->service->addArnPrefix($_name);
+            $data['SubscriptionArn'] = $this->service->addArnPrefix($name);
         } else {
-            $_data['SubscriptionArn'] = $this->service->addArnPrefix($request);
+            $data['SubscriptionArn'] = $this->service->addArnPrefix($request);
         }
 
         try {
-            if (null !== $_result = $this->service->getConnection()->unsubscribe($_data)) {
+            if (null !== $result = $this->service->getConnection()->unsubscribe($data)) {
                 return ['success' => true];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to delete subscription '{$_data['SubscriptionArn']}'.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to delete subscription '{$data['SubscriptionArn']}'.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];

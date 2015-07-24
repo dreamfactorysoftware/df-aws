@@ -28,7 +28,7 @@ class S3FileSystem extends RemoteFileSystem
     /**
      * @var S3Client
      */
-    protected $_blobConn = null;
+    protected $blobConn = null;
 
     //*************************************************************************
     //	Methods
@@ -39,7 +39,7 @@ class S3FileSystem extends RemoteFileSystem
      */
     protected function checkConnection()
     {
-        if (empty($this->_blobConn)) {
+        if (empty($this->blobConn)) {
             throw new DfException('No valid connection to blob file storage.');
         }
     }
@@ -49,7 +49,7 @@ class S3FileSystem extends RemoteFileSystem
      */
     public function __construct($config)
     {
-        $this->_blobConn = AwsSvcUtilities::createClient($config, static::CLIENT_NAME);
+        $this->blobConn = AwsSvcUtilities::createClient($config, static::CLIENT_NAME);
         $this->container = ArrayUtils::get($config, 'container');
 
         if (!$this->containerExists($this->container)) {
@@ -62,7 +62,7 @@ class S3FileSystem extends RemoteFileSystem
      */
     public function __destruct()
     {
-        unset($this->_blobConn);
+        unset($this->blobConn);
     }
 
     /**
@@ -82,15 +82,15 @@ class S3FileSystem extends RemoteFileSystem
         }
 
         /** @noinspection PhpUndefinedMethodInspection */
-        $_buckets = $this->_blobConn->listBuckets()->get('Buckets');
+        $buckets = $this->blobConn->listBuckets()->get('Buckets');
 
-        $_out = [];
-        foreach ($_buckets as $_bucket) {
-            $_name = rtrim($_bucket['Name']);
-            $_out[] = ['name' => $_name, 'path' => $_name];
+        $out = [];
+        foreach ($buckets as $bucket) {
+            $name = rtrim($bucket['Name']);
+            $out[] = ['name' => $name, 'path' => $name];
         }
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -136,7 +136,7 @@ class S3FileSystem extends RemoteFileSystem
     {
         $this->checkConnection();
 
-        return $this->_blobConn->doesBucketExist($container);
+        return $this->blobConn->doesBucketExist($container);
     }
 
     /**
@@ -150,21 +150,21 @@ class S3FileSystem extends RemoteFileSystem
      */
     public function createContainer($properties, $metadata = [])
     {
-        $_name = ArrayUtils::get($properties, 'name', ArrayUtils::get($properties, 'path'));
-        if (empty($_name)) {
+        $name = ArrayUtils::get($properties, 'name', ArrayUtils::get($properties, 'path'));
+        if (empty($name)) {
             throw new BadRequestException('No name found for container in create request.');
         }
         try {
             $this->checkConnection();
-            $this->_blobConn->createBucket(
+            $this->blobConn->createBucket(
                 [
-                    'Bucket' => $_name
+                    'Bucket' => $name
                 ]
             );
 
-            return ['name' => $_name, 'path' => $_name];
+            return ['name' => $name, 'path' => $name];
         } catch (\Exception $ex) {
-            throw new DfException("Failed to create container '$_name': " . $ex->getMessage());
+            throw new DfException("Failed to create container '$name': " . $ex->getMessage());
         }
     }
 
@@ -181,7 +181,7 @@ class S3FileSystem extends RemoteFileSystem
     {
         $this->checkConnection();
         try {
-            if ($this->_blobConn->doesBucketExist($container)) {
+            if ($this->blobConn->doesBucketExist($container)) {
                 throw new \Exception("No container named '$container'");
             }
         } catch (\Exception $ex) {
@@ -199,7 +199,7 @@ class S3FileSystem extends RemoteFileSystem
     {
         try {
             $this->checkConnection();
-            $this->_blobConn->deleteBucket(
+            $this->blobConn->deleteBucket(
                 [
                     'Bucket' => $container
                 ]
@@ -222,7 +222,7 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            return $this->_blobConn->doesObjectExist($container, $name);
+            return $this->blobConn->doesObjectExist($container, $name);
         } catch (\Exception $ex) {
             return false;
         }
@@ -241,17 +241,17 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            $_options = [
+            $options = [
                 'Bucket' => $container,
                 'Key'    => $name,
                 'Body'   => $blob
             ];
 
             if (!empty($type)) {
-                $_options['ContentType'] = $type;
+                $options['ContentType'] = $type;
             }
 
-            $_result = $this->_blobConn->putObject($_options);
+            $result = $this->blobConn->putObject($options);
         } catch (\Exception $ex) {
             throw new DfException('Failed to create blob "' . $name . '": ' . $ex->getMessage());
         }
@@ -270,17 +270,17 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            $_options = [
+            $options = [
                 'Bucket'     => $container,
                 'Key'        => $name,
                 'SourceFile' => $localFileName
             ];
 
             if (!empty($type)) {
-                $_options['ContentType'] = $type;
+                $options['ContentType'] = $type;
             }
 
-            $_result = $this->_blobConn->putObject($_options);
+            $result = $this->blobConn->putObject($options);
         } catch (\Exception $ex) {
             throw new DfException('Failed to create blob "' . $name . '": ' . $ex->getMessage());
         }
@@ -302,13 +302,13 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            $_options = [
+            $options = [
                 'Bucket'     => $container,
                 'Key'        => $name,
                 'CopySource' => urlencode($src_container . '/' . $src_name)
             ];
 
-            $result = $this->_blobConn->copyObject($_options);
+            $result = $this->blobConn->copyObject($options);
         } catch (\Exception $ex) {
             throw new DfException('Failed to copy blob "' . $name . '": ' . $ex->getMessage());
         }
@@ -328,13 +328,13 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            $_options = [
+            $options = [
                 'Bucket' => $container,
                 'Key'    => $name,
                 'SaveAs' => $localFileName
             ];
 
-            $_result = $this->_blobConn->getObject($_options);
+            $result = $this->blobConn->getObject($options);
         } catch (\Exception $ex) {
             throw new DfException('Failed to retrieve blob "' . $name . '": ' . $ex->getMessage());
         }
@@ -352,14 +352,14 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            $_options = [
+            $options = [
                 'Bucket' => $container,
                 'Key'    => $name
             ];
 
-            $_result = $this->_blobConn->getObject($_options);
+            $result = $this->blobConn->getObject($options);
 
-            return $_result['Body'];
+            return $result['Body'];
         } catch (\Exception $ex) {
             throw new DfException('Failed to retrieve blob "' . $name . '": ' . $ex->getMessage());
         }
@@ -375,7 +375,7 @@ class S3FileSystem extends RemoteFileSystem
     {
         try {
             $this->checkConnection();
-            $this->_blobConn->deleteObject(
+            $this->blobConn->deleteObject(
                 [
                     'Bucket' => $container,
                     'Key'    => $name
@@ -399,69 +399,69 @@ class S3FileSystem extends RemoteFileSystem
      */
     public function listBlobs($container = '', $prefix = '', $delimiter = '')
     {
-        $_options = [
+        $options = [
             'Bucket' => $container,
             'Prefix' => $prefix
         ];
 
         if (!empty($delimiter)) {
-            $_options['Delimiter'] = $delimiter;
+            $options['Delimiter'] = $delimiter;
         }
 
         //	No max-keys specified. Get everything.
-        $_keys = [];
+        $keys = [];
 
         do {
-            /** @var \Aws\S3\Iterator\ListObjectsIterator $_list */
-            $_list = $this->_blobConn->listObjects($_options);
+            /** @var \Aws\S3\Iterator\ListObjectsIterator $list */
+            $list = $this->blobConn->listObjects($options);
 
-            $_objects = $_list->get('Contents');
+            $objects = $list->get('Contents');
 
-            if (!empty($_objects)) {
-                foreach ($_objects as $_object) {
-                    if (0 != strcasecmp($prefix, $_object['Key'])) {
-                        $_keys[$_object['Key']] = true;
+            if (!empty($objects)) {
+                foreach ($objects as $object) {
+                    if (0 != strcasecmp($prefix, $object['Key'])) {
+                        $keys[$object['Key']] = true;
                     }
                 }
             }
 
-            $_objects = $_list->get('CommonPrefixes');
+            $objects = $list->get('CommonPrefixes');
 
-            if (!empty($_objects)) {
-                foreach ($_objects as $_object) {
-                    if (0 != strcasecmp($prefix, $_object['Prefix'])) {
-                        if (!isset($_keys[$_object['Prefix']])) {
-                            $_keys[$_object['Prefix']] = false;
+            if (!empty($objects)) {
+                foreach ($objects as $object) {
+                    if (0 != strcasecmp($prefix, $object['Prefix'])) {
+                        if (!isset($keys[$object['Prefix']])) {
+                            $keys[$object['Prefix']] = false;
                         }
                     }
                 }
             }
 
-            $_options['Marker'] = $_list->get('Marker');
-        } while ($_list->get('IsTruncated'));
+            $options['Marker'] = $list->get('Marker');
+        } while ($list->get('IsTruncated'));
 
-        $_options = [
+        $options = [
             'Bucket' => $container,
             'Key'    => ''
         ];
 
-        $_out = [];
-        foreach ($_keys as $_key => $_isObject) {
-            $_options['Key'] = $_key;
+        $out = [];
+        foreach ($keys as $key => $isObject) {
+            $options['Key'] = $key;
 
-            if ($_isObject) {
-                /** @var \Aws\S3\Iterator\ListObjectsIterator $_meta */
-                $_meta = $this->_blobConn->headObject($_options);
+            if ($isObject) {
+                /** @var \Aws\S3\Iterator\ListObjectsIterator $meta */
+                $meta = $this->blobConn->headObject($options);
 
-                $_out[] = [
-                    'name'           => $_key,
-                    'content_type'   => $_meta->get('ContentType'),
-                    'content_length' => intval($_meta->get('ContentLength')),
-                    'last_modified'  => $_meta->get('LastModified')
+                $out[] = [
+                    'name'           => $key,
+                    'content_type'   => $meta->get('ContentType'),
+                    'content_length' => intval($meta->get('ContentLength')),
+                    'last_modified'  => $meta->get('LastModified')
                 ];
             } else {
-                $_out[] = [
-                    'name'           => $_key,
+                $out[] = [
+                    'name'           => $key,
                     'content_type'   => null,
                     'content_length' => 0,
                     'last_modified'  => null
@@ -469,7 +469,7 @@ class S3FileSystem extends RemoteFileSystem
             }
         }
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -486,22 +486,22 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            /** @var \Aws\S3\Iterator\ListObjectsIterator $_result */
-            $_result = $this->_blobConn->headObject(
+            /** @var \Aws\S3\Iterator\ListObjectsIterator $result */
+            $result = $this->blobConn->headObject(
                 [
                     'Bucket' => $container,
                     'Key'    => $name
                 ]
             );
 
-            $_out = [
+            $out = [
                 'name'           => $name,
-                'content_type'   => $_result->get('ContentType'),
-                'content_length' => intval($_result->get('ContentLength')),
-                'last_modified'  => $_result->get('LastModified')
+                'content_type'   => $result->get('ContentType'),
+                'content_length' => intval($result->get('ContentLength')),
+                'last_modified'  => $result->get('LastModified')
             ];
 
-            return $_out;
+            return $out;
         } catch (\Exception $ex) {
             throw new DfException('Failed to list blob metadata: ' . $ex->getMessage());
         }
@@ -519,23 +519,23 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            /** @var \Aws\S3\Iterator\ListObjectsIterator $_result */
-            $_result = $this->_blobConn->getObject(
+            /** @var \Aws\S3\Iterator\ListObjectsIterator $result */
+            $result = $this->blobConn->getObject(
                 [
                     'Bucket' => $container,
                     'Key'    => $name
                 ]
             );
 
-            header('Last-Modified: ' . $_result->get('LastModified'));
-            header('Content-Type: ' . $_result->get('ContentType'));
-            header('Content-Length:' . intval($_result->get('ContentLength')));
+            header('Last-Modified: ' . $result->get('LastModified'));
+            header('Content-Type: ' . $result->get('ContentType'));
+            header('Content-Length:' . intval($result->get('ContentLength')));
 
-            $_disposition =
+            $disposition =
                 (isset($params['disposition']) && !empty($params['disposition'])) ? $params['disposition'] : 'inline';
 
-            header('Content-Disposition: ' . $_disposition . '; filename="' . $name . '";');
-            echo $_result->get('Body');
+            header('Content-Disposition: ' . $disposition . '; filename="' . $name . '";');
+            echo $result->get('Body');
         } catch (\Exception $ex) {
             if ('Resource could not be accessed.' == $ex->getMessage()) {
                 $status_header = "HTTP/1.1 404 The specified file '$name' does not exist.";

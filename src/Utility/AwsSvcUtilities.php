@@ -36,20 +36,20 @@ class AwsSvcUtilities
         //Session::replaceLookups( $credentials, true );
 
         //  Fix credentials
-        if (null !== $_accessKey = ArrayUtils::get($credentials, 'access_key', null, true)) {
+        if (null !== $accessKey = ArrayUtils::get($credentials, 'access_key', null, true)) {
             unset($credentials['access_key']);
             // old way, replace with 'key'
-            ArrayUtils::set($credentials, 'key', $_accessKey);
+            ArrayUtils::set($credentials, 'key', $accessKey);
         }
 
-        if (null !== $_secretKey = ArrayUtils::get($credentials, 'secret_key', null, true)) {
+        if (null !== $secretKey = ArrayUtils::get($credentials, 'secret_key', null, true)) {
             unset($credentials['secret_key']);
             // old way, replace with 'key'
-            ArrayUtils::set($credentials, 'secret', $_secretKey);
+            ArrayUtils::set($credentials, 'secret', $secretKey);
         }
 
         if ($require_region) {
-            if (null === $_region = ArrayUtils::get($credentials, 'region', null, true)) {
+            if (null === $region = ArrayUtils::get($credentials, 'region', null, true)) {
                 // use a default region if not present
                 ArrayUtils::set($credentials, 'region', static::DEFAULT_REGION);
             }
@@ -67,17 +67,17 @@ class AwsSvcUtilities
      */
     public static function createClient($credentials, $factory)
     {
-        $_client = null;
+        $client = null;
 
         try {
-            $_aws = Aws::factory($credentials);
+            $aws = Aws::factory($credentials);
 
-            $_client = $_aws->get($factory);
-        } catch (\Exception $_ex) {
-            throw new InternalServerErrorException("Amazon $factory Service Exception:\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            $client = $aws->get($factory);
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("Amazon $factory Service Exception:\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
-        return $_client;
+        return $client;
     }
 }

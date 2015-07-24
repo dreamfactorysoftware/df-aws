@@ -41,17 +41,17 @@ class SimpleDbTable extends BaseDbTableResource
      */
     public function correctTableName(&$name)
     {
-        static $_existing = null;
+        static $existing = null;
 
-        if (!$_existing) {
-            $_existing = $this->service->getTables();
+        if (!$existing) {
+            $existing = $this->service->getTables();
         }
 
         if (empty($name)) {
             throw new BadRequestException('Table name can not be empty.');
         }
 
-        if (false === array_search($name, $_existing)) {
+        if (false === array_search($name, $existing)) {
             throw new NotFoundException("Table '$name' not found.");
         }
 
@@ -68,16 +68,16 @@ class SimpleDbTable extends BaseDbTableResource
         }
 //        $refresh = $this->request->queryBool('refresh');
 
-        $_names = $this->service->getTables();
+        $names = $this->service->getTables();
 
-        $_extras =
-            DbUtilities::getSchemaExtrasForTables($this->service->getServiceId(), $_names, false, 'table,label,plural');
+        $extras =
+            DbUtilities::getSchemaExtrasForTables($this->service->getServiceId(), $names, false, 'table,label,plural');
 
-        $_tables = [];
-        foreach ($_names as $name) {
+        $tables = [];
+        foreach ($names as $name) {
             $label = '';
             $plural = '';
-            foreach ($_extras as $each) {
+            foreach ($extras as $each) {
                 if (0 == strcasecmp($name, ArrayUtils::get($each, 'table', ''))) {
                     $label = ArrayUtils::get($each, 'label');
                     $plural = ArrayUtils::get($each, 'plural');
@@ -93,10 +93,10 @@ class SimpleDbTable extends BaseDbTableResource
                 $plural = Inflector::pluralize($label);
             }
 
-            $_tables[] = ['name' => $name, 'label' => $label, 'plural' => $plural];
+            $tables[] = ['name' => $name, 'label' => $label, 'plural' => $plural];
         }
 
-        return $_tables;
+        return $tables;
     }
 
     /**
@@ -104,52 +104,52 @@ class SimpleDbTable extends BaseDbTableResource
      */
     public function retrieveRecordsByFilter($table, $filter = null, $params = array(), $extras = array())
     {
-        $_idField = ArrayUtils::get($extras, 'id_field', static::DEFAULT_ID_FIELD);
-        $_fields = ArrayUtils::get($extras, 'fields');
-        $_ssFilters = ArrayUtils::get($extras, 'ss_filters');
+        $idField = ArrayUtils::get($extras, 'id_field', static::DEFAULT_ID_FIELD);
+        $fields = ArrayUtils::get($extras, 'fields');
+        $ssFilters = ArrayUtils::get($extras, 'ss_filters');
 
-        $_fields = static::_buildAttributesToGet($_fields);
+        $fields = static::buildAttributesToGet($fields);
 
-        $_select = 'select ';
-        $_select .= (empty($_fields)) ? '*' : $_fields;
-        $_select .= ' from ' . $table;
+        $select = 'select ';
+        $select .= (empty($fields)) ? '*' : $fields;
+        $select .= ' from ' . $table;
 
-        $_parsedFilter = static::buildCriteriaArray($filter, $params, $_ssFilters);
-        if (!empty($_parsedFilter)) {
-            $_select .= ' where ' . $_parsedFilter;
+        $parsedFilter = static::buildCriteriaArray($filter, $params, $ssFilters);
+        if (!empty($parsedFilter)) {
+            $select .= ' where ' . $parsedFilter;
         }
 
-        $_order = ArrayUtils::get($extras, 'order');
-        if ($_order > 0) {
-            $_select .= ' order by ' . $_order;
+        $order = ArrayUtils::get($extras, 'order');
+        if ($order > 0) {
+            $select .= ' order by ' . $order;
         }
 
-        $_limit = ArrayUtils::get($extras, 'limit');
-        if ($_limit > 0) {
-            $_select .= ' limit ' . $_limit;
+        $limit = ArrayUtils::get($extras, 'limit');
+        if ($limit > 0) {
+            $select .= ' limit ' . $limit;
         }
 
         try {
-            $_result =
+            $result =
                 $this->service->getConnection()->select(array(
-                    'SelectExpression' => $_select,
+                    'SelectExpression' => $select,
                     'ConsistentRead'   => true
                 ));
-            $_items = ArrayUtils::clean($_result['Items']);
+            $items = ArrayUtils::clean($result['Items']);
 
-            $_out = array();
-            foreach ($_items as $_item) {
-                $_attributes = ArrayUtils::get($_item, 'Attributes');
-                $_name = ArrayUtils::get($_item, $_idField);
-                $_out[] = array_merge(
-                    static::_unformatAttributes($_attributes),
-                    array($_idField => $_name)
+            $out = array();
+            foreach ($items as $item) {
+                $attributes = ArrayUtils::get($item, 'Attributes');
+                $name = ArrayUtils::get($item, $idField);
+                $out[] = array_merge(
+                    static::unformatAttributes($attributes),
+                    array($idField => $name)
                 );
             }
 
-            return $_out;
-        } catch (\Exception $_ex) {
-            throw new InternalServerErrorException("Failed to filter records from '$table'.\n{$_ex->getMessage()}");
+            return $out;
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("Failed to filter records from '$table'.\n{$ex->getMessage()}");
         }
     }
 
@@ -157,16 +157,16 @@ class SimpleDbTable extends BaseDbTableResource
     {
         if (empty($requested_fields)) {
             $requested_fields = array(static::DEFAULT_ID_FIELD); // can only be this
-            $_ids = array(
+            $ids = array(
                 array('name' => static::DEFAULT_ID_FIELD, 'type' => 'string', 'required' => true),
             );
         } else {
-            $_ids = array(
+            $ids = array(
                 array('name' => $requested_fields, 'type' => 'string', 'required' => true),
             );
         }
 
-        return $_ids;
+        return $ids;
     }
 
     /**
@@ -182,59 +182,59 @@ class SimpleDbTable extends BaseDbTableResource
     protected function parseRecord($record, $fields_info, $filter_info = null, $for_update = false, $old_record = null)
     {
 //        $record = DataFormat::arrayKeyLower( $record );
-        $_parsed = (empty($fields_info)) ? $record : array();
+        $parsed = (empty($fields_info)) ? $record : array();
         if (!empty($fields_info)) {
-            $_keys = array_keys($record);
-            $_values = array_values($record);
-            foreach ($fields_info as $_fieldInfo) {
+            $keys = array_keys($record);
+            $values = array_values($record);
+            foreach ($fields_info as $fieldInfo) {
 //            $name = strtolower( ArrayUtils::get( $field_info, 'name', '' ) );
-                $_name = ArrayUtils::get($_fieldInfo, 'name', '');
-                $_type = ArrayUtils::get($_fieldInfo, 'type');
-                $_pos = array_search($_name, $_keys);
-                if (false !== $_pos) {
-                    $_fieldVal = ArrayUtils::get($_values, $_pos);
+                $name = ArrayUtils::get($fieldInfo, 'name', '');
+                $type = ArrayUtils::get($fieldInfo, 'type');
+                $pos = array_search($name, $keys);
+                if (false !== $pos) {
+                    $fieldVal = ArrayUtils::get($values, $pos);
                     // due to conversion from XML to array, null or empty xml elements have the array value of an empty array
-                    if (is_array($_fieldVal) && empty($_fieldVal)) {
-                        $_fieldVal = null;
+                    if (is_array($fieldVal) && empty($fieldVal)) {
+                        $fieldVal = null;
                     }
 
                     /** validations **/
 
-                    $_validations = ArrayUtils::get($_fieldInfo, 'validation');
+                    $validations = ArrayUtils::get($fieldInfo, 'validation');
 
-                    if (!static::validateFieldValue($_name, $_fieldVal, $_validations, $for_update, $_fieldInfo)) {
-                        unset($_keys[$_pos]);
-                        unset($_values[$_pos]);
+                    if (!static::validateFieldValue($name, $fieldVal, $validations, $for_update, $fieldInfo)) {
+                        unset($keys[$pos]);
+                        unset($values[$pos]);
                         continue;
                     }
 
-                    $_parsed[$_name] = $_fieldVal;
-                    unset($_keys[$_pos]);
-                    unset($_values[$_pos]);
+                    $parsed[$name] = $fieldVal;
+                    unset($keys[$pos]);
+                    unset($values[$pos]);
                 }
 
                 // add or override for specific fields
-                switch ($_type) {
+                switch ($type) {
                     case 'timestamp_on_create':
                         if (!$for_update) {
-                            $_parsed[$_name] = new \MongoDate();
+                            $parsed[$name] = new \MongoDate();
                         }
                         break;
                     case 'timestamp_on_update':
-                        $_parsed[$_name] = new \MongoDate();
+                        $parsed[$name] = new \MongoDate();
                         break;
                     case 'user_id_on_create':
                         if (!$for_update) {
                             $userId = 1;//Session::getCurrentUserId();
                             if (isset($userId)) {
-                                $_parsed[$_name] = $userId;
+                                $parsed[$name] = $userId;
                             }
                         }
                         break;
                     case 'user_id_on_update':
                         $userId = 1;//Session::getCurrentUserId();
                         if (isset($userId)) {
-                            $_parsed[$_name] = $userId;
+                            $parsed[$name] = $userId;
                         }
                         break;
                 }
@@ -242,13 +242,13 @@ class SimpleDbTable extends BaseDbTableResource
         }
 
         if (!empty($filter_info)) {
-            $this->validateRecord($_parsed, $filter_info, $for_update, $old_record);
+            $this->validateRecord($parsed, $filter_info, $for_update, $old_record);
         }
 
-        return $_parsed;
+        return $parsed;
     }
 
-    protected static function _formatValue($value)
+    protected static function formatValue($value)
     {
         if (is_string($value)) {
             return $value;
@@ -269,7 +269,7 @@ class SimpleDbTable extends BaseDbTableResource
         return $value;
     }
 
-    protected static function _unformatValue($value)
+    protected static function unformatValue($value)
     {
         if (0 == substr_compare($value, '#DFJ#', 0, 5)) {
             return json_decode(substr($value, 5));
@@ -293,28 +293,28 @@ class SimpleDbTable extends BaseDbTableResource
      *
      * @return array
      */
-    protected static function _formatAttributes($record, $replace = false)
+    protected static function formatAttributes($record, $replace = false)
     {
-        $_out = array();
+        $out = array();
         if (!empty($record)) {
-            foreach ($record as $_name => $_value) {
-                if (ArrayUtils::isArrayNumeric($_value)) {
-                    foreach ($_value as $_key => $_part) {
-                        $_part = static::_formatValue($_part);
-                        if (0 == $_key) {
-                            $_out[] = array('Name' => $_name, 'Value' => $_part, 'Replace' => $replace);
+            foreach ($record as $name => $value) {
+                if (ArrayUtils::isArrayNumeric($value)) {
+                    foreach ($value as $key => $part) {
+                        $part = static::formatValue($part);
+                        if (0 == $key) {
+                            $out[] = array('Name' => $name, 'Value' => $part, 'Replace' => $replace);
                         } else {
-                            $_out[] = array('Name' => $_name, 'Value' => $_part);
+                            $out[] = array('Name' => $name, 'Value' => $part);
                         }
                     }
                 } else {
-                    $_value = static::_formatValue($_value);
-                    $_out[] = array('Name' => $_name, 'Value' => $_value, 'Replace' => $replace);
+                    $value = static::formatValue($value);
+                    $out[] = array('Name' => $name, 'Value' => $value, 'Replace' => $replace);
                 }
             }
         }
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -322,36 +322,36 @@ class SimpleDbTable extends BaseDbTableResource
      *
      * @return array
      */
-    protected static function _unformatAttributes($record)
+    protected static function unformatAttributes($record)
     {
-        $_out = array();
+        $out = array();
         if (!empty($record)) {
-            foreach ($record as $_attribute) {
-                $_name = ArrayUtils::get($_attribute, 'Name');
-                if (empty($_name)) {
+            foreach ($record as $attribute) {
+                $name = ArrayUtils::get($attribute, 'Name');
+                if (empty($name)) {
                     continue;
                 }
 
-                $_value = ArrayUtils::get($_attribute, 'Value');
-                if (isset($_out[$_name])) {
-                    $_temp = $_out[$_name];
-                    if (is_array($_temp)) {
-                        $_temp[] = static::_unformatValue($_value);
-                        $_value = $_temp;
+                $value = ArrayUtils::get($attribute, 'Value');
+                if (isset($out[$name])) {
+                    $temp = $out[$name];
+                    if (is_array($temp)) {
+                        $temp[] = static::unformatValue($value);
+                        $value = $temp;
                     } else {
-                        $_value = array($_temp, static::_unformatValue($_value));
+                        $value = array($temp, static::unformatValue($value));
                     }
                 } else {
-                    $_value = static::_unformatValue($_value);
+                    $value = static::unformatValue($value);
                 }
-                $_out[$_name] = $_value;
+                $out[$name] = $value;
             }
         }
 
-        return $_out;
+        return $out;
     }
 
-    protected static function _buildAttributesToGet($fields = null, $id_fields = null)
+    protected static function buildAttributesToGet($fields = null, $id_fields = null)
     {
         if ('*' == $fields) {
             return null;
@@ -380,14 +380,14 @@ class SimpleDbTable extends BaseDbTableResource
         $params = static::interpretRecordValues($params);
 
         // build filter array if necessary, add server-side filters if necessary
-        $_criteria = static::_parseFilter($filter, $params);
-        $_serverCriteria = static::buildSSFilterArray($ss_filters);
-        if (!empty($_serverCriteria)) {
-            $_criteria =
-                (!empty($_criteria)) ? '(' . $_serverCriteria . ') AND (' . $_criteria . ')' : $_serverCriteria;
+        $criteria = static::parseFilter($filter, $params);
+        $serverCriteria = static::buildSSFilterArray($ss_filters);
+        if (!empty($serverCriteria)) {
+            $criteria =
+                (!empty($criteria)) ? '(' . $serverCriteria . ') AND (' . $criteria . ')' : $serverCriteria;
         }
 
-        return $_criteria;
+        return $criteria;
     }
 
     protected static function buildSSFilterArray($ss_filters)
@@ -397,13 +397,13 @@ class SimpleDbTable extends BaseDbTableResource
         }
 
         // build the server side criteria
-        $_filters = ArrayUtils::get($ss_filters, 'filters');
-        if (empty($_filters)) {
+        $filters = ArrayUtils::get($ss_filters, 'filters');
+        if (empty($filters)) {
             return '';
         }
 
-        $_combiner = ArrayUtils::get($ss_filters, 'filter_op', 'and');
-        switch (strtoupper($_combiner)) {
+        $combiner = ArrayUtils::get($ss_filters, 'filter_op', 'and');
+        switch (strtoupper($combiner)) {
             case 'AND':
             case 'OR':
                 break;
@@ -412,26 +412,26 @@ class SimpleDbTable extends BaseDbTableResource
                 throw new InternalServerErrorException('Invalid server-side filter configuration detected.');
         }
 
-        $_criteria = '';
-        foreach ($_filters as $_filter) {
-            $_name = ArrayUtils::get($_filter, 'name');
-            $_op = ArrayUtils::get($_filter, 'operator');
-            if (empty($_name) || empty($_op)) {
+        $criteria = '';
+        foreach ($filters as $filter) {
+            $name = ArrayUtils::get($filter, 'name');
+            $op = ArrayUtils::get($filter, 'operator');
+            if (empty($name) || empty($op)) {
                 // log and bail
                 throw new InternalServerErrorException('Invalid server-side filter configuration detected.');
             }
 
-            $_value = ArrayUtils::get($_filter, 'value');
-            $_value = static::interpretFilterValue($_value);
+            $value = ArrayUtils::get($filter, 'value');
+            $value = static::interpretFilterValue($value);
 
-            $_temp = static::_parseFilter("$_name $_op $_value");
-            if (!empty($_criteria)) {
-                $_criteria .= " $_combiner ";
+            $temp = static::parseFilter("$name $op $value");
+            if (!empty($criteria)) {
+                $criteria .= " $combiner ";
             }
-            $_criteria .= $_temp;
+            $criteria .= $temp;
         }
 
-        return $_criteria;
+        return $criteria;
     }
 
     /**
@@ -441,7 +441,7 @@ class SimpleDbTable extends BaseDbTableResource
      * @throws BadRequestException
      * @return array
      */
-    protected static function _parseFilter($filter, $params = null)
+    protected static function parseFilter($filter, $params = null)
     {
         if (empty($filter)) {
             return $filter;
@@ -454,14 +454,14 @@ class SimpleDbTable extends BaseDbTableResource
 //        Session::replaceLookups( $filter );
 
         // handle logical operators first
-        $_search = array(' || ', ' && ');
-        $_replace = array(' or ', ' and ');
-        $filter = trim(str_ireplace($_search, $_replace, $filter));
+        $search = array(' || ', ' && ');
+        $replace = array(' or ', ' and ');
+        $filter = trim(str_ireplace($search, $replace, $filter));
 
         // the rest should be comparison operators
-        $_search = array(' eq ', ' ne ', ' gte ', ' lte ', ' gt ', ' lt ');
-        $_replace = array(' = ', ' != ', ' >= ', ' <= ', ' > ', ' < ');
-        $filter = trim(str_ireplace($_search, $_replace, $filter));
+        $search = array(' eq ', ' ne ', ' gte ', ' lte ', ' gt ', ' lt ');
+        $replace = array(' = ', ' != ', ' >= ', ' <= ', ' > ', ' < ');
+        $filter = trim(str_ireplace($search, $replace, $filter));
 
         // check for x = null
         $filter = str_ireplace(' = null', ' is null', $filter);
@@ -490,30 +490,30 @@ class SimpleDbTable extends BaseDbTableResource
         $continue = false,
         $single = false
     ){
-        $_ssFilters = ArrayUtils::get($extras, 'ss_filters');
-        $_fields = ArrayUtils::get($extras, 'fields');
-        $_fieldsInfo = ArrayUtils::get($extras, 'fields_info');
-        $_idsInfo = ArrayUtils::get($extras, 'ids_info');
-        $_idFields = ArrayUtils::get($extras, 'id_fields');
-        $_updates = ArrayUtils::get($extras, 'updates');
+        $ssFilters = ArrayUtils::get($extras, 'ss_filters');
+        $fields = ArrayUtils::get($extras, 'fields');
+        $fieldsInfo = ArrayUtils::get($extras, 'fields_info');
+        $idsInfo = ArrayUtils::get($extras, 'ids_info');
+        $idFields = ArrayUtils::get($extras, 'id_fields');
+        $updates = ArrayUtils::get($extras, 'updates');
 
-        $_out = array();
+        $out = array();
         switch ($this->getAction()) {
             case Verbs::POST:
-                $_parsed = $this->parseRecord($record, $_fieldsInfo, $_ssFilters);
-                if (empty($_parsed)) {
+                $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters);
+                if (empty($parsed)) {
                     throw new BadRequestException('No valid fields were found in record.');
                 }
 
-                $_native = $this->_formatAttributes($_parsed);
+                $native = $this->formatAttributes($parsed);
 
-                /*$_result = */
+                /*$result = */
                 $this->service->getConnection()->putAttributes(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
+                        static::TABLE_INDICATOR => $this->transactionTable,
                         'ItemName'              => $id,
-                        'Attributes'            => $_native,
-                        'Expected'              => array($_idFields[0] => array('Exists' => false))
+                        'Attributes'            => $native,
+                        'Expected'              => array($idFields[0] => array('Exists' => false))
                     )
                 );
 
@@ -521,75 +521,75 @@ class SimpleDbTable extends BaseDbTableResource
                     $this->addToRollback($id);
                 }
 
-                $_out = static::cleanRecord($record, $_fields, $_idFields);
+                $out = static::cleanRecord($record, $fields, $idFields);
                 break;
             case Verbs::PUT:
-                if (!empty($_updates)) {
+                if (!empty($updates)) {
                     // only update by full records can use batching
-                    $_updates[$_idFields[0]] = $id;
-                    $record = $_updates;
+                    $updates[$idFields[0]] = $id;
+                    $record = $updates;
                 }
 
-                $_parsed = $this->parseRecord($record, $_fieldsInfo, $_ssFilters, true);
-                if (empty($_parsed)) {
+                $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters, true);
+                if (empty($parsed)) {
                     throw new BadRequestException('No valid fields were found in record.');
                 }
 
-                $_native = $this->_formatAttributes($_parsed, true);
-//                $_batched = array( 'Name' => $id, 'Attributes' => $_native );
+                $native = $this->formatAttributes($parsed, true);
+//                $batched = array( 'Name' => $id, 'Attributes' => $native );
 
                 if (!$continue && !$rollback) {
-                    $_batched = array('Name' => $id, 'Attributes' => $_native);
+                    $batched = array('Name' => $id, 'Attributes' => $native);
 
-                    return parent::addToTransaction($_batched, $id);
+                    return parent::addToTransaction($batched, $id);
                 }
 
-                $_result = $this->service->getConnection()->putAttributes(
+                $result = $this->service->getConnection()->putAttributes(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
+                        static::TABLE_INDICATOR => $this->transactionTable,
                         'ItemName'              => $id,
-                        'Attributes'            => $_native,
+                        'Attributes'            => $native,
                     )
                 );
 
                 if ($rollback) {
-                    $_temp = ArrayUtils::get($_result, 'Attributes');
-                    if (!empty($_temp)) {
-                        $this->addToRollback($_temp);
+                    $temp = ArrayUtils::get($result, 'Attributes');
+                    if (!empty($temp)) {
+                        $this->addToRollback($temp);
                     }
                 }
 
-                $_out = static::cleanRecord($record, $_fields, $_idFields);
+                $out = static::cleanRecord($record, $fields, $idFields);
                 break;
 
             case Verbs::MERGE:
             case Verbs::PATCH:
-                if (!empty($_updates)) {
-                    $_updates[$_idFields[0]] = $id;
-                    $record = $_updates;
+                if (!empty($updates)) {
+                    $updates[$idFields[0]] = $id;
+                    $record = $updates;
                 }
 
-                $_parsed = $this->parseRecord($record, $_fieldsInfo, $_ssFilters, true);
-                if (empty($_parsed)) {
+                $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters, true);
+                if (empty($parsed)) {
                     throw new BadRequestException('No valid fields were found in record.');
                 }
 
-                $_native = $this->_formatAttributes($_parsed, true);
+                $native = $this->formatAttributes($parsed, true);
 
-                $_result = $this->service->getConnection()->putAttributes(
+                $result = $this->service->getConnection()->putAttributes(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
+                        static::TABLE_INDICATOR => $this->transactionTable,
                         'ItemName'              => $id,
-                        'Attributes'            => $_native,
+                        'Attributes'            => $native,
                     )
                 );
 
                 if ($rollback) {
-                    $_old = ArrayUtils::get($_result, 'Attributes', array());
-                    $this->addToRollback($_old);
+                    $old = ArrayUtils::get($result, 'Attributes', array());
+                    $this->addToRollback($old);
                 }
 
-                $_out = static::cleanRecord($record, $_fields, $_idFields);
+                $out = static::cleanRecord($record, $fields, $idFields);
                 break;
 
             case Verbs::DELETE:
@@ -597,47 +597,47 @@ class SimpleDbTable extends BaseDbTableResource
                     return parent::addToTransaction(null, $id);
                 }
 
-                $_result = $this->service->getConnection()->deleteAttributes(
+                $result = $this->service->getConnection()->deleteAttributes(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
+                        static::TABLE_INDICATOR => $this->transactionTable,
                         'ItemName'              => $id
                     )
                 );
 
-                $_temp = ArrayUtils::get($_result, 'Attributes', array());
+                $temp = ArrayUtils::get($result, 'Attributes', array());
 
                 if ($rollback) {
-                    $this->addToRollback($_temp);
+                    $this->addToRollback($temp);
                 }
 
-                $_temp = $this->_unformatAttributes($_temp);
-                $_out = static::cleanRecord($_temp, $_fields, $_idFields);
+                $temp = $this->unformatAttributes($temp);
+                $out = static::cleanRecord($temp, $fields, $idFields);
                 break;
 
             case Verbs::GET:
-                $_scanProperties = array(
-                    static::TABLE_INDICATOR => $this->_transactionTable,
+                $scanProperties = array(
+                    static::TABLE_INDICATOR => $this->transactionTable,
                     'ItemName'              => $id,
                     'ConsistentRead'        => true,
                 );
 
-                $_fields = static::_buildAttributesToGet($_fields, $_idFields);
-                if (!empty($_fields)) {
-                    $_scanProperties['AttributeNames'] = $_fields;
+                $fields = static::buildAttributesToGet($fields, $idFields);
+                if (!empty($fields)) {
+                    $scanProperties['AttributeNames'] = $fields;
                 }
 
-                $_result = $this->service->getConnection()->getAttributes($_scanProperties);
+                $result = $this->service->getConnection()->getAttributes($scanProperties);
 
-                $_out = array_merge(
-                    static::_unformatAttributes($_result['Attributes']),
-                    array($_idFields[0] => $id)
+                $out = array_merge(
+                    static::unformatAttributes($result['Attributes']),
+                    array($idFields[0] => $id)
                 );
                 break;
             default:
                 break;
         }
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -645,38 +645,38 @@ class SimpleDbTable extends BaseDbTableResource
      */
     protected function commitTransaction($extras = null)
     {
-        if (empty($this->_batchRecords) && empty($this->_batchIds)) {
+        if (empty($this->batchRecords) && empty($this->batchIds)) {
             return null;
         }
 
-        $_ssFilters = ArrayUtils::get($extras, 'ss_filters');
-        $_fields = ArrayUtils::get($extras, 'fields');
-        $_requireMore = ArrayUtils::get($extras, 'require_more');
-        $_idsInfo = ArrayUtils::get($extras, 'ids_info');
-        $_idFields = ArrayUtils::get($extras, 'id_fields');
+        $ssFilters = ArrayUtils::get($extras, 'ss_filters');
+        $fields = ArrayUtils::get($extras, 'fields');
+        $requireMore = ArrayUtils::get($extras, 'require_more');
+        $idsInfo = ArrayUtils::get($extras, 'ids_info');
+        $idFields = ArrayUtils::get($extras, 'id_fields');
 
-        $_out = array();
+        $out = array();
         switch ($this->getAction()) {
             case Verbs::POST:
-                $_result = $this->service->getConnection()->batchPutAttributes(
+                $result = $this->service->getConnection()->batchPutAttributes(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
-                        'Items'                 => $this->_batchRecords,
+                        static::TABLE_INDICATOR => $this->transactionTable,
+                        'Items'                 => $this->batchRecords,
                     )
                 );
 
-                $_out = static::cleanRecords($this->_batchRecords, $_fields, $_idFields);
+                $out = static::cleanRecords($this->batchRecords, $fields, $idFields);
                 break;
 
             case Verbs::PUT:
-                $_result = $this->service->getConnection()->batchPutAttributes(
+                $result = $this->service->getConnection()->batchPutAttributes(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
-                        'Items'                 => $this->_batchRecords,
+                        static::TABLE_INDICATOR => $this->transactionTable,
+                        'Items'                 => $this->batchRecords,
                     )
                 );
 
-                $_out = static::cleanRecords($this->_batchRecords, $_fields, $_idFields);
+                $out = static::cleanRecords($this->batchRecords, $fields, $idFields);
                 break;
 
             case Verbs::MERGE:
@@ -685,81 +685,81 @@ class SimpleDbTable extends BaseDbTableResource
                 break;
 
             case Verbs::DELETE:
-                if ($_requireMore) {
-                    $_fields = static::_buildAttributesToGet($_fields);
+                if ($requireMore) {
+                    $fields = static::buildAttributesToGet($fields);
 
-                    $_select = 'select ';
-                    $_select .= (empty($_fields)) ? '*' : $_fields;
-                    $_select .= ' from ' . $this->_transactionTable;
+                    $select = 'select ';
+                    $select .= (empty($fields)) ? '*' : $fields;
+                    $select .= ' from ' . $this->transactionTable;
 
-                    $_filter = "itemName() in ('" . implode("','", $this->_batchIds) . "')";
-                    $_parsedFilter = static::buildCriteriaArray($_filter, null, $_ssFilters);
-                    if (!empty($_parsedFilter)) {
-                        $_select .= ' where ' . $_parsedFilter;
+                    $filter = "itemName() in ('" . implode("','", $this->batchIds) . "')";
+                    $parsedFilter = static::buildCriteriaArray($filter, null, $ssFilters);
+                    if (!empty($parsedFilter)) {
+                        $select .= ' where ' . $parsedFilter;
                     }
 
-                    $_result =
+                    $result =
                         $this->service->getConnection()->select(array(
-                            'SelectExpression' => $_select,
+                            'SelectExpression' => $select,
                             'ConsistentRead'   => true
                         ));
-                    $_items = ArrayUtils::clean($_result['Items']);
+                    $items = ArrayUtils::clean($result['Items']);
 
-                    $_out = array();
-                    foreach ($_items as $_item) {
-                        $_attributes = ArrayUtils::get($_item, 'Attributes');
-                        $_name = ArrayUtils::get($_item, static::DEFAULT_ID_FIELD);
-                        $_out[] = array_merge(
-                            static::_unformatAttributes($_attributes),
-                            array($_idFields[0] => $_name)
+                    $out = array();
+                    foreach ($items as $item) {
+                        $attributes = ArrayUtils::get($item, 'Attributes');
+                        $name = ArrayUtils::get($item, static::DEFAULT_ID_FIELD);
+                        $out[] = array_merge(
+                            static::unformatAttributes($attributes),
+                            array($idFields[0] => $name)
                         );
                     }
                 } else {
-                    $_out = static::cleanRecords($this->_batchRecords, $_fields, $_idFields);
+                    $out = static::cleanRecords($this->batchRecords, $fields, $idFields);
                 }
 
-                $_items = array();
-                foreach ($this->_batchIds as $_id) {
-                    $_items[] = array('Name' => $_id);
+                $items = array();
+                foreach ($this->batchIds as $id) {
+                    $items[] = array('Name' => $id);
                 }
-                /*$_result = */
+                /*$result = */
                 $this->service->getConnection()->batchDeleteAttributes(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
-                        'Items'                 => $_items
+                        static::TABLE_INDICATOR => $this->transactionTable,
+                        'Items'                 => $items
                     )
                 );
 
-                // todo check $_result['UnprocessedItems'] for 'DeleteRequest'
+                // todo check $result['UnprocessedItems'] for 'DeleteRequest'
                 break;
 
             case Verbs::GET:
-                $_fields = static::_buildAttributesToGet($_fields);
+                $fields = static::buildAttributesToGet($fields);
 
-                $_select = 'select ';
-                $_select .= (empty($_fields)) ? '*' : $_fields;
-                $_select .= ' from ' . $this->_transactionTable;
+                $select = 'select ';
+                $select .= (empty($fields)) ? '*' : $fields;
+                $select .= ' from ' . $this->transactionTable;
 
-                $_filter = "itemName() in ('" . implode("','", $this->_batchIds) . "')";
-                $_parsedFilter = static::buildCriteriaArray($_filter, null, $_ssFilters);
-                if (!empty($_parsedFilter)) {
-                    $_select .= ' where ' . $_parsedFilter;
+                $filter = "itemName() in ('" . implode("','", $this->batchIds) . "')";
+                $parsedFilter = static::buildCriteriaArray($filter, null, $ssFilters);
+                if (!empty($parsedFilter)) {
+                    $select .= ' where ' . $parsedFilter;
                 }
 
-                $_result =
+                $result =
                     $this->service->getConnection()->select(array(
-                        'SelectExpression' => $_select,
+                        'SelectExpression' => $select,
                         'ConsistentRead'   => true
                     ));
-                $_items = ArrayUtils::clean($_result['Items']);
+                $items = ArrayUtils::clean($result['Items']);
 
-                $_out = array();
-                foreach ($_items as $_item) {
-                    $_attributes = ArrayUtils::get($_item, 'Attributes');
-                    $_name = ArrayUtils::get($_item, 'Name');
-                    $_out[] = array_merge(
-                        static::_unformatAttributes($_attributes),
-                        array($_idFields[0] => $_name)
+                $out = array();
+                foreach ($items as $item) {
+                    $attributes = ArrayUtils::get($item, 'Attributes');
+                    $name = ArrayUtils::get($item, 'Name');
+                    $out[] = array_merge(
+                        static::unformatAttributes($attributes),
+                        array($idFields[0] => $name)
                     );
                 }
                 break;
@@ -767,10 +767,10 @@ class SimpleDbTable extends BaseDbTableResource
                 break;
         }
 
-        $this->_batchIds = array();
-        $this->_batchRecords = array();
+        $this->batchIds = array();
+        $this->batchRecords = array();
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -786,15 +786,15 @@ class SimpleDbTable extends BaseDbTableResource
      */
     protected function rollbackTransaction()
     {
-        if (!empty($this->_rollbackRecords)) {
+        if (!empty($this->rollbackRecords)) {
             switch ($this->getAction()) {
                 case Verbs::POST:
 
-                    /* $_result = */
+                    /* $result = */
                     $this->service->getConnection()->batchDeleteAttributes(
                         array(
-                            static::TABLE_INDICATOR => $this->_transactionTable,
-                            'Items'                 => $this->_rollbackRecords
+                            static::TABLE_INDICATOR => $this->transactionTable,
+                            'Items'                 => $this->rollbackRecords
                         )
                     );
                     break;
@@ -803,26 +803,26 @@ class SimpleDbTable extends BaseDbTableResource
                 case Verbs::PATCH:
                 case Verbs::MERGE:
                 case Verbs::DELETE:
-                    $_requests = array();
-                    foreach ($this->_rollbackRecords as $_item) {
-                        $_requests[] = array('PutRequest' => array('Item' => $_item));
+                    $requests = array();
+                    foreach ($this->rollbackRecords as $item) {
+                        $requests[] = array('PutRequest' => array('Item' => $item));
                     }
 
                     $this->service->getConnection()->batchPutAttributes(
                         array(
-                            static::TABLE_INDICATOR => $this->_transactionTable,
-                            'Items'                 => $this->_batchRecords,
+                            static::TABLE_INDICATOR => $this->transactionTable,
+                            'Items'                 => $this->batchRecords,
                         )
                     );
 
-                    // todo check $_result['UnprocessedItems'] for 'PutRequest'
+                    // todo check $result['UnprocessedItems'] for 'PutRequest'
                     break;
 
                 default:
                     break;
             }
 
-            $this->_rollbackRecords = array();
+            $this->rollbackRecords = array();
         }
 
         return true;

@@ -41,17 +41,17 @@ class DynamoDbTable extends BaseDbTableResource
      */
     public function correctTableName(&$name)
     {
-        static $_existing = null;
+        static $existing = null;
 
-        if (!$_existing) {
-            $_existing = $this->parent->getTables();
+        if (!$existing) {
+            $existing = $this->parent->getTables();
         }
 
         if (empty($name)) {
             throw new BadRequestException('Table name can not be empty.');
         }
 
-        if (false === array_search($name, $_existing)) {
+        if (false === array_search($name, $existing)) {
             throw new NotFoundException("Table '$name' not found.");
         }
 
@@ -68,16 +68,16 @@ class DynamoDbTable extends BaseDbTableResource
         }
 //        $refresh = $this->request->queryBool('refresh');
 
-        $_names = $this->parent->getTables();
+        $names = $this->parent->getTables();
 
-        $_extras =
-            DbUtilities::getSchemaExtrasForTables($this->parent->getServiceId(), $_names, false, 'table,label,plural');
+        $extras =
+            DbUtilities::getSchemaExtrasForTables($this->parent->getServiceId(), $names, false, 'table,label,plural');
 
-        $_tables = [];
-        foreach ($_names as $name) {
+        $tables = [];
+        foreach ($names as $name) {
             $label = '';
             $plural = '';
-            foreach ($_extras as $each) {
+            foreach ($extras as $each) {
                 if (0 == strcasecmp($name, ArrayUtils::get($each, 'table', ''))) {
                     $label = ArrayUtils::get($each, 'label');
                     $plural = ArrayUtils::get($each, 'plural');
@@ -93,10 +93,10 @@ class DynamoDbTable extends BaseDbTableResource
                 $plural = Inflector::pluralize($label);
             }
 
-            $_tables[] = ['name' => $name, 'label' => $label, 'plural' => $plural];
+            $tables[] = ['name' => $name, 'label' => $label, 'plural' => $plural];
         }
 
-        return $_tables;
+        return $tables;
     }
 
     /**
@@ -118,38 +118,38 @@ class DynamoDbTable extends BaseDbTableResource
      */
     public function retrieveRecordsByFilter($table, $filter = null, $params = array(), $extras = array())
     {
-        $_fields = ArrayUtils::get($extras, 'fields');
-        $_ssFilters = ArrayUtils::get($extras, 'ss_filters');
+        $fields = ArrayUtils::get($extras, 'fields');
+        $ssFilters = ArrayUtils::get($extras, 'ss_filters');
 
-        $_scanProperties = array(static::TABLE_INDICATOR => $table);
+        $scanProperties = array(static::TABLE_INDICATOR => $table);
 
-        $_fields = static::_buildAttributesToGet($_fields);
-        if (!empty($_fields)) {
-            $_scanProperties['AttributesToGet'] = $_fields;
+        $fields = static::buildAttributesToGet($fields);
+        if (!empty($fields)) {
+            $scanProperties['AttributesToGet'] = $fields;
         }
 
-        $_parsedFilter = static::buildCriteriaArray($filter, $params, $_ssFilters);
-        if (!empty($_parsedFilter)) {
-            $_scanProperties['ScanFilter'] = $_parsedFilter;
+        $parsedFilter = static::buildCriteriaArray($filter, $params, $ssFilters);
+        if (!empty($parsedFilter)) {
+            $scanProperties['ScanFilter'] = $parsedFilter;
         }
 
-        $_limit = ArrayUtils::get($extras, 'limit');
-        if ($_limit > 0) {
-            $_scanProperties['Limit'] = $_limit;
+        $limit = ArrayUtils::get($extras, 'limit');
+        if ($limit > 0) {
+            $scanProperties['Limit'] = $limit;
         }
 
         try {
-            $_result = $this->parent->getConnection()->scan($_scanProperties);
-            $_items = ArrayUtils::clean($_result['Items']);
+            $result = $this->parent->getConnection()->scan($scanProperties);
+            $items = ArrayUtils::clean($result['Items']);
 
-            $_out = array();
-            foreach ($_items as $_item) {
-                $_out[] = $this->_unformatAttributes($_item);
+            $out = array();
+            foreach ($items as $item) {
+                $out[] = $this->unformatAttributes($item);
             }
 
-            return $_out;
-        } catch (\Exception $_ex) {
-            throw new InternalServerErrorException("Failed to filter records from '$table'.\n{$_ex->getMessage()}");
+            return $out;
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("Failed to filter records from '$table'.\n{$ex->getMessage()}");
         }
     }
 
@@ -166,59 +166,59 @@ class DynamoDbTable extends BaseDbTableResource
     protected function parseRecord($record, $fields_info, $filter_info = null, $for_update = false, $old_record = null)
     {
 //        $record = DataFormat::arrayKeyLower( $record );
-        $_parsed = (empty($fields_info)) ? $record : array();
+        $parsed = (empty($fields_info)) ? $record : array();
         if (!empty($fields_info)) {
-            $_keys = array_keys($record);
-            $_values = array_values($record);
-            foreach ($fields_info as $_fieldInfo) {
+            $keys = array_keys($record);
+            $values = array_values($record);
+            foreach ($fields_info as $fieldInfo) {
 //            $name = strtolower( ArrayUtils::get( $field_info, 'name', '' ) );
-                $_name = ArrayUtils::get($_fieldInfo, 'name', '');
-                $_type = ArrayUtils::get($_fieldInfo, 'type');
-                $_pos = array_search($_name, $_keys);
-                if (false !== $_pos) {
-                    $_fieldVal = ArrayUtils::get($_values, $_pos);
+                $name = ArrayUtils::get($fieldInfo, 'name', '');
+                $type = ArrayUtils::get($fieldInfo, 'type');
+                $pos = array_search($name, $keys);
+                if (false !== $pos) {
+                    $fieldVal = ArrayUtils::get($values, $pos);
                     // due to conversion from XML to array, null or empty xml elements have the array value of an empty array
-                    if (is_array($_fieldVal) && empty($_fieldVal)) {
-                        $_fieldVal = null;
+                    if (is_array($fieldVal) && empty($fieldVal)) {
+                        $fieldVal = null;
                     }
 
                     /** validations **/
 
-                    $_validations = ArrayUtils::get($_fieldInfo, 'validation');
+                    $validations = ArrayUtils::get($fieldInfo, 'validation');
 
-                    if (!static::validateFieldValue($_name, $_fieldVal, $_validations, $for_update, $_fieldInfo)) {
-                        unset($_keys[$_pos]);
-                        unset($_values[$_pos]);
+                    if (!static::validateFieldValue($name, $fieldVal, $validations, $for_update, $fieldInfo)) {
+                        unset($keys[$pos]);
+                        unset($values[$pos]);
                         continue;
                     }
 
-                    $_parsed[$_name] = $_fieldVal;
-                    unset($_keys[$_pos]);
-                    unset($_values[$_pos]);
+                    $parsed[$name] = $fieldVal;
+                    unset($keys[$pos]);
+                    unset($values[$pos]);
                 }
 
                 // add or override for specific fields
-                switch ($_type) {
+                switch ($type) {
                     case 'timestamp_on_create':
                         if (!$for_update) {
-                            $_parsed[$_name] = new \MongoDate();
+                            $parsed[$name] = new \MongoDate();
                         }
                         break;
                     case 'timestamp_on_update':
-                        $_parsed[$_name] = new \MongoDate();
+                        $parsed[$name] = new \MongoDate();
                         break;
                     case 'user_id_on_create':
                         if (!$for_update) {
                             $userId = 1;//Session::getCurrentUserId();
                             if (isset($userId)) {
-                                $_parsed[$_name] = $userId;
+                                $parsed[$name] = $userId;
                             }
                         }
                         break;
                     case 'user_id_on_update':
                         $userId = 1;//Session::getCurrentUserId();
                         if (isset($userId)) {
-                            $_parsed[$_name] = $userId;
+                            $parsed[$name] = $userId;
                         }
                         break;
                 }
@@ -226,10 +226,10 @@ class DynamoDbTable extends BaseDbTableResource
         }
 
         if (!empty($filter_info)) {
-            $this->validateRecord($_parsed, $filter_info, $for_update, $old_record);
+            $this->validateRecord($parsed, $filter_info, $for_update, $old_record);
         }
 
-        return $_parsed;
+        return $parsed;
     }
 
     /**
@@ -238,11 +238,11 @@ class DynamoDbTable extends BaseDbTableResource
      *
      * @return mixed
      */
-    protected function _formatAttributes($record, $for_update = false)
+    protected function formatAttributes($record, $for_update = false)
     {
-        $_format = ($for_update) ? Attribute::FORMAT_UPDATE : Attribute::FORMAT_PUT;
+        $format = ($for_update) ? Attribute::FORMAT_UPDATE : Attribute::FORMAT_PUT;
 
-        return $this->parent->getConnection()->formatAttributes($record, $_format);
+        return $this->parent->getConnection()->formatAttributes($record, $format);
     }
 
     /**
@@ -250,19 +250,19 @@ class DynamoDbTable extends BaseDbTableResource
      *
      * @return array
      */
-    protected function _unformatAttributes($native)
+    protected function unformatAttributes($native)
     {
-        $_out = array();
+        $out = array();
         if (is_array($native)) {
-            foreach ($native as $_key => $_value) {
-                $_out[$_key] = static::_unformatValue($_value);
+            foreach ($native as $key => $value) {
+                $out[$key] = static::unformatValue($value);
             }
         }
 
-        return $_out;
+        return $out;
     }
 
-    protected static function _unformatValue($value)
+    protected static function unformatValue($value)
     {
         // represented as arrays, though there is only ever one item present
         foreach ($value as $type => $actual) {
@@ -280,23 +280,23 @@ class DynamoDbTable extends BaseDbTableResource
                 case Type::BS:
                     return $actual;
                 case Type::NS:
-                    $_out = array();
-                    foreach ($actual as $_item) {
-                        if (intval($_item) == $_item) {
-                            $_out[] = intval($_item);
+                    $out = array();
+                    foreach ($actual as $item) {
+                        if (intval($item) == $item) {
+                            $out[] = intval($item);
                         } else {
-                            $_out[] = floatval($_item);
+                            $out[] = floatval($item);
                         }
                     }
 
-                    return $_out;
+                    return $out;
             }
         }
 
         return $value;
     }
 
-    protected static function _buildAttributesToGet($fields = null, $id_fields = null)
+    protected static function buildAttributesToGet($fields = null, $id_fields = null)
     {
         if ('*' == $fields) {
             return null;
@@ -322,50 +322,50 @@ class DynamoDbTable extends BaseDbTableResource
     protected function getIdsInfo($table, $fields_info = null, &$requested_fields = null, $requested_types = null)
     {
         $requested_fields = array();
-        $_result = $this->parent->getConnection()->describeTable(array(static::TABLE_INDICATOR => $table));
-        $_result = $_result['Table'];
-        $_keys = ArrayUtils::get($_result, 'KeySchema', array());
-        $_definitions = ArrayUtils::get($_result, 'AttributeDefinitions', array());
-        $_fields = array();
-        foreach ($_keys as $_key) {
-            $_name = ArrayUtils::get($_key, 'AttributeName');
-            $_keyType = ArrayUtils::get($_key, 'KeyType');
-            $_type = null;
-            foreach ($_definitions as $_type) {
-                if (0 == strcmp($_name, ArrayUtils::get($_type, 'AttributeName'))) {
-                    $_type = ArrayUtils::get($_type, 'AttributeType');
+        $result = $this->parent->getConnection()->describeTable(array(static::TABLE_INDICATOR => $table));
+        $result = $result['Table'];
+        $keys = ArrayUtils::get($result, 'KeySchema', array());
+        $definitions = ArrayUtils::get($result, 'AttributeDefinitions', array());
+        $fields = array();
+        foreach ($keys as $key) {
+            $name = ArrayUtils::get($key, 'AttributeName');
+            $keyType = ArrayUtils::get($key, 'KeyType');
+            $type = null;
+            foreach ($definitions as $type) {
+                if (0 == strcmp($name, ArrayUtils::get($type, 'AttributeName'))) {
+                    $type = ArrayUtils::get($type, 'AttributeType');
                 }
             }
 
-            $requested_fields[] = $_name;
-            $_fields[] = array('name' => $_name, 'key_type' => $_keyType, 'type' => $_type, 'required' => true);
+            $requested_fields[] = $name;
+            $fields[] = array('name' => $name, 'key_type' => $keyType, 'type' => $type, 'required' => true);
         }
 
-        return $_fields;
+        return $fields;
     }
 
-    protected static function _buildKey($ids_info, &$record, $remove = false)
+    protected static function buildKey($ids_info, &$record, $remove = false)
     {
-        $_keys = array();
-        foreach ($ids_info as $_info) {
-            $_name = ArrayUtils::get($_info, 'name');
-            $_type = ArrayUtils::get($_info, 'type');
-            $_value = ArrayUtils::get($record, $_name, null, $remove);
-            if (empty($_value)) {
+        $keys = array();
+        foreach ($ids_info as $info) {
+            $name = ArrayUtils::get($info, 'name');
+            $type = ArrayUtils::get($info, 'type');
+            $value = ArrayUtils::get($record, $name, null, $remove);
+            if (empty($value)) {
                 throw new BadRequestException("Identifying field(s) not found in record.");
             }
 
-            switch ($_type) {
+            switch ($type) {
                 case Type::N:
-                    $_value = array(Type::N => strval($_value));
+                    $value = array(Type::N => strval($value));
                     break;
                 default:
-                    $_value = array(Type::S => $_value);
+                    $value = array(Type::S => $value);
             }
-            $_keys[$_name] = $_value;
+            $keys[$name] = $value;
         }
 
-        return $_keys;
+        return $keys;
     }
 
     protected static function buildCriteriaArray($filter, $params = null, $ss_filters = null)
@@ -376,16 +376,16 @@ class DynamoDbTable extends BaseDbTableResource
         // build filter array if necessary, add server-side filters if necessary
         if (!is_array($filter)) {
 //            Session::replaceLookups( $filter );
-            $_criteria = static::buildFilterArray($filter, $params);
+            $criteria = static::buildFilterArray($filter, $params);
         } else {
-            $_criteria = $filter;
+            $criteria = $filter;
         }
-        $_serverCriteria = static::buildSSFilterArray($ss_filters);
-        if (!empty($_serverCriteria)) {
-            $_criteria = (!empty($_criteria)) ? array($_criteria, $_serverCriteria) : $_serverCriteria;
+        $serverCriteria = static::buildSSFilterArray($ss_filters);
+        if (!empty($serverCriteria)) {
+            $criteria = (!empty($criteria)) ? array($criteria, $serverCriteria) : $serverCriteria;
         }
 
-        return $_criteria;
+        return $criteria;
     }
 
     protected static function buildSSFilterArray($ss_filters)
@@ -395,43 +395,43 @@ class DynamoDbTable extends BaseDbTableResource
         }
 
         // build the server side criteria
-        $_filters = ArrayUtils::get($ss_filters, 'filters');
-        if (empty($_filters)) {
+        $filters = ArrayUtils::get($ss_filters, 'filters');
+        if (empty($filters)) {
             return null;
         }
 
-        $_criteria = array();
-        $_combiner = ArrayUtils::get($ss_filters, 'filter_op', 'and');
-        foreach ($_filters as $_filter) {
-            $_name = ArrayUtils::get($_filter, 'name');
-            $_op = ArrayUtils::get($_filter, 'operator');
-            if (empty($_name) || empty($_op)) {
+        $criteria = array();
+        $combiner = ArrayUtils::get($ss_filters, 'filter_op', 'and');
+        foreach ($filters as $filter) {
+            $name = ArrayUtils::get($filter, 'name');
+            $op = ArrayUtils::get($filter, 'operator');
+            if (empty($name) || empty($op)) {
                 // log and bail
                 throw new InternalServerErrorException('Invalid server-side filter configuration detected.');
             }
 
-            $_value = ArrayUtils::get($_filter, 'value');
-            $_value = static::interpretFilterValue($_value);
+            $value = ArrayUtils::get($filter, 'value');
+            $value = static::interpretFilterValue($value);
 
-            $_criteria[] = static::buildFilterArray("$_name $_op $_value");
+            $criteria[] = static::buildFilterArray("$name $op $value");
         }
 
-        if (1 == count($_criteria)) {
-            return $_criteria[0];
+        if (1 == count($criteria)) {
+            return $criteria[0];
         }
 
-        switch (strtoupper($_combiner)) {
+        switch (strtoupper($combiner)) {
             case 'AND':
                 break;
             case 'OR':
-                $_criteria = array('split' => $_criteria);
+                $criteria = array('split' => $criteria);
                 break;
             default:
                 // log and bail
                 throw new InternalServerErrorException('Invalid server-side filter configuration detected.');
         }
 
-        return $_criteria;
+        return $criteria;
     }
 
     /**
@@ -451,29 +451,29 @@ class DynamoDbTable extends BaseDbTableResource
             return $filter; // assume they know what they are doing
         }
 
-        $_search = array(' or ', ' and ', ' nor ');
-        $_replace = array(' || ', ' && ', ' NOR ');
-        $filter = trim(str_ireplace($_search, $_replace, $filter));
+        $search = array(' or ', ' and ', ' nor ');
+        $replace = array(' || ', ' && ', ' NOR ');
+        $filter = trim(str_ireplace($search, $replace, $filter));
 
         // handle logical operators first
-        $_ops = array_map('trim', explode(' && ', $filter));
-        if (count($_ops) > 1) {
-            $_parts = array();
-            foreach ($_ops as $_op) {
-                $_parts = array_merge($_parts, static::buildFilterArray($_op, $params));
+        $ops = array_map('trim', explode(' && ', $filter));
+        if (count($ops) > 1) {
+            $parts = array();
+            foreach ($ops as $op) {
+                $parts = array_merge($parts, static::buildFilterArray($op, $params));
             }
 
-            return $_parts;
+            return $parts;
         }
 
-        $_ops = array_map('trim', explode(' || ', $filter));
-        if (count($_ops) > 1) {
+        $ops = array_map('trim', explode(' || ', $filter));
+        if (count($ops) > 1) {
             // need to split this into multiple queries
             throw new BadRequestException('OR logical comparison not currently supported on DynamoDb.');
         }
 
-        $_ops = array_map('trim', explode(' NOR ', $filter));
-        if (count($_ops) > 1) {
+        $ops = array_map('trim', explode(' NOR ', $filter));
+        if (count($ops) > 1) {
             throw new BadRequestException('NOR logical comparison not currently supported on DynamoDb.');
         }
 
@@ -483,7 +483,7 @@ class DynamoDbTable extends BaseDbTableResource
         }
 
         // the rest should be comparison operators
-        $_search = array(
+        $search = array(
             ' eq ',
             ' ne ',
             ' <> ',
@@ -498,7 +498,7 @@ class DynamoDbTable extends BaseDbTableResource
             ' not_contains ',
             ' like '
         );
-        $_replace = array(
+        $replace = array(
             '=',
             '!=',
             '!=',
@@ -513,10 +513,10 @@ class DynamoDbTable extends BaseDbTableResource
             ' NOT_CONTAINS ',
             ' LIKE '
         );
-        $filter = trim(str_ireplace($_search, $_replace, $filter));
+        $filter = trim(str_ireplace($search, $replace, $filter));
 
         // Note: order matters, watch '='
-        $_sqlOperators = array(
+        $sqlOperators = array(
             '!=',
             '>=',
             '<=',
@@ -530,7 +530,7 @@ class DynamoDbTable extends BaseDbTableResource
             ' NOT_CONTAINS ',
             ' LIKE '
         );
-        $_dynamoOperators = array(
+        $dynamoOperators = array(
             ComparisonOperator::NE,
             ComparisonOperator::GE,
             ComparisonOperator::LE,
@@ -545,41 +545,41 @@ class DynamoDbTable extends BaseDbTableResource
             ComparisonOperator::CONTAINS
         );
 
-        foreach ($_sqlOperators as $_key => $_sqlOp) {
-            $_ops = array_map('trim', explode($_sqlOp, $filter));
-            if (count($_ops) > 1) {
-//                $_field = $_ops[0];
-                $_val = static::_determineValue($_ops[1], $params);
-                $_dynamoOp = $_dynamoOperators[$_key];
-                switch ($_dynamoOp) {
+        foreach ($sqlOperators as $key => $sqlOp) {
+            $ops = array_map('trim', explode($sqlOp, $filter));
+            if (count($ops) > 1) {
+//                $field = $ops[0];
+                $val = static::determineValue($ops[1], $params);
+                $dynamoOp = $dynamoOperators[$key];
+                switch ($dynamoOp) {
                     case ComparisonOperator::NE:
-                        if (0 == strcasecmp('null', $_ops[1])) {
+                        if (0 == strcasecmp('null', $ops[1])) {
                             return array(
-                                $_ops[0] => array(
+                                $ops[0] => array(
                                     'ComparisonOperator' => ComparisonOperator::NOT_NULL
                                 )
                             );
                         }
 
                         return array(
-                            $_ops[0] => array(
-                                'AttributeValueList' => $_val,
-                                'ComparisonOperator' => $_dynamoOp
+                            $ops[0] => array(
+                                'AttributeValueList' => $val,
+                                'ComparisonOperator' => $dynamoOp
                             )
                         );
 
                     case ComparisonOperator::EQ:
-                        if (0 == strcasecmp('null', $_ops[1])) {
+                        if (0 == strcasecmp('null', $ops[1])) {
                             return array(
-                                $_ops[0] => array(
+                                $ops[0] => array(
                                     'ComparisonOperator' => ComparisonOperator::NULL
                                 )
                             );
                         }
 
                         return array(
-                            $_ops[0] => array(
-                                'AttributeValueList' => $_val,
+                            $ops[0] => array(
+                                'AttributeValueList' => $val,
                                 'ComparisonOperator' => ComparisonOperator::EQ
                             )
                         );
@@ -588,18 +588,18 @@ class DynamoDbTable extends BaseDbTableResource
 //			WHERE name LIKE "%Joe%"	use CONTAINS "Joe"
 //			WHERE name LIKE "Joe%"	use BEGINS_WITH "Joe"
 //			WHERE name LIKE "%Joe"	not supported
-                        $_val = $_ops[1];
-                        $_type = Type::S;
-                        if (trim($_val, "'\"") === $_val) {
-                            $_type = Type::N;
+                        $val = $ops[1];
+                        $type = Type::S;
+                        if (trim($val, "'\"") === $val) {
+                            $type = Type::N;
                         }
 
-                        $_val = trim($_val, "'\"");
-                        if ('%' == $_val[strlen($_val) - 1]) {
-                            if ('%' == $_val[0]) {
+                        $val = trim($val, "'\"");
+                        if ('%' == $val[strlen($val) - 1]) {
+                            if ('%' == $val[0]) {
                                 return array(
-                                    $_ops[0] => array(
-                                        'AttributeValueList' => array($_type => trim($_val, '%')),
+                                    $ops[0] => array(
+                                        'AttributeValueList' => array($type => trim($val, '%')),
                                         'ComparisonOperator' => ComparisonOperator::CONTAINS
                                     )
                                 );
@@ -607,17 +607,17 @@ class DynamoDbTable extends BaseDbTableResource
                                 throw new BadRequestException('ENDS_WITH currently not supported in DynamoDb.');
                             }
                         } else {
-                            if ('%' == $_val[0]) {
+                            if ('%' == $val[0]) {
                                 return array(
-                                    $_ops[0] => array(
-                                        'AttributeValueList' => array($_type => trim($_val, '%')),
+                                    $ops[0] => array(
+                                        'AttributeValueList' => array($type => trim($val, '%')),
                                         'ComparisonOperator' => ComparisonOperator::BEGINS_WITH
                                     )
                                 );
                             } else {
                                 return array(
-                                    $_ops[0] => array(
-                                        'AttributeValueList' => array($_type => trim($_val, '%')),
+                                    $ops[0] => array(
+                                        'AttributeValueList' => array($type => trim($val, '%')),
                                         'ComparisonOperator' => ComparisonOperator::CONTAINS
                                     )
                                 );
@@ -626,9 +626,9 @@ class DynamoDbTable extends BaseDbTableResource
 
                     default:
                         return array(
-                            $_ops[0] => array(
-                                'AttributeValueList' => $_val,
-                                'ComparisonOperator' => $_dynamoOp
+                            $ops[0] => array(
+                                'AttributeValueList' => $val,
+                                'ComparisonOperator' => $dynamoOp
                             )
                         );
                 }
@@ -644,7 +644,7 @@ class DynamoDbTable extends BaseDbTableResource
      *
      * @return bool|float|int|string
      */
-    private static function _determineValue($value, $replacements = null)
+    private static function determineValue($value, $replacements = null)
     {
         // process parameter replacements
         if (is_string($value) && !empty($value) && (':' == $value[0])) {
@@ -693,114 +693,114 @@ class DynamoDbTable extends BaseDbTableResource
         $continue = false,
         $single = false
     ){
-        $_ssFilters = ArrayUtils::get($extras, 'ss_filters');
-        $_fields = ArrayUtils::get($extras, 'fields');
-        $_fieldsInfo = ArrayUtils::get($extras, 'fields_info');
-        $_idsInfo = ArrayUtils::get($extras, 'ids_info');
-        $_idFields = ArrayUtils::get($extras, 'id_fields');
-        $_updates = ArrayUtils::get($extras, 'updates');
+        $ssFilters = ArrayUtils::get($extras, 'ss_filters');
+        $fields = ArrayUtils::get($extras, 'fields');
+        $fieldsInfo = ArrayUtils::get($extras, 'fields_info');
+        $idsInfo = ArrayUtils::get($extras, 'ids_info');
+        $idFields = ArrayUtils::get($extras, 'id_fields');
+        $updates = ArrayUtils::get($extras, 'updates');
 
-        $_out = array();
+        $out = array();
         switch ($this->getAction()) {
             case Verbs::POST:
-                $_parsed = $this->parseRecord($record, $_fieldsInfo, $_ssFilters);
-                if (empty($_parsed)) {
+                $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters);
+                if (empty($parsed)) {
                     throw new BadRequestException('No valid fields were found in record.');
                 }
 
-                $_native = $this->_formatAttributes($_parsed);
+                $native = $this->formatAttributes($parsed);
 
-                /*$_result = */
+                /*$result = */
                 $this->parent->getConnection()->putItem(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
-                        'Item'                  => $_native,
-                        'Expected'              => array($_idFields[0] => array('Exists' => false))
+                        static::TABLE_INDICATOR => $this->transactionTable,
+                        'Item'                  => $native,
+                        'Expected'              => array($idFields[0] => array('Exists' => false))
                     )
                 );
 
                 if ($rollback) {
-                    $_key = static::_buildKey($_idsInfo, $record);
-                    $this->addToRollback($_key);
+                    $key = static::buildKey($idsInfo, $record);
+                    $this->addToRollback($key);
                 }
 
-                $_out = static::cleanRecord($record, $_fields, $_idFields);
+                $out = static::cleanRecord($record, $fields, $idFields);
                 break;
             case Verbs::PUT:
-                if (!empty($_updates)) {
+                if (!empty($updates)) {
                     // only update by full records can use batching
-                    $_updates[$_idFields[0]] = $id;
-                    $record = $_updates;
+                    $updates[$idFields[0]] = $id;
+                    $record = $updates;
                 }
 
-                $_parsed = $this->parseRecord($record, $_fieldsInfo, $_ssFilters, true);
-                if (empty($_parsed)) {
+                $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters, true);
+                if (empty($parsed)) {
                     throw new BadRequestException('No valid fields were found in record.');
                 }
 
-                $_native = $this->_formatAttributes($_parsed);
+                $native = $this->formatAttributes($parsed);
 
                 if (!$continue && !$rollback) {
-                    return parent::addToTransaction($_native, $id);
+                    return parent::addToTransaction($native, $id);
                 }
 
-                $_options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::NONE;
-                $_result = $this->parent->getConnection()->putItem(
+                $options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::NONE;
+                $result = $this->parent->getConnection()->putItem(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
-                        'Item'                  => $_native,
-                        //                            'Expected'     => $_expected,
-                        'ReturnValues'          => $_options
+                        static::TABLE_INDICATOR => $this->transactionTable,
+                        'Item'                  => $native,
+                        //                            'Expected'     => $expected,
+                        'ReturnValues'          => $options
                     )
                 );
 
                 if ($rollback) {
-                    $_temp = ArrayUtils::get($_result, 'Attributes');
-                    if (!empty($_temp)) {
-                        $this->addToRollback($_temp);
+                    $temp = ArrayUtils::get($result, 'Attributes');
+                    if (!empty($temp)) {
+                        $this->addToRollback($temp);
                     }
                 }
 
-                $_out = static::cleanRecord($record, $_fields, $_idFields);
+                $out = static::cleanRecord($record, $fields, $idFields);
                 break;
 
             case Verbs::MERGE:
             case Verbs::PATCH:
-                if (!empty($_updates)) {
-                    $_updates[$_idFields[0]] = $id;
-                    $record = $_updates;
+                if (!empty($updates)) {
+                    $updates[$idFields[0]] = $id;
+                    $record = $updates;
                 }
 
-                $_parsed = $this->parseRecord($record, $_fieldsInfo, $_ssFilters, true);
-                if (empty($_parsed)) {
+                $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters, true);
+                if (empty($parsed)) {
                     throw new BadRequestException('No valid fields were found in record.');
                 }
 
-                $_key = static::_buildKey($_idsInfo, $_parsed, true);
-                $_native = $this->_formatAttributes($_parsed, true);
+                $key = static::buildKey($idsInfo, $parsed, true);
+                $native = $this->formatAttributes($parsed, true);
 
                 // simple insert request
-                $_options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::ALL_NEW;
+                $options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::ALL_NEW;
 
-                $_result = $this->parent->getConnection()->updateItem(
+                $result = $this->parent->getConnection()->updateItem(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
-                        'Key'                   => $_key,
-                        'AttributeUpdates'      => $_native,
-                        'ReturnValues'          => $_options
+                        static::TABLE_INDICATOR => $this->transactionTable,
+                        'Key'                   => $key,
+                        'AttributeUpdates'      => $native,
+                        'ReturnValues'          => $options
                     )
                 );
 
-                $_temp = ArrayUtils::get($_result, 'Attributes', array());
+                $temp = ArrayUtils::get($result, 'Attributes', array());
                 if ($rollback) {
-                    $this->addToRollback($_temp);
+                    $this->addToRollback($temp);
 
                     // merge old record with new changes
-                    $_new = array_merge($this->_unformatAttributes($_temp), $_updates);
-                    $_out = static::cleanRecord($_new, $_fields, $_idFields);
+                    $new = array_merge($this->unformatAttributes($temp), $updates);
+                    $out = static::cleanRecord($new, $fields, $idFields);
                 } else {
-                    $_temp = $this->_unformatAttributes($_temp);
-                    $_out = static::cleanRecord($_temp, $_fields, $_idFields);
+                    $temp = $this->unformatAttributes($temp);
+                    $out = static::cleanRecord($temp, $fields, $idFields);
                 }
                 break;
 
@@ -809,55 +809,55 @@ class DynamoDbTable extends BaseDbTableResource
                     return parent::addToTransaction(null, $id);
                 }
 
-                $_record = array($_idFields[0] => $id);
-                $_key = static::_buildKey($_idsInfo, $_record);
+                $record = array($idFields[0] => $id);
+                $key = static::buildKey($idsInfo, $record);
 
-                $_result = $this->parent->getConnection()->deleteItem(
+                $result = $this->parent->getConnection()->deleteItem(
                     array(
-                        static::TABLE_INDICATOR => $this->_transactionTable,
-                        'Key'                   => $_key,
+                        static::TABLE_INDICATOR => $this->transactionTable,
+                        'Key'                   => $key,
                         'ReturnValues'          => ReturnValue::ALL_OLD,
                     )
                 );
 
-                $_temp = ArrayUtils::get($_result, 'Attributes', array());
+                $temp = ArrayUtils::get($result, 'Attributes', array());
 
                 if ($rollback) {
-                    $this->addToRollback($_temp);
+                    $this->addToRollback($temp);
                 }
 
-                $_temp = $this->_unformatAttributes($_temp);
-                $_out = static::cleanRecord($_temp, $_fields, $_idFields);
+                $temp = $this->unformatAttributes($temp);
+                $out = static::cleanRecord($temp, $fields, $idFields);
                 break;
 
             case Verbs::GET:
-                $_record = array($_idFields[0] => $id);
-                $_key = static::_buildKey($_idsInfo, $_record);
-                $_scanProperties = array(
-                    static::TABLE_INDICATOR => $this->_transactionTable,
-                    'Key'                   => $_key,
+                $record = array($idFields[0] => $id);
+                $key = static::buildKey($idsInfo, $record);
+                $scanProperties = array(
+                    static::TABLE_INDICATOR => $this->transactionTable,
+                    'Key'                   => $key,
                     'ConsistentRead'        => true,
                 );
 
-                $_fields = static::_buildAttributesToGet($_fields, $_idFields);
-                if (!empty($_fields)) {
-                    $_scanProperties['AttributesToGet'] = $_fields;
+                $fields = static::buildAttributesToGet($fields, $idFields);
+                if (!empty($fields)) {
+                    $scanProperties['AttributesToGet'] = $fields;
                 }
 
-                $_result = $this->parent->getConnection()->getItem($_scanProperties);
-                $_result = $_result['Item'];
-                if (empty($_result)) {
+                $result = $this->parent->getConnection()->getItem($scanProperties);
+                $result = $result['Item'];
+                if (empty($result)) {
                     throw new NotFoundException('Record not found.');
                 }
 
                 // Grab value from the result object like an array
-                $_out = $this->_unformatAttributes($_result['Item']);
+                $out = $this->unformatAttributes($result['Item']);
                 break;
             default:
                 break;
         }
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -865,51 +865,51 @@ class DynamoDbTable extends BaseDbTableResource
      */
     protected function commitTransaction($extras = null)
     {
-        if (empty($this->_batchRecords) && empty($this->_batchIds)) {
+        if (empty($this->batchRecords) && empty($this->batchIds)) {
             return null;
         }
 
-//        $_ssFilters = ArrayUtils::get( $extras, 'ss_filters' );
-        $_fields = ArrayUtils::get($extras, 'fields');
-        $_requireMore = ArrayUtils::get($extras, 'require_more');
-        $_idsInfo = ArrayUtils::get($extras, 'ids_info');
-        $_idFields = ArrayUtils::get($extras, 'id_fields');
+//        $ssFilters = ArrayUtils::get( $extras, 'ss_filters' );
+        $fields = ArrayUtils::get($extras, 'fields');
+        $requireMore = ArrayUtils::get($extras, 'require_more');
+        $idsInfo = ArrayUtils::get($extras, 'ids_info');
+        $idFields = ArrayUtils::get($extras, 'id_fields');
 
-        $_out = array();
+        $out = array();
         switch ($this->getAction()) {
             case Verbs::POST:
-                $_requests = array();
-                foreach ($this->_batchRecords as $_item) {
-                    $_requests[] = array('PutRequest' => array('Item' => $_item));
+                $requests = array();
+                foreach ($this->batchRecords as $item) {
+                    $requests[] = array('PutRequest' => array('Item' => $item));
                 }
 
-                /*$_result = */
+                /*$result = */
                 $this->parent->getConnection()->batchWriteItem(
-                    array('RequestItems' => array($this->_transactionTable => $_requests))
+                    array('RequestItems' => array($this->transactionTable => $requests))
                 );
 
-                // todo check $_result['UnprocessedItems'] for 'PutRequest'
+                // todo check $result['UnprocessedItems'] for 'PutRequest'
 
-                foreach ($this->_batchRecords as $_item) {
-                    $_out[] = static::cleanRecord($this->_unformatAttributes($_item), $_fields, $_idFields);
+                foreach ($this->batchRecords as $item) {
+                    $out[] = static::cleanRecord($this->unformatAttributes($item), $fields, $idFields);
                 }
                 break;
 
             case Verbs::PUT:
-                $_requests = array();
-                foreach ($this->_batchRecords as $_item) {
-                    $_requests[] = array('PutRequest' => array('Item' => $_item));
+                $requests = array();
+                foreach ($this->batchRecords as $item) {
+                    $requests[] = array('PutRequest' => array('Item' => $item));
                 }
 
-                /*$_result = */
+                /*$result = */
                 $this->parent->getConnection()->batchWriteItem(
-                    array('RequestItems' => array($this->_transactionTable => $_requests))
+                    array('RequestItems' => array($this->transactionTable => $requests))
                 );
 
-                // todo check $_result['UnprocessedItems'] for 'PutRequest'
+                // todo check $result['UnprocessedItems'] for 'PutRequest'
 
-                foreach ($this->_batchRecords as $_item) {
-                    $_out[] = static::cleanRecord($this->_unformatAttributes($_item), $_fields, $_idFields);
+                foreach ($this->batchRecords as $item) {
+                    $out[] = static::cleanRecord($this->unformatAttributes($item), $fields, $idFields);
                 }
                 break;
 
@@ -919,88 +919,88 @@ class DynamoDbTable extends BaseDbTableResource
                 break;
 
             case Verbs::DELETE:
-                $_requests = array();
-                foreach ($this->_batchIds as $_id) {
-                    $_record = array($_idFields[0] => $_id);
-                    $_out[] = $_record;
-                    $_key = static::_buildKey($_idsInfo, $_record);
-                    $_requests[] = array('DeleteRequest' => array('Key' => $_key));
+                $requests = array();
+                foreach ($this->batchIds as $id) {
+                    $record = array($idFields[0] => $id);
+                    $out[] = $record;
+                    $key = static::buildKey($idsInfo, $record);
+                    $requests[] = array('DeleteRequest' => array('Key' => $key));
                 }
-                if ($_requireMore) {
-                    $_scanProperties = array(
-                        'Keys'           => $this->_batchRecords,
+                if ($requireMore) {
+                    $scanProperties = array(
+                        'Keys'           => $this->batchRecords,
                         'ConsistentRead' => true,
                     );
 
-                    $_attributes = static::_buildAttributesToGet($_fields, $_idFields);
-                    if (!empty($_attributes)) {
-                        $_scanProperties['AttributesToGet'] = $_attributes;
+                    $attributes = static::buildAttributesToGet($fields, $idFields);
+                    if (!empty($attributes)) {
+                        $scanProperties['AttributesToGet'] = $attributes;
                     }
 
                     // Get multiple items by key in a BatchGetItem request
-                    $_result = $this->parent->getConnection()->batchGetItem(
+                    $result = $this->parent->getConnection()->batchGetItem(
                         array(
                             'RequestItems' => array(
-                                $this->_transactionTable => $_scanProperties
+                                $this->transactionTable => $scanProperties
                             )
                         )
                     );
 
-                    $_out = array();
-                    $_items = $_result->getPath("Responses/{$this->_transactionTable}");
-                    foreach ($_items as $_item) {
-                        $_out[] = $this->_unformatAttributes($_item);
+                    $out = array();
+                    $items = $result->getPath("Responses/{$this->transactionTable}");
+                    foreach ($items as $item) {
+                        $out[] = $this->unformatAttributes($item);
                     }
                 }
 
-                /*$_result = */
+                /*$result = */
                 $this->parent->getConnection()->batchWriteItem(
-                    array('RequestItems' => array($this->_transactionTable => $_requests))
+                    array('RequestItems' => array($this->transactionTable => $requests))
                 );
 
-                // todo check $_result['UnprocessedItems'] for 'DeleteRequest'
+                // todo check $result['UnprocessedItems'] for 'DeleteRequest'
                 break;
 
             case Verbs::GET:
-                $_keys = array();
-                foreach ($this->_batchIds as $_id) {
-                    $_record = array($_idFields[0] => $_id);
-                    $_key = static::_buildKey($_idsInfo, $_record);
-                    $_keys[] = $_key;
+                $keys = array();
+                foreach ($this->batchIds as $id) {
+                    $record = array($idFields[0] => $id);
+                    $key = static::buildKey($idsInfo, $record);
+                    $keys[] = $key;
                 }
 
-                $_scanProperties = array(
-                    'Keys'           => $_keys,
+                $scanProperties = array(
+                    'Keys'           => $keys,
                     'ConsistentRead' => true,
                 );
 
-                $_fields = static::_buildAttributesToGet($_fields, $_idFields);
-                if (!empty($_fields)) {
-                    $_scanProperties['AttributesToGet'] = $_fields;
+                $fields = static::buildAttributesToGet($fields, $idFields);
+                if (!empty($fields)) {
+                    $scanProperties['AttributesToGet'] = $fields;
                 }
 
                 // Get multiple items by key in a BatchGetItem request
-                $_result = $this->parent->getConnection()->batchGetItem(
+                $result = $this->parent->getConnection()->batchGetItem(
                     array(
                         'RequestItems' => array(
-                            $this->_transactionTable => $_scanProperties
+                            $this->transactionTable => $scanProperties
                         )
                     )
                 );
 
-                $_items = $_result->getPath("Responses/{$this->_transactionTable}");
-                foreach ($_items as $_item) {
-                    $_out[] = $this->_unformatAttributes($_item);
+                $items = $result->getPath("Responses/{$this->transactionTable}");
+                foreach ($items as $item) {
+                    $out[] = $this->unformatAttributes($item);
                 }
                 break;
             default:
                 break;
         }
 
-        $this->_batchIds = array();
-        $this->_batchRecords = array();
+        $this->batchIds = array();
+        $this->batchRecords = array();
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -1016,44 +1016,44 @@ class DynamoDbTable extends BaseDbTableResource
      */
     protected function rollbackTransaction()
     {
-        if (!empty($this->_rollbackRecords)) {
+        if (!empty($this->rollbackRecords)) {
             switch ($this->getAction()) {
                 case Verbs::POST:
-                    $_requests = array();
-                    foreach ($this->_rollbackRecords as $_item) {
-                        $_requests[] = array('DeleteRequest' => array('Key' => $_item));
+                    $requests = array();
+                    foreach ($this->rollbackRecords as $item) {
+                        $requests[] = array('DeleteRequest' => array('Key' => $item));
                     }
 
-                    /* $_result = */
+                    /* $result = */
                     $this->parent->getConnection()->batchWriteItem(
-                        array('RequestItems' => array($this->_transactionTable => $_requests))
+                        array('RequestItems' => array($this->transactionTable => $requests))
                     );
 
-                    // todo check $_result['UnprocessedItems'] for 'DeleteRequest'
+                    // todo check $result['UnprocessedItems'] for 'DeleteRequest'
                     break;
 
                 case Verbs::PUT:
                 case Verbs::PATCH:
                 case Verbs::MERGE:
                 case Verbs::DELETE:
-                    $_requests = array();
-                    foreach ($this->_rollbackRecords as $_item) {
-                        $_requests[] = array('PutRequest' => array('Item' => $_item));
+                    $requests = array();
+                    foreach ($this->rollbackRecords as $item) {
+                        $requests[] = array('PutRequest' => array('Item' => $item));
                     }
 
-                    /* $_result = */
+                    /* $result = */
                     $this->parent->getConnection()->batchWriteItem(
-                        array('RequestItems' => array($this->_transactionTable => $_requests))
+                        array('RequestItems' => array($this->transactionTable => $requests))
                     );
 
-                    // todo check $_result['UnprocessedItems'] for 'PutRequest'
+                    // todo check $result['UnprocessedItems'] for 'PutRequest'
                     break;
 
                 default:
                     break;
             }
 
-            $this->_rollbackRecords = array();
+            $this->rollbackRecords = array();
         }
 
         return true;

@@ -3,11 +3,9 @@ namespace DreamFactory\Core\Aws\Resources;
 
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Aws\Services\Sns;
-use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
-use DreamFactory\Core\Exceptions\RestException;
 use DreamFactory\Core\Contracts\ServiceResponseInterface;
 
 /**
@@ -41,34 +39,34 @@ class SnsApplication extends BaseSnsResource
      * @throws NotFoundException
      * @throws null
      */
-    protected function _getApplicationsAsArray()
+    protected function getApplicationsAsArray()
     {
-        $_out = [];
-        $_token = null;
+        $out = [];
+        $token = null;
         try {
             do {
-                $_result = $this->service->getConnection()->listPlatformApplications(
+                $result = $this->service->getConnection()->listPlatformApplications(
                     [
-                        'NextToken' => $_token
+                        'NextToken' => $token
                     ]
                 );
-                $_topics = $_result['PlatformApplications'];
-                $_token = $_result['NextToken'];
+                $topics = $result['PlatformApplications'];
+                $token = $result['NextToken'];
 
-                if (!empty($_topics)) {
-                    $_out = array_merge($_out, $_topics);
+                if (!empty($topics)) {
+                    $out = array_merge($out, $topics);
                 }
-            } while ($_token);
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+            } while ($token);
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to retrieve applications.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to retrieve applications.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -84,16 +82,16 @@ class SnsApplication extends BaseSnsResource
 
         $this->resource = ArrayUtils::get($this->resourceArray, 0);
 
-        $_pos = 1;
-        $_more = ArrayUtils::get($this->resourceArray, $_pos);
+        $pos = 1;
+        $more = ArrayUtils::get($this->resourceArray, $pos);
 
-        if (!empty($_more)) {
-            if (SnsEndpoint::RESOURCE_NAME !== $_more) {
+        if (!empty($more)) {
+            if (SnsEndpoint::RESOURCE_NAME !== $more) {
                 do {
-                    $this->resource .= '/' . $_more;
-                    $_pos++;
-                    $_more = ArrayUtils::get($this->resourceArray, $_pos);
-                } while (!empty($_more) && (SnsEndpoint::RESOURCE_NAME !== $_more));
+                    $this->resource .= '/' . $more;
+                    $pos++;
+                    $more = ArrayUtils::get($this->resourceArray, $pos);
+                } while (!empty($more) && (SnsEndpoint::RESOURCE_NAME !== $more));
             }
         }
 
@@ -107,28 +105,28 @@ class SnsApplication extends BaseSnsResource
      */
     public function listResources($fields = null)
     {
-        $_resources = [];
-        $_result = $this->_getApplicationsAsArray();
-        foreach ($_result as $_app) {
+        $resources = [];
+        $result = $this->getApplicationsAsArray();
+        foreach ($result as $app) {
             switch ($fields) {
                 case false:
                 case Sns::FORMAT_SIMPLE:
-                    $_resources[] = $this->service->stripArnPrefix(ArrayUtils::get($_app, 'PlatformApplicationArn'));
+                    $resources[] = $this->service->stripArnPrefix(ArrayUtils::get($app, 'PlatformApplicationArn'));
                     break;
                 case Sns::FORMAT_ARN:
-                    $_resources[] = ArrayUtils::get($_app, 'PlatformApplicationArn');
+                    $resources[] = ArrayUtils::get($app, 'PlatformApplicationArn');
                     break;
                 case true:
                 case Sns::FORMAT_FULL:
                 default:
-                    $_app['Application'] =
-                        $this->service->stripArnPrefix(ArrayUtils::get($_app, 'PlatformApplicationArn'));
-                    $_resources[] = $_app;
+                    $app['Application'] =
+                        $this->service->stripArnPrefix(ArrayUtils::get($app, 'PlatformApplicationArn'));
+                    $resources[] = $app;
                     break;
             }
         }
 
-        return $_resources;
+        return $resources;
     }
 
     protected function handleGET()
@@ -198,25 +196,25 @@ class SnsApplication extends BaseSnsResource
      */
     public function retrieveApplication($resource)
     {
-        $_request = ['PlatformApplicationArn' => $this->service->addArnPrefix($resource)];
+        $request = ['PlatformApplicationArn' => $this->service->addArnPrefix($resource)];
 
         try {
-            if (null !== $_result = $this->service->getConnection()->getPlatformApplicationAttributes($_request)) {
-                $_attributes = ArrayUtils::get($_result->toArray(), 'Attributes');
+            if (null !== $result = $this->service->getConnection()->getPlatformApplicationAttributes($request)) {
+                $attributes = ArrayUtils::get($result->toArray(), 'Attributes');
 
                 return [
                     'Application'            => $this->service->stripArnPrefix($resource),
                     'PlatformApplicationArn' => $this->service->addArnPrefix($resource),
-                    'Attributes'             => $_attributes
+                    'Attributes'             => $attributes
                 ];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to retrieve properties for '$resource'.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to retrieve properties for '$resource'.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];
@@ -225,8 +223,8 @@ class SnsApplication extends BaseSnsResource
     public function createApplication($request)
     {
         if (is_array($request)) {
-            $_name = ArrayUtils::get($request, 'Name');
-            if (empty($_name)) {
+            $name = ArrayUtils::get($request, 'Name');
+            if (empty($name)) {
                 throw new BadRequestException("Create application request contains no 'Name' field.");
             }
         } else {
@@ -234,18 +232,18 @@ class SnsApplication extends BaseSnsResource
         }
 
         try {
-            if (null !== $_result = $this->service->getConnection()->createPlatformApplication($request)) {
-                $_arn = ArrayUtils::get($_result->toArray(), 'PlatformApplicationArn', '');
+            if (null !== $result = $this->service->getConnection()->createPlatformApplication($request)) {
+                $arn = ArrayUtils::get($result->toArray(), 'PlatformApplicationArn', '');
 
-                return ['Application' => $this->service->stripArnPrefix($_arn), 'PlatformApplicationArn' => $_arn];
+                return ['Application' => $this->service->stripArnPrefix($arn), 'PlatformApplicationArn' => $arn];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to create application '{$request['Name']}'.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to create application '{$request['Name']}'.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];
@@ -254,28 +252,28 @@ class SnsApplication extends BaseSnsResource
     public function updateApplication($request)
     {
         if (is_array($request)) {
-            $_name = ArrayUtils::get($request, 'Application', ArrayUtils::get($request, 'PlatformApplicationArn'));
-            if (empty($_name)) {
+            $name = ArrayUtils::get($request, 'Application', ArrayUtils::get($request, 'PlatformApplicationArn'));
+            if (empty($name)) {
                 throw new BadRequestException("Update application request contains no 'Application' field.");
             }
 
-            $request['PlatformApplicationArn'] = $this->service->addArnPrefix($_name);
+            $request['PlatformApplicationArn'] = $this->service->addArnPrefix($name);
         } else {
             throw new BadRequestException("Update application request contains no fields.");
         }
 
         try {
-            if (null !== $_result = $this->service->getConnection()->setPlatformApplicationAttributes($request)) {
+            if (null !== $result = $this->service->getConnection()->setPlatformApplicationAttributes($request)) {
                 return ['success' => true];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
             throw new InternalServerErrorException(
-                "Failed to update application '{$request['PlatformApplicationArn']}'.\n{$_ex->getMessage()}",
-                $_ex->getCode()
+                "Failed to update application '{$request['PlatformApplicationArn']}'.\n{$ex->getMessage()}",
+                $ex->getCode()
             );
         }
 
@@ -284,30 +282,30 @@ class SnsApplication extends BaseSnsResource
 
     public function deleteApplication($request)
     {
-        $_data = [];
+        $data = [];
         if (is_array($request)) {
-            $_name = ArrayUtils::get($request, 'Application', ArrayUtils::get($request, 'PlatformApplicationArn'));
-            if (empty($_name)) {
+            $name = ArrayUtils::get($request, 'Application', ArrayUtils::get($request, 'PlatformApplicationArn'));
+            if (empty($name)) {
                 throw new BadRequestException("Delete application request contains no 'Application' field.");
             }
 
-            $_data['PlatformApplicationArn'] = $this->service->addArnPrefix($_name);
+            $data['PlatformApplicationArn'] = $this->service->addArnPrefix($name);
         } else {
-            $_data['PlatformApplicationArn'] = $this->service->addArnPrefix($request);
+            $data['PlatformApplicationArn'] = $this->service->addArnPrefix($request);
         }
 
         try {
-            if (null !== $_result = $this->service->getConnection()->deletePlatformApplication($_data)) {
+            if (null !== $result = $this->service->getConnection()->deletePlatformApplication($data)) {
                 return ['success' => true];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
             throw new InternalServerErrorException(
-                "Failed to delete application '{$_data['PlatformApplicationArn']}'.\n{$_ex->getMessage()}",
-                $_ex->getCode()
+                "Failed to delete application '{$data['PlatformApplicationArn']}'.\n{$ex->getMessage()}",
+                $ex->getCode()
             );
         }
 

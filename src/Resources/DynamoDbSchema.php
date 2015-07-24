@@ -30,7 +30,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
     /**
      * @var array
      */
-    protected $_defaultCreateTable = array(
+    protected $defaultCreateTable = array(
         'AttributeDefinitions'  => array(
             array(
                 'AttributeName' => 'id',
@@ -59,16 +59,16 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
         }
 //        $refresh = $this->request->queryBool('refresh');
 
-        $_names = $this->parent->getTables();
+        $names = $this->parent->getTables();
 
-        $_extras =
-            DbUtilities::getSchemaExtrasForTables($this->parent->getServiceId(), $_names, false, 'table,label,plural');
+        $extras =
+            DbUtilities::getSchemaExtrasForTables($this->parent->getServiceId(), $names, false, 'table,label,plural');
 
-        $_tables = [];
-        foreach ($_names as $name) {
+        $tables = [];
+        foreach ($names as $name) {
             $label = '';
             $plural = '';
-            foreach ($_extras as $each) {
+            foreach ($extras as $each) {
                 if (0 == strcasecmp($name, ArrayUtils::get($each, 'table', ''))) {
                     $label = ArrayUtils::get($each, 'label');
                     $plural = ArrayUtils::get($each, 'plural');
@@ -84,10 +84,10 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
                 $plural = Inflector::pluralize($label);
             }
 
-            $_tables[] = ['name' => $name, 'label' => $label, 'plural' => $plural];
+            $tables[] = ['name' => $name, 'label' => $label, 'plural' => $plural];
         }
 
-        return $_tables;
+        return $tables;
     }
 
     /**
@@ -109,20 +109,20 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
      */
     public function describeTable($table, $refresh = true)
     {
-        $_name =
+        $name =
             (is_array($table)) ? ArrayUtils::get($table, 'name', ArrayUtils::get($table, static::TABLE_INDICATOR))
                 : $table;
         try {
-            $_result = $this->parent->getConnection()->describeTable(array(static::TABLE_INDICATOR => $_name));
+            $result = $this->parent->getConnection()->describeTable(array(static::TABLE_INDICATOR => $name));
 
             // The result of an operation can be used like an array
-            $_out = $_result['Table'];
-            $_out['name'] = $_name;
-            $_out['access'] = $this->getPermissions($_name);
+            $out = $result['Table'];
+            $out['name'] = $name;
+            $out['access'] = $this->getPermissions($name);
 
-            return $_out;
-        } catch (\Exception $_ex) {
-            throw new InternalServerErrorException("Failed to get table properties for table '$_name'.\n{$_ex->getMessage(
+            return $out;
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("Failed to get table properties for table '$name'.\n{$ex->getMessage(
             )}");
         }
     }
@@ -140,21 +140,21 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
         }
 
         try {
-            $_properties = array_merge(
+            $properties = array_merge(
                 array(static::TABLE_INDICATOR => $table),
-                $this->_defaultCreateTable,
+                $this->defaultCreateTable,
                 $properties
             );
-            $_result = $this->parent->getConnection()->createTable($_properties);
+            $result = $this->parent->getConnection()->createTable($properties);
 
             // Wait until the table is created and active
             $this->parent->getConnection()->waitUntilTableExists(array(static::TABLE_INDICATOR => $table));
 
-            $_out = array_merge(array('name' => $table), $_result['TableDescription']);
+            $out = array_merge(array('name' => $table), $result['TableDescription']);
 
-            return $_out;
-        } catch (\Exception $_ex) {
-            throw new InternalServerErrorException("Failed to create table '$table'.\n{$_ex->getMessage()}");
+            return $out;
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("Failed to create table '$table'.\n{$ex->getMessage()}");
         }
     }
 
@@ -172,18 +172,18 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
 
         try {
             // Update the provisioned throughput capacity of the table
-            $_properties = array_merge(
+            $properties = array_merge(
                 array(static::TABLE_INDICATOR => $table),
                 $properties
             );
-            $_result = $this->parent->getConnection()->updateTable($_properties);
+            $result = $this->parent->getConnection()->updateTable($properties);
 
             // Wait until the table is active again after updating
             $this->parent->getConnection()->waitUntilTableExists(array(static::TABLE_INDICATOR => $table));
 
-            return array_merge(array('name' => $table), $_result['TableDescription']);
-        } catch (\Exception $_ex) {
-            throw new InternalServerErrorException("Failed to update table '$table'.\n{$_ex->getMessage()}");
+            return array_merge(array('name' => $table), $result['TableDescription']);
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("Failed to update table '$table'.\n{$ex->getMessage()}");
         }
     }
 
@@ -192,22 +192,22 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
      */
     public function deleteTable($table, $check_empty = false)
     {
-        $_name =
+        $name =
             (is_array($table)) ? ArrayUtils::get($table, 'name', ArrayUtils::get($table, static::TABLE_INDICATOR))
                 : $table;
-        if (empty($_name)) {
+        if (empty($name)) {
             throw new BadRequestException('Table name can not be empty.');
         }
 
         try {
-            $_result = $this->parent->getConnection()->deleteTable(array(static::TABLE_INDICATOR => $_name));
+            $result = $this->parent->getConnection()->deleteTable(array(static::TABLE_INDICATOR => $name));
 
             // Wait until the table is truly gone
-            $this->parent->getConnection()->waitUntilTableNotExists(array(static::TABLE_INDICATOR => $_name));
+            $this->parent->getConnection()->waitUntilTableNotExists(array(static::TABLE_INDICATOR => $name));
 
-            return array_merge(array('name' => $_name), $_result['TableDescription']);
-        } catch (\Exception $_ex) {
-            throw new InternalServerErrorException("Failed to delete table '$_name'.\n{$_ex->getMessage()}");
+            return array_merge(array('name' => $name), $result['TableDescription']);
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("Failed to delete table '$name'.\n{$ex->getMessage()}");
         }
     }
 }

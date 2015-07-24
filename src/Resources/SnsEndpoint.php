@@ -3,11 +3,9 @@ namespace DreamFactory\Core\Aws\Resources;
 
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Aws\Services\Sns;
-use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
-use DreamFactory\Core\Exceptions\RestException;
 use DreamFactory\Core\Contracts\ServiceResponseInterface;
 
 /**
@@ -41,40 +39,40 @@ class SnsEndpoint extends BaseSnsResource
      * @throws NotFoundException
      * @throws null
      */
-    protected function _getEndpointsAsArray($application)
+    protected function getEndpointsAsArray($application)
     {
         if (empty($application)) {
             throw new BadRequestException('Platform application name required for retrieving endpoints.');
         }
 
         $application = $this->service->addArnPrefix($application);
-        $_out = [];
-        $_token = null;
+        $out = [];
+        $token = null;
         try {
             do {
-                $_result = $this->service->getConnection()->listEndpointsByPlatformApplication(
+                $result = $this->service->getConnection()->listEndpointsByPlatformApplication(
                     [
                         'PlatformApplicationArn' => $application,
-                        'NextToken'              => $_token
+                        'NextToken'              => $token
                     ]
                 );
-                $_topics = $_result['Endpoints'];
-                $_token = $_result['NextToken'];
+                $topics = $result['Endpoints'];
+                $token = $result['NextToken'];
 
-                if (!empty($_topics)) {
-                    $_out = array_merge($_out, $_topics);
+                if (!empty($topics)) {
+                    $out = array_merge($out, $topics);
                 }
-            } while ($_token);
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+            } while ($token);
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to retrieve endpoints.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to retrieve endpoints.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
-        return $_out;
+        return $out;
     }
 
     /**
@@ -90,16 +88,16 @@ class SnsEndpoint extends BaseSnsResource
 
         $this->resource = ArrayUtils::get($this->resourceArray, 0);
 
-        $_pos = 1;
-        $_more = ArrayUtils::get($this->resourceArray, $_pos);
+        $pos = 1;
+        $more = ArrayUtils::get($this->resourceArray, $pos);
 
-        if (!empty($_more)) {
+        if (!empty($more)) {
             //  This will be the full resource path
             do {
-                $this->resource .= '/' . $_more;
-                $_pos++;
-                $_more = ArrayUtils::get($this->resourceArray, $_pos);
-            } while (!empty($_more));
+                $this->resource .= '/' . $more;
+                $pos++;
+                $more = ArrayUtils::get($this->resourceArray, $pos);
+            } while (!empty($more));
         }
 
         return $this;
@@ -113,63 +111,63 @@ class SnsEndpoint extends BaseSnsResource
      */
     public function listResources($fields = null)
     {
-        $_resources = [];
+        $resources = [];
         if (empty($this->parentResource)) {
             $applications = [];
             try {
-                $_out = [];
-                $_token = null;
+                $out = [];
+                $token = null;
                 do {
-                    $_result = $this->service->getConnection()->listPlatformApplications(
+                    $result = $this->service->getConnection()->listPlatformApplications(
                         [
-                            'NextToken' => $_token
+                            'NextToken' => $token
                         ]
                     );
-                    $_topics = $_result['PlatformApplications'];
-                    $_token = $_result['NextToken'];
+                    $topics = $result['PlatformApplications'];
+                    $token = $result['NextToken'];
 
-                    if (!empty($_topics)) {
-                        $_out = array_merge($_out, $_topics);
+                    if (!empty($topics)) {
+                        $out = array_merge($out, $topics);
                     }
-                } while ($_token);
+                } while ($token);
 
-                foreach ($_out as $_app) {
-                    $applications[] = ArrayUtils::get($_app, 'PlatformApplicationArn');
+                foreach ($out as $app) {
+                    $applications[] = ArrayUtils::get($app, 'PlatformApplicationArn');
                 }
-            } catch (\Exception $_ex) {
-                if (null !== $_newEx = Sns::translateException($_ex)) {
-                    throw $_newEx;
+            } catch (\Exception $ex) {
+                if (null !== $newEx = Sns::translateException($ex)) {
+                    throw $newEx;
                 }
 
-                throw new InternalServerErrorException("Failed to retrieve applications.\n{$_ex->getMessage()}",
-                    $_ex->getCode());
+                throw new InternalServerErrorException("Failed to retrieve applications.\n{$ex->getMessage()}",
+                    $ex->getCode());
             }
         } else {
             $applications = [$this->parentResource];
         }
 
         foreach ($applications as $application) {
-            $_result = $this->_getEndpointsAsArray($application);
-            foreach ($_result as $_end) {
+            $result = $this->getEndpointsAsArray($application);
+            foreach ($result as $end) {
                 switch ($fields) {
                     case false:
                     case Sns::FORMAT_SIMPLE:
-                        $_resources[] = $this->service->stripArnPrefix(ArrayUtils::get($_end, 'EndpointArn'));
+                        $resources[] = $this->service->stripArnPrefix(ArrayUtils::get($end, 'EndpointArn'));
                         break;
                     case Sns::FORMAT_ARN:
-                        $_resources[] = ArrayUtils::get($_end, 'EndpointArn');
+                        $resources[] = ArrayUtils::get($end, 'EndpointArn');
                         break;
                     case true:
                     case Sns::FORMAT_FULL:
                     default:
-                        $_end['Endpoint'] = $this->service->stripArnPrefix(ArrayUtils::get($_end, 'EndpointArn'));
-                        $_resources[] = $_end;
+                        $end['Endpoint'] = $this->service->stripArnPrefix(ArrayUtils::get($end, 'EndpointArn'));
+                        $resources[] = $end;
                         break;
                 }
             }
         }
 
-        return $_resources;
+        return $resources;
     }
 
     protected function handleGET()
@@ -239,25 +237,25 @@ class SnsEndpoint extends BaseSnsResource
      */
     public function retrieveEndpoint($resource)
     {
-        $_request = ['EndpointArn' => $this->service->addArnPrefix($resource)];
+        $request = ['EndpointArn' => $this->service->addArnPrefix($resource)];
 
         try {
-            if (null !== $_result = $this->service->getConnection()->getEndpointAttributes($_request)) {
-                $_attributes = ArrayUtils::get($_result->toArray(), 'Attributes');
+            if (null !== $result = $this->service->getConnection()->getEndpointAttributes($request)) {
+                $attributes = ArrayUtils::get($result->toArray(), 'Attributes');
 
                 return [
                     'Endpoint'    => $this->service->stripArnPrefix($resource),
                     'EndpointArn' => $this->service->addArnPrefix($resource),
-                    'Attributes'  => $_attributes
+                    'Attributes'  => $attributes
                 ];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to retrieve properties for '$resource'.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to retrieve properties for '$resource'.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];
@@ -266,13 +264,13 @@ class SnsEndpoint extends BaseSnsResource
     public function createEndpoint($request)
     {
         if (is_array($request)) {
-            $_name = ArrayUtils::get($request, 'Application', ArrayUtils::get($request, 'PlatformApplicationArn'));
-            if (empty($_name)) {
+            $name = ArrayUtils::get($request, 'Application', ArrayUtils::get($request, 'PlatformApplicationArn'));
+            if (empty($name)) {
                 throw new BadRequestException("Create endpoint request contains no 'Application' field.");
             }
-            $request['PlatformApplicationArn'] = $this->service->addArnPrefix($_name);
-            $_name = ArrayUtils::get($request, 'Token');
-            if (empty($_name)) {
+            $request['PlatformApplicationArn'] = $this->service->addArnPrefix($name);
+            $name = ArrayUtils::get($request, 'Token');
+            if (empty($name)) {
                 throw new BadRequestException("Create endpoint request contains no 'Token' field.");
             }
         } else {
@@ -280,19 +278,19 @@ class SnsEndpoint extends BaseSnsResource
         }
 
         try {
-            if (null !== $_result = $this->service->getConnection()->createPlatformEndpoint($request)) {
-                $_arn = ArrayUtils::get($_result->toArray(), 'EndpointArn', '');
+            if (null !== $result = $this->service->getConnection()->createPlatformEndpoint($request)) {
+                $arn = ArrayUtils::get($result->toArray(), 'EndpointArn', '');
 
-                return ['Endpoint' => $this->service->stripArnPrefix($_arn), 'EndpointArn' => $_arn];
+                return ['Endpoint' => $this->service->stripArnPrefix($arn), 'EndpointArn' => $arn];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
             throw new InternalServerErrorException(
-                "Failed to create endpoint for '{$request['PlatformApplicationArn']}'.\n{$_ex->getMessage()}",
-                $_ex->getCode()
+                "Failed to create endpoint for '{$request['PlatformApplicationArn']}'.\n{$ex->getMessage()}",
+                $ex->getCode()
             );
         }
 
@@ -302,27 +300,27 @@ class SnsEndpoint extends BaseSnsResource
     public function updateEndpoint($request)
     {
         if (is_array($request)) {
-            $_name = ArrayUtils::get($request, 'Endpoint', ArrayUtils::get($request, 'EndpointArn'));
-            if (empty($_name)) {
+            $name = ArrayUtils::get($request, 'Endpoint', ArrayUtils::get($request, 'EndpointArn'));
+            if (empty($name)) {
                 throw new BadRequestException("Update endpoint request contains no 'Endpoint' field.");
             }
 
-            $request['EndpointArn'] = $this->service->addArnPrefix($_name);
+            $request['EndpointArn'] = $this->service->addArnPrefix($name);
         } else {
             throw new BadRequestException("Update endpoint request contains no fields.");
         }
 
         try {
-            if (null !== $_result = $this->service->getConnection()->setEndpointAttributes($request)) {
+            if (null !== $result = $this->service->getConnection()->setEndpointAttributes($request)) {
                 return ['success' => true];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to update endpoint '{$request['EndpointArn']}'.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to update endpoint '{$request['EndpointArn']}'.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];
@@ -330,29 +328,29 @@ class SnsEndpoint extends BaseSnsResource
 
     public function deleteEndpoint($request)
     {
-        $_data = [];
+        $data = [];
         if (is_array($request)) {
-            $_name = ArrayUtils::get($request, 'Endpoint', ArrayUtils::get($request, 'EndpointArn'));
-            if (empty($_name)) {
+            $name = ArrayUtils::get($request, 'Endpoint', ArrayUtils::get($request, 'EndpointArn'));
+            if (empty($name)) {
                 throw new BadRequestException("Delete endpoint request contains no 'Endpoint' field.");
             }
 
-            $_data['EndpointArn'] = $this->service->addArnPrefix($_name);
+            $data['EndpointArn'] = $this->service->addArnPrefix($name);
         } else {
-            $_data['EndpointArn'] = $this->service->addArnPrefix($request);
+            $data['EndpointArn'] = $this->service->addArnPrefix($request);
         }
 
         try {
-            if (null !== $_result = $this->service->getConnection()->deleteEndpoint($_data)) {
+            if (null !== $result = $this->service->getConnection()->deleteEndpoint($data)) {
                 return ['success' => true];
             }
-        } catch (\Exception $_ex) {
-            if (null !== $_newEx = Sns::translateException($_ex)) {
-                throw $_newEx;
+        } catch (\Exception $ex) {
+            if (null !== $newEx = Sns::translateException($ex)) {
+                throw $newEx;
             }
 
-            throw new InternalServerErrorException("Failed to delete endpoint '{$_data['EndpointArn']}'.\n{$_ex->getMessage()}",
-                $_ex->getCode());
+            throw new InternalServerErrorException("Failed to delete endpoint '{$data['EndpointArn']}'.\n{$ex->getMessage()}",
+                $ex->getCode());
         }
 
         return [];
