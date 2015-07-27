@@ -5,6 +5,8 @@ use Aws\DynamoDb\Enum\ComparisonOperator;
 use Aws\DynamoDb\Enum\ReturnValue;
 use Aws\DynamoDb\Enum\Type;
 use Aws\DynamoDb\Model\Attribute;
+use DreamFactory\Core\Enums\ApiOptions;
+use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Library\Utility\Enums\Verbs;
 use DreamFactory\Library\Utility\Inflector;
@@ -118,7 +120,7 @@ class DynamoDbTable extends BaseDbTableResource
      */
     public function retrieveRecordsByFilter($table, $filter = null, $params = array(), $extras = array())
     {
-        $fields = ArrayUtils::get($extras, 'fields');
+        $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
         $ssFilters = ArrayUtils::get($extras, 'ss_filters');
 
         $scanProperties = array(static::TABLE_INDICATOR => $table);
@@ -133,7 +135,7 @@ class DynamoDbTable extends BaseDbTableResource
             $scanProperties['ScanFilter'] = $parsedFilter;
         }
 
-        $limit = ArrayUtils::get($extras, 'limit');
+        $limit = ArrayUtils::get($extras, ApiOptions::LIMIT);
         if ($limit > 0) {
             $scanProperties['Limit'] = $limit;
         }
@@ -298,7 +300,7 @@ class DynamoDbTable extends BaseDbTableResource
 
     protected static function buildAttributesToGet($fields = null, $id_fields = null)
     {
-        if ('*' == $fields) {
+        if (ApiOptions::FIELDS_ALL == $fields) {
             return null;
         }
         if (empty($fields)) {
@@ -375,7 +377,7 @@ class DynamoDbTable extends BaseDbTableResource
 
         // build filter array if necessary, add server-side filters if necessary
         if (!is_array($filter)) {
-//            Session::replaceLookups( $filter );
+            Session::replaceLookups( $filter );
             $criteria = static::buildFilterArray($filter, $params);
         } else {
             $criteria = $filter;
@@ -694,7 +696,7 @@ class DynamoDbTable extends BaseDbTableResource
         $single = false
     ){
         $ssFilters = ArrayUtils::get($extras, 'ss_filters');
-        $fields = ArrayUtils::get($extras, 'fields');
+        $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
         $fieldsInfo = ArrayUtils::get($extras, 'fields_info');
         $idsInfo = ArrayUtils::get($extras, 'ids_info');
         $idFields = ArrayUtils::get($extras, 'id_fields');
@@ -870,7 +872,7 @@ class DynamoDbTable extends BaseDbTableResource
         }
 
 //        $ssFilters = ArrayUtils::get( $extras, 'ss_filters' );
-        $fields = ArrayUtils::get($extras, 'fields');
+        $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
         $requireMore = ArrayUtils::get($extras, 'require_more');
         $idsInfo = ArrayUtils::get($extras, 'ids_info');
         $idFields = ArrayUtils::get($extras, 'id_fields');

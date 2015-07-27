@@ -9,6 +9,7 @@ use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Services\BaseNoSqlDbService;
+use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
 
 /**
@@ -73,7 +74,7 @@ class DynamoDb extends BaseNoSqlDbService
 
         // set up a default table schema
         $parameters = ArrayUtils::clean(ArrayUtils::get($config, 'parameters'));
-        //Session::replaceLookups( $parameters );
+        Session::replaceLookups( $parameters );
         if (null !== ($table = ArrayUtils::get($parameters, 'default_create_table'))) {
             $this->defaultCreateTable = $table;
         }

@@ -1,6 +1,8 @@
 <?php
 namespace DreamFactory\Core\Aws\Resources;
 
+use DreamFactory\Core\Enums\ApiOptions;
+use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Library\Utility\Enums\Verbs;
 use DreamFactory\Library\Utility\Inflector;
@@ -104,14 +106,14 @@ class SimpleDbTable extends BaseDbTableResource
      */
     public function retrieveRecordsByFilter($table, $filter = null, $params = array(), $extras = array())
     {
-        $idField = ArrayUtils::get($extras, 'id_field', static::DEFAULT_ID_FIELD);
-        $fields = ArrayUtils::get($extras, 'fields');
+        $idField = ArrayUtils::get($extras, ApiOptions::ID_FIELD, static::DEFAULT_ID_FIELD);
+        $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
         $ssFilters = ArrayUtils::get($extras, 'ss_filters');
 
         $fields = static::buildAttributesToGet($fields);
 
         $select = 'select ';
-        $select .= (empty($fields)) ? '*' : $fields;
+        $select .= (empty($fields)) ? ApiOptions::FIELDS_ALL : $fields;
         $select .= ' from ' . $table;
 
         $parsedFilter = static::buildCriteriaArray($filter, $params, $ssFilters);
@@ -119,12 +121,12 @@ class SimpleDbTable extends BaseDbTableResource
             $select .= ' where ' . $parsedFilter;
         }
 
-        $order = ArrayUtils::get($extras, 'order');
+        $order = ArrayUtils::get($extras, ApiOptions::ORDER);
         if ($order > 0) {
             $select .= ' order by ' . $order;
         }
 
-        $limit = ArrayUtils::get($extras, 'limit');
+        $limit = ArrayUtils::get($extras, ApiOptions::LIMIT);
         if ($limit > 0) {
             $select .= ' limit ' . $limit;
         }
@@ -353,7 +355,7 @@ class SimpleDbTable extends BaseDbTableResource
 
     protected static function buildAttributesToGet($fields = null, $id_fields = null)
     {
-        if ('*' == $fields) {
+        if (ApiOptions::FIELDS_ALL == $fields) {
             return null;
         }
         if (empty($fields)) {
@@ -451,7 +453,7 @@ class SimpleDbTable extends BaseDbTableResource
             throw new BadRequestException('Filtering in array format is not currently supported on SimpleDb.');
         }
 
-//        Session::replaceLookups( $filter );
+        Session::replaceLookups( $filter );
 
         // handle logical operators first
         $search = array(' || ', ' && ');
@@ -491,7 +493,7 @@ class SimpleDbTable extends BaseDbTableResource
         $single = false
     ){
         $ssFilters = ArrayUtils::get($extras, 'ss_filters');
-        $fields = ArrayUtils::get($extras, 'fields');
+        $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
         $fieldsInfo = ArrayUtils::get($extras, 'fields_info');
         $idsInfo = ArrayUtils::get($extras, 'ids_info');
         $idFields = ArrayUtils::get($extras, 'id_fields');
@@ -650,7 +652,7 @@ class SimpleDbTable extends BaseDbTableResource
         }
 
         $ssFilters = ArrayUtils::get($extras, 'ss_filters');
-        $fields = ArrayUtils::get($extras, 'fields');
+        $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
         $requireMore = ArrayUtils::get($extras, 'require_more');
         $idsInfo = ArrayUtils::get($extras, 'ids_info');
         $idFields = ArrayUtils::get($extras, 'id_fields');
@@ -689,7 +691,7 @@ class SimpleDbTable extends BaseDbTableResource
                     $fields = static::buildAttributesToGet($fields);
 
                     $select = 'select ';
-                    $select .= (empty($fields)) ? '*' : $fields;
+                    $select .= (empty($fields)) ? ApiOptions::FIELDS_ALL : $fields;
                     $select .= ' from ' . $this->transactionTable;
 
                     $filter = "itemName() in ('" . implode("','", $this->batchIds) . "')";
@@ -737,7 +739,7 @@ class SimpleDbTable extends BaseDbTableResource
                 $fields = static::buildAttributesToGet($fields);
 
                 $select = 'select ';
-                $select .= (empty($fields)) ? '*' : $fields;
+                $select .= (empty($fields)) ? ApiOptions::FIELDS_ALL : $fields;
                 $select .= ' from ' . $this->transactionTable;
 
                 $filter = "itemName() in ('" . implode("','", $this->batchIds) . "')";

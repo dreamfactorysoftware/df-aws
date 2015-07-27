@@ -5,6 +5,7 @@ use Aws\Common\Aws;
 use Aws\Common\Client\AbstractClient;
 use Aws\Common\Enum\Region;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
+use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
 
 /**
@@ -33,7 +34,7 @@ class AwsSvcUtilities
     public static function updateCredentials(&$credentials, $require_region = true)
     {
         //  Replace any private lookups
-        //Session::replaceLookups( $credentials, true );
+        Session::replaceLookups( $credentials, true );
 
         //  Fix credentials
         if (null !== $accessKey = ArrayUtils::get($credentials, 'access_key', null, true)) {
