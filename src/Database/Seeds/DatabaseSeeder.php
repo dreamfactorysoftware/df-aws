@@ -6,7 +6,6 @@ use DreamFactory\Core\Aws\Models\AwsConfig;
 use DreamFactory\Core\Aws\Services\DynamoDb;
 use DreamFactory\Core\Aws\Services\S3;
 use DreamFactory\Core\Aws\Services\Ses;
-use DreamFactory\Core\Aws\Services\SimpleDb;
 use DreamFactory\Core\Aws\Services\Sns;
 use DreamFactory\Core\Database\Seeds\BaseModelSeeder;
 use DreamFactory\Core\Enums\ServiceTypeGroups;
@@ -32,15 +31,6 @@ class DatabaseSeeder extends BaseModelSeeder
             'config_handler' => AwsConfig::class,
             'label'          => 'AWS DynamoDb',
             'description'    => 'A database service supporting the AWS DynamoDb system.',
-            'group'          => ServiceTypeGroups::DATABASE,
-            'singleton'      => false
-        ],
-        [
-            'name'           => 'aws_simpledb',
-            'class_name'     => SimpleDb::class,
-            'config_handler' => AwsConfig::class,
-            'label'          => 'AWS SimpleDb',
-            'description'    => 'A database service supporting the AWS SimpleDb system.',
             'group'          => ServiceTypeGroups::DATABASE,
             'singleton'      => false
         ],

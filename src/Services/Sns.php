@@ -2,8 +2,8 @@
 namespace DreamFactory\Core\Aws\Services;
 
 use Aws\Sns\SnsClient;
+use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
-use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
 use DreamFactory\Core\Aws\Resources\BaseSnsResource;
 use DreamFactory\Core\Aws\Resources\SnsApplication;
 use DreamFactory\Core\Aws\Resources\SnsEndpoint;
@@ -107,9 +107,18 @@ class Sns extends BaseRestService
         parent::__construct($settings);
 
         $config = ArrayUtils::clean(ArrayUtils::get($settings, 'config', []));
-        AwsSvcUtilities::updateCredentials($config, true);
+        //  Replace any private lookups
+        Session::replaceLookups( $config, true );
+        // statically assign the our supported version
+        $config['version'] = '2010-03-31';
 
-        $this->conn = AwsSvcUtilities::createClient($config, static::CLIENT_NAME);
+
+        try {
+            $this->dbConn = new SnsClient($config);
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("AWS SNS Service Exception:\n{$ex->getMessage()}",
+                $ex->getCode());
+        }
         $this->region = ArrayUtils::get($config, 'region');
     }
 

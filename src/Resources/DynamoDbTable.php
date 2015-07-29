@@ -1,10 +1,10 @@
 <?php
 namespace DreamFactory\Core\Aws\Resources;
 
-use Aws\DynamoDb\Enum\ComparisonOperator;
-use Aws\DynamoDb\Enum\ReturnValue;
-use Aws\DynamoDb\Enum\Type;
-use Aws\DynamoDb\Model\Attribute;
+use Aws\DynamoDb\Marshaler;
+use DreamFactory\Core\Aws\Enums\ComparisonOperator;
+use DreamFactory\Core\Aws\Enums\ReturnValue;
+use DreamFactory\Core\Aws\Enums\Type;
 use DreamFactory\Core\Enums\ApiOptions;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
@@ -118,12 +118,12 @@ class DynamoDbTable extends BaseDbTableResource
     /**
      * {@inheritdoc}
      */
-    public function retrieveRecordsByFilter($table, $filter = null, $params = array(), $extras = array())
+    public function retrieveRecordsByFilter($table, $filter = null, $params = [], $extras = [])
     {
         $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
         $ssFilters = ArrayUtils::get($extras, 'ss_filters');
 
-        $scanProperties = array(static::TABLE_INDICATOR => $table);
+        $scanProperties = [static::TABLE_INDICATOR => $table];
 
         $fields = static::buildAttributesToGet($fields);
         if (!empty($fields)) {
@@ -144,7 +144,7 @@ class DynamoDbTable extends BaseDbTableResource
             $result = $this->parent->getConnection()->scan($scanProperties);
             $items = ArrayUtils::clean($result['Items']);
 
-            $out = array();
+            $out = [];
             foreach ($items as $item) {
                 $out[] = $this->unformatAttributes($item);
             }
@@ -168,7 +168,7 @@ class DynamoDbTable extends BaseDbTableResource
     protected function parseRecord($record, $fields_info, $filter_info = null, $for_update = false, $old_record = null)
     {
 //        $record = DataFormat::arrayKeyLower( $record );
-        $parsed = (empty($fields_info)) ? $record : array();
+        $parsed = (empty($fields_info)) ? $record : [];
         if (!empty($fields_info)) {
             $keys = array_keys($record);
             $values = array_values($record);
@@ -211,14 +211,14 @@ class DynamoDbTable extends BaseDbTableResource
                         break;
                     case 'user_id_on_create':
                         if (!$for_update) {
-                            $userId = 1;//Session::getCurrentUserId();
+                            $userId = Session::getCurrentUserId();
                             if (isset($userId)) {
                                 $parsed[$name] = $userId;
                             }
                         }
                         break;
                     case 'user_id_on_update':
-                        $userId = 1;//Session::getCurrentUserId();
+                        $userId = Session::getCurrentUserId();
                         if (isset($userId)) {
                             $parsed[$name] = $userId;
                         }
@@ -242,9 +242,19 @@ class DynamoDbTable extends BaseDbTableResource
      */
     protected function formatAttributes($record, $for_update = false)
     {
-        $format = ($for_update) ? Attribute::FORMAT_UPDATE : Attribute::FORMAT_PUT;
+        $marshaler = new Marshaler();
 
-        return $this->parent->getConnection()->formatAttributes($record, $format);
+        if ($for_update) {
+            if (is_array($record)) {
+                foreach ($record as $key => &$value) {
+                    $value = ['Action' => 'PUT', 'Value' => $marshaler->marshalValue($value)];
+                }
+
+                return $record;
+            }
+        }
+
+        return $marshaler->marshalItem($record);
     }
 
     /**
@@ -254,7 +264,7 @@ class DynamoDbTable extends BaseDbTableResource
      */
     protected function unformatAttributes($native)
     {
-        $out = array();
+        $out = [];
         if (is_array($native)) {
             foreach ($native as $key => $value) {
                 $out[$key] = static::unformatValue($value);
@@ -266,6 +276,10 @@ class DynamoDbTable extends BaseDbTableResource
 
     protected static function unformatValue($value)
     {
+        $marshaler = new Marshaler();
+
+        return $marshaler->unmarshalValue($value);
+
         // represented as arrays, though there is only ever one item present
         foreach ($value as $type => $actual) {
             switch ($type) {
@@ -282,7 +296,7 @@ class DynamoDbTable extends BaseDbTableResource
                 case Type::BS:
                     return $actual;
                 case Type::NS:
-                    $out = array();
+                    $out = [];
                     foreach ($actual as $item) {
                         if (intval($item) == $item) {
                             $out[] = intval($item);
@@ -323,12 +337,12 @@ class DynamoDbTable extends BaseDbTableResource
 
     protected function getIdsInfo($table, $fields_info = null, &$requested_fields = null, $requested_types = null)
     {
-        $requested_fields = array();
-        $result = $this->parent->getConnection()->describeTable(array(static::TABLE_INDICATOR => $table));
+        $requested_fields = [];
+        $result = $this->parent->getConnection()->describeTable([static::TABLE_INDICATOR => $table]);
         $result = $result['Table'];
-        $keys = ArrayUtils::get($result, 'KeySchema', array());
-        $definitions = ArrayUtils::get($result, 'AttributeDefinitions', array());
-        $fields = array();
+        $keys = ArrayUtils::get($result, 'KeySchema', []);
+        $definitions = ArrayUtils::get($result, 'AttributeDefinitions', []);
+        $fields = [];
         foreach ($keys as $key) {
             $name = ArrayUtils::get($key, 'AttributeName');
             $keyType = ArrayUtils::get($key, 'KeyType');
@@ -340,29 +354,110 @@ class DynamoDbTable extends BaseDbTableResource
             }
 
             $requested_fields[] = $name;
-            $fields[] = array('name' => $name, 'key_type' => $keyType, 'type' => $type, 'required' => true);
+            $fields[] = ['name' => $name, 'key_type' => $keyType, 'type' => $type, 'required' => true];
         }
 
         return $fields;
     }
 
+    protected static function checkForIds(&$record, $ids_info, $extras = null, $on_create = false, $remove = false)
+    {
+        $id = null;
+        if (!empty($ids_info)) {
+            if (1 == count($ids_info)) {
+                $info = $ids_info[0];
+                $name = ArrayUtils::get($info, 'name');
+                if (is_array($record)) {
+                    $value = ArrayUtils::get($record, $name);
+                    if ($remove) {
+                        unset($record[$name]);
+                    }
+                } else {
+                    $value = $record;
+                }
+                if (!empty($value)) {
+                    $type = ArrayUtils::get($info, 'type');
+                    switch ($type) {
+                        case Type::N:
+                            $value = intval($value);
+                            break;
+                        case Type::S:
+                            $value = strval($value);
+                            break;
+                    }
+                    $id = $value;
+                } else {
+                    $required = ArrayUtils::getBool($info, 'required');
+                    // could be passed in as a parameter affecting all records
+                    $param = ArrayUtils::get($extras, $name);
+                    if ($on_create && $required && empty($param)) {
+                        return false;
+                    }
+                }
+            } else {
+                $id = [];
+                foreach ($ids_info as $info) {
+                    $name = ArrayUtils::get($info, 'name');
+                    if (is_array($record)) {
+                        $value = ArrayUtils::get($record, $name);
+                        if ($remove) {
+                            unset($record[$name]);
+                        }
+                    } else {
+                        $value = $record;
+                    }
+                    if (!empty($value)) {
+                        $type = ArrayUtils::get($info, 'type');
+                        switch ($type) {
+                            case Type::N:
+                                $value = intval($value);
+                                break;
+                            case Type::S:
+                                $value = strval($value);
+                                break;
+                        }
+                        $id[$name] = $value;
+                    } else {
+                        $required = ArrayUtils::getBool($info, 'required');
+                        // could be passed in as a parameter affecting all records
+                        $param = ArrayUtils::get($extras, $name);
+                        if ($on_create && $required && empty($param)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($id)) {
+            return $id;
+        } elseif ($on_create) {
+            return [];
+        }
+
+        return false;
+    }
+
     protected static function buildKey($ids_info, &$record, $remove = false)
     {
-        $keys = array();
+        $keys = [];
         foreach ($ids_info as $info) {
             $name = ArrayUtils::get($info, 'name');
             $type = ArrayUtils::get($info, 'type');
-            $value = ArrayUtils::get($record, $name, null, $remove);
+            $value = ArrayUtils::get($record, $name, null);
+            if ($remove) {
+                unset($record[$name]);
+            }
             if (empty($value)) {
                 throw new BadRequestException("Identifying field(s) not found in record.");
             }
 
             switch ($type) {
                 case Type::N:
-                    $value = array(Type::N => strval($value));
+                    $value = [Type::N => strval($value)];
                     break;
                 default:
-                    $value = array(Type::S => $value);
+                    $value = [Type::S => $value];
             }
             $keys[$name] = $value;
         }
@@ -377,14 +472,14 @@ class DynamoDbTable extends BaseDbTableResource
 
         // build filter array if necessary, add server-side filters if necessary
         if (!is_array($filter)) {
-            Session::replaceLookups( $filter );
+            Session::replaceLookups($filter);
             $criteria = static::buildFilterArray($filter, $params);
         } else {
             $criteria = $filter;
         }
         $serverCriteria = static::buildSSFilterArray($ss_filters);
         if (!empty($serverCriteria)) {
-            $criteria = (!empty($criteria)) ? array($criteria, $serverCriteria) : $serverCriteria;
+            $criteria = (!empty($criteria)) ? [$criteria, $serverCriteria] : $serverCriteria;
         }
 
         return $criteria;
@@ -402,7 +497,7 @@ class DynamoDbTable extends BaseDbTableResource
             return null;
         }
 
-        $criteria = array();
+        $criteria = [];
         $combiner = ArrayUtils::get($ss_filters, 'filter_op', 'and');
         foreach ($filters as $filter) {
             $name = ArrayUtils::get($filter, 'name');
@@ -426,7 +521,7 @@ class DynamoDbTable extends BaseDbTableResource
             case 'AND':
                 break;
             case 'OR':
-                $criteria = array('split' => $criteria);
+                $criteria = ['split' => $criteria];
                 break;
             default:
                 // log and bail
@@ -446,21 +541,21 @@ class DynamoDbTable extends BaseDbTableResource
     protected static function buildFilterArray($filter, $params = null)
     {
         if (empty($filter)) {
-            return array();
+            return [];
         }
 
         if (is_array($filter)) {
             return $filter; // assume they know what they are doing
         }
 
-        $search = array(' or ', ' and ', ' nor ');
-        $replace = array(' || ', ' && ', ' NOR ');
+        $search = [' or ', ' and ', ' nor '];
+        $replace = [' || ', ' && ', ' NOR '];
         $filter = trim(str_ireplace($search, $replace, $filter));
 
         // handle logical operators first
         $ops = array_map('trim', explode(' && ', $filter));
         if (count($ops) > 1) {
-            $parts = array();
+            $parts = [];
             foreach ($ops as $op) {
                 $parts = array_merge($parts, static::buildFilterArray($op, $params));
             }
@@ -485,7 +580,7 @@ class DynamoDbTable extends BaseDbTableResource
         }
 
         // the rest should be comparison operators
-        $search = array(
+        $search = [
             ' eq ',
             ' ne ',
             ' <> ',
@@ -499,8 +594,8 @@ class DynamoDbTable extends BaseDbTableResource
             ' contains ',
             ' not_contains ',
             ' like '
-        );
-        $replace = array(
+        ];
+        $replace = [
             '=',
             '!=',
             '!=',
@@ -514,11 +609,11 @@ class DynamoDbTable extends BaseDbTableResource
             ' CONTAINS ',
             ' NOT_CONTAINS ',
             ' LIKE '
-        );
+        ];
         $filter = trim(str_ireplace($search, $replace, $filter));
 
         // Note: order matters, watch '='
-        $sqlOperators = array(
+        $sqlOperators = [
             '!=',
             '>=',
             '<=',
@@ -531,8 +626,8 @@ class DynamoDbTable extends BaseDbTableResource
             ' CONTAINS ',
             ' NOT_CONTAINS ',
             ' LIKE '
-        );
-        $dynamoOperators = array(
+        ];
+        $dynamoOperators = [
             ComparisonOperator::NE,
             ComparisonOperator::GE,
             ComparisonOperator::LE,
@@ -545,7 +640,7 @@ class DynamoDbTable extends BaseDbTableResource
             ComparisonOperator::CONTAINS,
             ComparisonOperator::NOT_CONTAINS,
             ComparisonOperator::CONTAINS
-        );
+        ];
 
         foreach ($sqlOperators as $key => $sqlOp) {
             $ops = array_map('trim', explode($sqlOp, $filter));
@@ -556,35 +651,35 @@ class DynamoDbTable extends BaseDbTableResource
                 switch ($dynamoOp) {
                     case ComparisonOperator::NE:
                         if (0 == strcasecmp('null', $ops[1])) {
-                            return array(
-                                $ops[0] => array(
+                            return [
+                                $ops[0] => [
                                     'ComparisonOperator' => ComparisonOperator::NOT_NULL
-                                )
-                            );
+                                ]
+                            ];
                         }
 
-                        return array(
-                            $ops[0] => array(
+                        return [
+                            $ops[0] => [
                                 'AttributeValueList' => $val,
                                 'ComparisonOperator' => $dynamoOp
-                            )
-                        );
+                            ]
+                        ];
 
                     case ComparisonOperator::EQ:
                         if (0 == strcasecmp('null', $ops[1])) {
-                            return array(
-                                $ops[0] => array(
+                            return [
+                                $ops[0] => [
                                     'ComparisonOperator' => ComparisonOperator::NULL
-                                )
-                            );
+                                ]
+                            ];
                         }
 
-                        return array(
-                            $ops[0] => array(
+                        return [
+                            $ops[0] => [
                                 'AttributeValueList' => $val,
                                 'ComparisonOperator' => ComparisonOperator::EQ
-                            )
-                        );
+                            ]
+                        ];
 
                     case ComparisonOperator::CONTAINS:
 //			WHERE name LIKE "%Joe%"	use CONTAINS "Joe"
@@ -599,40 +694,40 @@ class DynamoDbTable extends BaseDbTableResource
                         $val = trim($val, "'\"");
                         if ('%' == $val[strlen($val) - 1]) {
                             if ('%' == $val[0]) {
-                                return array(
-                                    $ops[0] => array(
-                                        'AttributeValueList' => array($type => trim($val, '%')),
+                                return [
+                                    $ops[0] => [
+                                        'AttributeValueList' => [$type => trim($val, '%')],
                                         'ComparisonOperator' => ComparisonOperator::CONTAINS
-                                    )
-                                );
+                                    ]
+                                ];
                             } else {
                                 throw new BadRequestException('ENDS_WITH currently not supported in DynamoDb.');
                             }
                         } else {
                             if ('%' == $val[0]) {
-                                return array(
-                                    $ops[0] => array(
-                                        'AttributeValueList' => array($type => trim($val, '%')),
+                                return [
+                                    $ops[0] => [
+                                        'AttributeValueList' => [$type => trim($val, '%')],
                                         'ComparisonOperator' => ComparisonOperator::BEGINS_WITH
-                                    )
-                                );
+                                    ]
+                                ];
                             } else {
-                                return array(
-                                    $ops[0] => array(
-                                        'AttributeValueList' => array($type => trim($val, '%')),
+                                return [
+                                    $ops[0] => [
+                                        'AttributeValueList' => [$type => trim($val, '%')],
                                         'ComparisonOperator' => ComparisonOperator::CONTAINS
-                                    )
-                                );
+                                    ]
+                                ];
                             }
                         }
 
                     default:
-                        return array(
-                            $ops[0] => array(
+                        return [
+                            $ops[0] => [
                                 'AttributeValueList' => $val,
                                 'ComparisonOperator' => $dynamoOp
-                            )
-                        );
+                            ]
+                        ];
                 }
             }
         }
@@ -656,21 +751,22 @@ class DynamoDbTable extends BaseDbTableResource
         }
 
         if (trim($value, "'\"") !== $value) {
-            return array(array(Type::S => trim($value, "'\""))); // meant to be a string
+            return [[Type::S => trim($value, "'\"")]]; // meant to be a string
         }
 
         if (is_numeric($value)) {
             $value = ($value == strval(intval($value))) ? intval($value) : floatval($value);
 
-            return array(array(Type::N => $value));
+            // Scan strangely requires numbers to be strings.
+            return [[Type::N => strval($value)]];
         }
 
         if (0 == strcasecmp($value, 'true')) {
-            return array(array(Type::N => 1));
+            return [[Type::N => 1]];
         }
 
         if (0 == strcasecmp($value, 'false')) {
-            return array(array(Type::N => 0));
+            return [[Type::N => 0]];
         }
 
         return $value;
@@ -702,7 +798,7 @@ class DynamoDbTable extends BaseDbTableResource
         $idFields = ArrayUtils::get($extras, 'id_fields');
         $updates = ArrayUtils::get($extras, 'updates');
 
-        $out = array();
+        $out = [];
         switch ($this->getAction()) {
             case Verbs::POST:
                 $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters);
@@ -712,13 +808,12 @@ class DynamoDbTable extends BaseDbTableResource
 
                 $native = $this->formatAttributes($parsed);
 
-                /*$result = */
-                $this->parent->getConnection()->putItem(
-                    array(
+                $result = $this->parent->getConnection()->putItem(
+                    [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Item'                  => $native,
-                        'Expected'              => array($idFields[0] => array('Exists' => false))
-                    )
+                        'Expected'              => [$idFields[0] => ['Exists' => false]]
+                    ]
                 );
 
                 if ($rollback) {
@@ -748,16 +843,16 @@ class DynamoDbTable extends BaseDbTableResource
 
                 $options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::NONE;
                 $result = $this->parent->getConnection()->putItem(
-                    array(
+                    [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Item'                  => $native,
                         //                            'Expected'     => $expected,
                         'ReturnValues'          => $options
-                    )
+                    ]
                 );
 
                 if ($rollback) {
-                    $temp = ArrayUtils::get($result, 'Attributes');
+                    $temp = $result['Attributes'];
                     if (!empty($temp)) {
                         $this->addToRollback($temp);
                     }
@@ -766,7 +861,6 @@ class DynamoDbTable extends BaseDbTableResource
                 $out = static::cleanRecord($record, $fields, $idFields);
                 break;
 
-            case Verbs::MERGE:
             case Verbs::PATCH:
                 if (!empty($updates)) {
                     $updates[$idFields[0]] = $id;
@@ -785,15 +879,15 @@ class DynamoDbTable extends BaseDbTableResource
                 $options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::ALL_NEW;
 
                 $result = $this->parent->getConnection()->updateItem(
-                    array(
+                    [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Key'                   => $key,
                         'AttributeUpdates'      => $native,
                         'ReturnValues'          => $options
-                    )
+                    ]
                 );
 
-                $temp = ArrayUtils::get($result, 'Attributes', array());
+                $temp = $result['Attributes'];
                 if ($rollback) {
                     $this->addToRollback($temp);
 
@@ -811,18 +905,18 @@ class DynamoDbTable extends BaseDbTableResource
                     return parent::addToTransaction(null, $id);
                 }
 
-                $record = array($idFields[0] => $id);
+                $record = [$idFields[0] => $id];
                 $key = static::buildKey($idsInfo, $record);
 
                 $result = $this->parent->getConnection()->deleteItem(
-                    array(
+                    [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Key'                   => $key,
                         'ReturnValues'          => ReturnValue::ALL_OLD,
-                    )
+                    ]
                 );
 
-                $temp = ArrayUtils::get($result, 'Attributes', array());
+                $temp = $result['Attributes'];
 
                 if ($rollback) {
                     $this->addToRollback($temp);
@@ -833,13 +927,13 @@ class DynamoDbTable extends BaseDbTableResource
                 break;
 
             case Verbs::GET:
-                $record = array($idFields[0] => $id);
+                $record = [$idFields[0] => $id];
                 $key = static::buildKey($idsInfo, $record);
-                $scanProperties = array(
+                $scanProperties = [
                     static::TABLE_INDICATOR => $this->transactionTable,
                     'Key'                   => $key,
                     'ConsistentRead'        => true,
-                );
+                ];
 
                 $fields = static::buildAttributesToGet($fields, $idFields);
                 if (!empty($fields)) {
@@ -853,7 +947,7 @@ class DynamoDbTable extends BaseDbTableResource
                 }
 
                 // Grab value from the result object like an array
-                $out = $this->unformatAttributes($result['Item']);
+                $out = $this->unformatAttributes($result);
                 break;
             default:
                 break;
@@ -877,17 +971,17 @@ class DynamoDbTable extends BaseDbTableResource
         $idsInfo = ArrayUtils::get($extras, 'ids_info');
         $idFields = ArrayUtils::get($extras, 'id_fields');
 
-        $out = array();
+        $out = [];
         switch ($this->getAction()) {
             case Verbs::POST:
-                $requests = array();
+                $requests = [];
                 foreach ($this->batchRecords as $item) {
-                    $requests[] = array('PutRequest' => array('Item' => $item));
+                    $requests[] = ['PutRequest' => ['Item' => $item]];
                 }
 
                 /*$result = */
                 $this->parent->getConnection()->batchWriteItem(
-                    array('RequestItems' => array($this->transactionTable => $requests))
+                    ['RequestItems' => [$this->transactionTable => $requests]]
                 );
 
                 // todo check $result['UnprocessedItems'] for 'PutRequest'
@@ -898,14 +992,14 @@ class DynamoDbTable extends BaseDbTableResource
                 break;
 
             case Verbs::PUT:
-                $requests = array();
+                $requests = [];
                 foreach ($this->batchRecords as $item) {
-                    $requests[] = array('PutRequest' => array('Item' => $item));
+                    $requests[] = ['PutRequest' => ['Item' => $item]];
                 }
 
                 /*$result = */
                 $this->parent->getConnection()->batchWriteItem(
-                    array('RequestItems' => array($this->transactionTable => $requests))
+                    ['RequestItems' => [$this->transactionTable => $requests]]
                 );
 
                 // todo check $result['UnprocessedItems'] for 'PutRequest'
@@ -921,18 +1015,18 @@ class DynamoDbTable extends BaseDbTableResource
                 break;
 
             case Verbs::DELETE:
-                $requests = array();
+                $requests = [];
                 foreach ($this->batchIds as $id) {
-                    $record = array($idFields[0] => $id);
+                    $record = [$idFields[0] => $id];
                     $out[] = $record;
                     $key = static::buildKey($idsInfo, $record);
-                    $requests[] = array('DeleteRequest' => array('Key' => $key));
+                    $requests[] = ['DeleteRequest' => ['Key' => $key]];
                 }
                 if ($requireMore) {
-                    $scanProperties = array(
+                    $scanProperties = [
                         'Keys'           => $this->batchRecords,
                         'ConsistentRead' => true,
-                    );
+                    ];
 
                     $attributes = static::buildAttributesToGet($fields, $idFields);
                     if (!empty($attributes)) {
@@ -941,14 +1035,14 @@ class DynamoDbTable extends BaseDbTableResource
 
                     // Get multiple items by key in a BatchGetItem request
                     $result = $this->parent->getConnection()->batchGetItem(
-                        array(
-                            'RequestItems' => array(
+                        [
+                            'RequestItems' => [
                                 $this->transactionTable => $scanProperties
-                            )
-                        )
+                            ]
+                        ]
                     );
 
-                    $out = array();
+                    $out = [];
                     $items = $result->getPath("Responses/{$this->transactionTable}");
                     foreach ($items as $item) {
                         $out[] = $this->unformatAttributes($item);
@@ -957,24 +1051,24 @@ class DynamoDbTable extends BaseDbTableResource
 
                 /*$result = */
                 $this->parent->getConnection()->batchWriteItem(
-                    array('RequestItems' => array($this->transactionTable => $requests))
+                    ['RequestItems' => [$this->transactionTable => $requests]]
                 );
 
                 // todo check $result['UnprocessedItems'] for 'DeleteRequest'
                 break;
 
             case Verbs::GET:
-                $keys = array();
+                $keys = [];
                 foreach ($this->batchIds as $id) {
-                    $record = array($idFields[0] => $id);
+                    $record = [$idFields[0] => $id];
                     $key = static::buildKey($idsInfo, $record);
                     $keys[] = $key;
                 }
 
-                $scanProperties = array(
+                $scanProperties = [
                     'Keys'           => $keys,
                     'ConsistentRead' => true,
-                );
+                ];
 
                 $fields = static::buildAttributesToGet($fields, $idFields);
                 if (!empty($fields)) {
@@ -983,11 +1077,11 @@ class DynamoDbTable extends BaseDbTableResource
 
                 // Get multiple items by key in a BatchGetItem request
                 $result = $this->parent->getConnection()->batchGetItem(
-                    array(
-                        'RequestItems' => array(
+                    [
+                        'RequestItems' => [
                             $this->transactionTable => $scanProperties
-                        )
-                    )
+                        ]
+                    ]
                 );
 
                 $items = $result->getPath("Responses/{$this->transactionTable}");
@@ -999,8 +1093,8 @@ class DynamoDbTable extends BaseDbTableResource
                 break;
         }
 
-        $this->batchIds = array();
-        $this->batchRecords = array();
+        $this->batchIds = [];
+        $this->batchRecords = [];
 
         return $out;
     }
@@ -1021,14 +1115,14 @@ class DynamoDbTable extends BaseDbTableResource
         if (!empty($this->rollbackRecords)) {
             switch ($this->getAction()) {
                 case Verbs::POST:
-                    $requests = array();
+                    $requests = [];
                     foreach ($this->rollbackRecords as $item) {
-                        $requests[] = array('DeleteRequest' => array('Key' => $item));
+                        $requests[] = ['DeleteRequest' => ['Key' => $item]];
                     }
 
                     /* $result = */
                     $this->parent->getConnection()->batchWriteItem(
-                        array('RequestItems' => array($this->transactionTable => $requests))
+                        ['RequestItems' => [$this->transactionTable => $requests]]
                     );
 
                     // todo check $result['UnprocessedItems'] for 'DeleteRequest'
@@ -1038,14 +1132,14 @@ class DynamoDbTable extends BaseDbTableResource
                 case Verbs::PATCH:
                 case Verbs::MERGE:
                 case Verbs::DELETE:
-                    $requests = array();
+                    $requests = [];
                     foreach ($this->rollbackRecords as $item) {
-                        $requests[] = array('PutRequest' => array('Item' => $item));
+                        $requests[] = ['PutRequest' => ['Item' => $item]];
                     }
 
                     /* $result = */
                     $this->parent->getConnection()->batchWriteItem(
-                        array('RequestItems' => array($this->transactionTable => $requests))
+                        ['RequestItems' => [$this->transactionTable => $requests]]
                     );
 
                     // todo check $result['UnprocessedItems'] for 'PutRequest'
@@ -1055,7 +1149,7 @@ class DynamoDbTable extends BaseDbTableResource
                     break;
             }
 
-            $this->rollbackRecords = array();
+            $this->rollbackRecords = [];
         }
 
         return true;

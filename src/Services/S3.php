@@ -1,7 +1,6 @@
 <?php
 namespace DreamFactory\Core\Aws\Services;
 
-use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
 use DreamFactory\Core\Aws\Components\S3FileSystem;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Services\RemoteFileService;
@@ -19,7 +18,6 @@ class S3 extends RemoteFileService
      */
     protected function setDriver($config)
     {
-        AwsSvcUtilities::updateCredentials($config, false);
         $this->container = ArrayUtils::get($config, 'container');
 
         if (empty($this->container)) {

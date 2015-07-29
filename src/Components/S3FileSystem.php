@@ -1,8 +1,9 @@
 <?php
 namespace DreamFactory\Core\Aws\Components;
 
+use DreamFactory\Core\Exceptions\InternalServerErrorException;
+use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
-use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
 use DreamFactory\Core\Components\RemoteFileSystem;
 use DreamFactory\Core\Exceptions\DfException;
 use DreamFactory\Core\Exceptions\BadRequestException;
@@ -15,12 +16,6 @@ use Aws\S3\S3Client;
  */
 class S3FileSystem extends RemoteFileSystem
 {
-    //*************************************************************************
-    //	Constants
-    //*************************************************************************
-
-    const CLIENT_NAME = 'S3';
-
     //*************************************************************************
     //	Members
     //*************************************************************************
@@ -46,10 +41,31 @@ class S3FileSystem extends RemoteFileSystem
 
     /**
      * @param array $config
+     *
+     * @throws InternalServerErrorException
      */
     public function __construct($config)
     {
-        $this->blobConn = AwsSvcUtilities::createClient($config, static::CLIENT_NAME);
+        //  Replace any private lookups
+        Session::replaceLookups( $config, true );
+        // statically assign the our supported version
+        $config['version'] = '2006-03-01';
+        if (isset($config['key']))
+        {
+            $config['credentials']['key'] = $config['key'];
+        }
+        if (isset($config['secret']))
+        {
+            $config['credentials']['secret'] = $config['secret'];
+        }
+
+        try {
+            $this->blobConn = new S3Client($config);
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("AWS DynamoDb Service Exception:\n{$ex->getMessage()}",
+                $ex->getCode());
+        }
+
         $this->container = ArrayUtils::get($config, 'container');
 
         if (!$this->containerExists($this->container)) {
@@ -412,7 +428,7 @@ class S3FileSystem extends RemoteFileSystem
         $keys = [];
 
         do {
-            /** @var \Aws\S3\Iterator\ListObjectsIterator $list */
+            /** @var \Aws\Result $list */
             $list = $this->blobConn->listObjects($options);
 
             $objects = $list->get('Contents');
@@ -450,7 +466,7 @@ class S3FileSystem extends RemoteFileSystem
             $options['Key'] = $key;
 
             if ($isObject) {
-                /** @var \Aws\S3\Iterator\ListObjectsIterator $meta */
+                /** @var \Aws\Result $meta */
                 $meta = $this->blobConn->headObject($options);
 
                 $out[] = [
@@ -486,7 +502,7 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            /** @var \Aws\S3\Iterator\ListObjectsIterator $result */
+            /** @var \Aws\Result $result */
             $result = $this->blobConn->headObject(
                 [
                     'Bucket' => $container,
@@ -519,7 +535,7 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
-            /** @var \Aws\S3\Iterator\ListObjectsIterator $result */
+            /** @var \Aws\Result $result */
             $result = $this->blobConn->getObject(
                 [
                     'Bucket' => $container,

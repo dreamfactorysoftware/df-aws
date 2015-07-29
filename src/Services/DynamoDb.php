@@ -2,7 +2,6 @@
 namespace DreamFactory\Core\Aws\Services;
 
 use Aws\DynamoDb\DynamoDbClient;
-use DreamFactory\Core\Aws\Utility\AwsSvcUtilities;
 use DreamFactory\Core\Aws\Resources\DynamoDbSchema;
 use DreamFactory\Core\Aws\Resources\DynamoDbTable;
 use DreamFactory\Core\Exceptions\BadRequestException;
@@ -24,8 +23,9 @@ class DynamoDb extends BaseNoSqlDbService
     //	Constants
     //*************************************************************************
 
-    const CLIENT_NAME = 'DynamoDb';
-
+    /**
+     *
+     */
     const TABLE_INDICATOR = 'TableName';
 
     //*************************************************************************
@@ -65,21 +65,37 @@ class DynamoDb extends BaseNoSqlDbService
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    public function __construct($settings = array())
+    public function __construct($settings = [])
     {
         parent::__construct($settings);
 
         $config = ArrayUtils::clean(ArrayUtils::get($settings, 'config'));
-        AwsSvcUtilities::updateCredentials($config, true);
+        //  Replace any private lookups
+        Session::replaceLookups($config, true);
+        // statically assign our supported version
+        $config['version'] = '2012-08-10';
+        if (isset($config['key']))
+        {
+            $config['credentials']['key'] = $config['key'];
+        }
+        if (isset($config['secret']))
+        {
+            $config['credentials']['secret'] = $config['secret'];
+        }
 
         // set up a default table schema
         $parameters = ArrayUtils::clean(ArrayUtils::get($config, 'parameters'));
-        Session::replaceLookups( $parameters );
+        Session::replaceLookups($parameters);
         if (null !== ($table = ArrayUtils::get($parameters, 'default_create_table'))) {
             $this->defaultCreateTable = $table;
         }
 
-        $this->dbConn = AwsSvcUtilities::createClient($config, static::CLIENT_NAME);
+        try {
+            $this->dbConn = new DynamoDbClient($config);
+        } catch (\Exception $ex) {
+            throw new InternalServerErrorException("AWS DynamoDb Service Exception:\n{$ex->getMessage()}",
+                $ex->getCode());
+        }
     }
 
     /**
@@ -96,6 +112,7 @@ class DynamoDb extends BaseNoSqlDbService
 
     /**
      * @throws \Exception
+     * @return DynamoDbClient
      */
     public function getConnection()
     {
@@ -106,15 +123,18 @@ class DynamoDb extends BaseNoSqlDbService
         return $this->dbConn;
     }
 
+    /**
+     * @return array
+     */
     public function getTables()
     {
-        $out = array();
+        $out = [];
         do {
             $result = $this->dbConn->listTables(
-                array(
+                [
                     'Limit'                   => 100, // arbitrary limit
                     'ExclusiveStartTableName' => isset($result) ? $result['LastEvaluatedTableName'] : null
-                )
+                ]
             );
 
             $out = array_merge($out, $result['TableNames']);
