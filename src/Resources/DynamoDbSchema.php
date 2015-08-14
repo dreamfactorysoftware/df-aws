@@ -54,6 +54,14 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
     /**
      * {@inheritdoc}
      */
+    public function listResources($schema = null, $refresh = false)
+    {
+        return $this->parent->getTables();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getResources($only_handlers = false)
     {
         if ($only_handlers) {
@@ -61,7 +69,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
         }
 //        $refresh = $this->request->queryBool('refresh');
 
-        $names = $this->parent->getTables();
+        $names = $this->listResources();
 
         $extras =
             DbUtilities::getSchemaExtrasForTables($this->parent->getServiceId(), $names, false, 'table,label,plural');
@@ -90,20 +98,6 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
         }
 
         return $tables;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function listAccessComponents($schema = null, $refresh = false)
-    {
-        $output = [];
-        $result = $this->parent->getTables();
-        foreach ($result as $name) {
-            $output[] = static::RESOURCE_NAME . '/' . $name;
-        }
-
-        return $output;
     }
 
     /**
