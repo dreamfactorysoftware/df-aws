@@ -33,14 +33,23 @@ class SnsSubscription extends BaseSnsResource
     //*************************************************************************
 
     /**
-     * @return array
-     * @throws BadRequestException
-     * @throws InternalServerErrorException
-     * @throws NotFoundException
-     * @throws null
+     * {@inheritdoc}
      */
-    protected function getSubscriptionsAsArray()
+    protected function getResourceIdentifier()
     {
+        return 'SubscriptionArn';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getResources($only_handlers = false)
+    {
+        if ($only_handlers) {
+            return [];
+        }
+//        $refresh = $this->request->queryBool('refresh');
+
         $out = [];
         $token = null;
         try {
@@ -86,7 +95,7 @@ class SnsSubscription extends BaseSnsResource
     public function listResources($fields = null)
     {
         $resources = [];
-        $result = $this->getSubscriptionsAsArray();
+        $result = $this->getResources();
         foreach ($result as $sub) {
             switch ($fields) {
                 case false:

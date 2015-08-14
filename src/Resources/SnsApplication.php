@@ -33,14 +33,23 @@ class SnsApplication extends BaseSnsResource
     //*************************************************************************
 
     /**
-     * @return array
-     * @throws BadRequestException
-     * @throws InternalServerErrorException
-     * @throws NotFoundException
-     * @throws null
+     * {@inheritdoc}
      */
-    protected function getApplicationsAsArray()
+    protected function getResourceIdentifier()
     {
+        return 'PlatformApplicationArn';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getResources($only_handlers = false)
+    {
+        if ($only_handlers) {
+            return [];
+        }
+//        $refresh = $this->request->queryBool('refresh');
+
         $out = [];
         $token = null;
         try {
@@ -106,7 +115,7 @@ class SnsApplication extends BaseSnsResource
     public function listResources($fields = null)
     {
         $resources = [];
-        $result = $this->getApplicationsAsArray();
+        $result = $this->getResources();
         foreach ($result as $app) {
             switch ($fields) {
                 case false:
