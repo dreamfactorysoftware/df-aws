@@ -33,14 +33,23 @@ class SnsTopic extends BaseSnsResource
     //*************************************************************************
 
     /**
-     * @return array
-     * @throws BadRequestException
-     * @throws InternalServerErrorException
-     * @throws NotFoundException
-     * @throws null
+     * {@inheritdoc}
      */
-    protected function getTopicsAsArray()
+    protected function getResourceIdentifier()
     {
+        return 'TopicArn';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getResources($only_handlers = false)
+    {
+        if ($only_handlers) {
+            return [];
+        }
+//        $refresh = $this->request->queryBool('refresh');
+
         $out = [];
         $token = null;
         try {
@@ -76,7 +85,7 @@ class SnsTopic extends BaseSnsResource
     public function listResources($fields = null)
     {
         $resources = [];
-        $result = $this->getTopicsAsArray();
+        $result = $this->getResources();
         foreach ($result as $topic) {
             switch ($fields) {
                 case false:

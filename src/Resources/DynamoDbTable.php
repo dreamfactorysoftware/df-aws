@@ -63,6 +63,14 @@ class DynamoDbTable extends BaseDbTableResource
     /**
      * {@inheritdoc}
      */
+    public function listResources($schema = null, $refresh = false)
+    {
+        return $this->parent->getTables();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getResources($only_handlers = false)
     {
         if ($only_handlers) {
@@ -70,7 +78,7 @@ class DynamoDbTable extends BaseDbTableResource
         }
 //        $refresh = $this->request->queryBool('refresh');
 
-        $names = $this->parent->getTables();
+        $names = $this->listResources();
 
         $extras =
             DbUtilities::getSchemaExtrasForTables($this->parent->getServiceId(), $names, false, 'table,label,plural');
@@ -99,20 +107,6 @@ class DynamoDbTable extends BaseDbTableResource
         }
 
         return $tables;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function listAccessComponents($schema = null, $refresh = false)
-    {
-        $output = [];
-        $result = $this->parent->getTables();
-        foreach ($result as $name) {
-            $output[] = static::RESOURCE_NAME . '/' . $name;
-        }
-
-        return $output;
     }
 
     /**
@@ -281,35 +275,35 @@ class DynamoDbTable extends BaseDbTableResource
         return $marshaler->unmarshalValue($value);
 
         // represented as arrays, though there is only ever one item present
-        foreach ($value as $type => $actual) {
-            switch ($type) {
-                case Type::S:
-                case Type::B:
-                    return $actual;
-                case Type::N:
-                    if (intval($actual) == $actual) {
-                        return intval($actual);
-                    } else {
-                        return floatval($actual);
-                    }
-                case Type::SS:
-                case Type::BS:
-                    return $actual;
-                case Type::NS:
-                    $out = [];
-                    foreach ($actual as $item) {
-                        if (intval($item) == $item) {
-                            $out[] = intval($item);
-                        } else {
-                            $out[] = floatval($item);
-                        }
-                    }
-
-                    return $out;
-            }
-        }
-
-        return $value;
+//        foreach ($value as $type => $actual) {
+//            switch ($type) {
+//                case Type::S:
+//                case Type::B:
+//                    return $actual;
+//                case Type::N:
+//                    if (intval($actual) == $actual) {
+//                        return intval($actual);
+//                    } else {
+//                        return floatval($actual);
+//                    }
+//                case Type::SS:
+//                case Type::BS:
+//                    return $actual;
+//                case Type::NS:
+//                    $out = [];
+//                    foreach ($actual as $item) {
+//                        if (intval($item) == $item) {
+//                            $out[] = intval($item);
+//                        } else {
+//                            $out[] = floatval($item);
+//                        }
+//                    }
+//
+//                    return $out;
+//            }
+//        }
+//
+//        return $value;
     }
 
     protected static function buildAttributesToGet($fields = null, $id_fields = null)

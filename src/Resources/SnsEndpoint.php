@@ -33,6 +33,14 @@ class SnsEndpoint extends BaseSnsResource
     //*************************************************************************
 
     /**
+     * {@inheritdoc}
+     */
+    protected function getResourceIdentifier()
+    {
+        return 'EndpointArn';
+    }
+
+    /**
      * @return array
      * @throws BadRequestException
      * @throws InternalServerErrorException
