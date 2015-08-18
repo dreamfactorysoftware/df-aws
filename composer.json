@@ -1,7 +1,6 @@
 {
   "name": "dreamfactory/df-aws",
   "description": "AWS package containing services for the DreamFactory Platform 2.0.",
-  "minimum-stability": "dev",
   "keywords": [
     "dreamfactory",
     "dsp",
@@ -33,12 +32,17 @@
     "wiki": "https://wiki.dreamfactory.com"
   },
   "require": {
-    "dreamfactory/df-core": "dev-develop as dev-master",
+    "dreamfactory/df-core": "~0.0.2",
     "aws/aws-sdk-php": "~3.2.0"
   },
   "autoload": {
     "psr-4": {
       "DreamFactory\\Core\\Aws\\": "src/"
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-develop": "0.0.x-dev"
     }
   }
 }
