@@ -37,36 +37,6 @@ class DynamoDbTable extends BaseDbTableResource
     //*************************************************************************
 
     /**
-     * {@InheritDoc}
-     */
-    public function correctTableName(&$name)
-    {
-        static $existing = null;
-
-        if (!$existing) {
-            $existing = $this->parent->getTables();
-        }
-
-        if (empty($name)) {
-            throw new BadRequestException('Table name can not be empty.');
-        }
-
-        if (false === array_search($name, $existing)) {
-            throw new NotFoundException("Table '$name' not found.");
-        }
-
-        return $name;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function listResources($schema = null, $refresh = false)
-    {
-        return $this->parent->getTables();
-    }
-
-    /**
      * {@inheritdoc}
      */
     public function retrieveRecordsByFilter($table, $filter = null, $params = [], $extras = [])
@@ -86,9 +56,15 @@ class DynamoDbTable extends BaseDbTableResource
             $scanProperties['ScanFilter'] = $parsedFilter;
         }
 
-        $limit = ArrayUtils::get($extras, ApiOptions::LIMIT);
+        $limit = intval(ArrayUtils::get($extras, ApiOptions::LIMIT));
         if ($limit > 0) {
             $scanProperties['Limit'] = $limit;
+            $scanProperties['Count'] = true;
+        }
+        $offset = intval(ArrayUtils::get($extras, ApiOptions::OFFSET));
+        if ($offset > 0) {
+            $scanProperties['ExclusiveStartKey'] = $offset;
+            $scanProperties['Count'] = true;
         }
 
         try {
@@ -99,6 +75,9 @@ class DynamoDbTable extends BaseDbTableResource
             foreach ($items as $item) {
                 $out[] = $this->unformatAttributes($item);
             }
+
+            $next = $this->unformatAttributes($result['LastEvaluatedKey']);
+            $count = $result['Count'];
 
             return $out;
         } catch (\Exception $ex) {

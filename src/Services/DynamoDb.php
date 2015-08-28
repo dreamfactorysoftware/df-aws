@@ -4,6 +4,8 @@ namespace DreamFactory\Core\Aws\Services;
 use Aws\DynamoDb\DynamoDbClient;
 use DreamFactory\Core\Aws\Resources\DynamoDbSchema;
 use DreamFactory\Core\Aws\Resources\DynamoDbTable;
+use DreamFactory\Core\Components\DbSchemaExtras;
+use DreamFactory\Core\Components\TableNameSchema;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
@@ -19,6 +21,8 @@ use DreamFactory\Library\Utility\ArrayUtils;
  */
 class DynamoDb extends BaseNoSqlDbService
 {
+    use DbSchemaExtras;
+
     //*************************************************************************
     //	Constants
     //*************************************************************************
@@ -36,7 +40,14 @@ class DynamoDb extends BaseNoSqlDbService
      * @var DynamoDbClient|null
      */
     protected $dbConn = null;
-
+    /**
+     * @var array
+     */
+    protected $tableNames = [];
+    /**
+     * @var array
+     */
+    protected $tables = [];
     /**
      * @var array
      */
@@ -143,52 +154,39 @@ class DynamoDb extends BaseNoSqlDbService
         return $out;
     }
 
-    /**
-     * @param string $name
-     *
-     * @return string
-     * @throws BadRequestException
-     * @throws NotFoundException
-     */
-    public function correctTableName(&$name)
+    public function getTableNames($schema = null, $refresh = false)
     {
-        static $existing = null;
-
-        if (!$existing) {
-            $existing = $this->getTables();
+        if ($refresh ||
+            (empty($this->tableNames) &&
+                (null === $this->tableNames = $this->getFromCache('table_names')))
+        ) {
+            /** @type TableNameSchema[] $names */
+            $names = [];
+            $tables = $this->getTables();
+            foreach ($tables as $table) {
+                $names[strtolower($table)] = new TableNameSchema($table);
+            }
+            // merge db extras
+            if (!empty($extrasEntries = $this->getSchemaExtrasForTables($tables, false))) {
+                foreach ($extrasEntries as $extras) {
+                    if (!empty($extraName = strtolower(strval($extras['table'])))) {
+                        if (array_key_exists($extraName, $tables)) {
+                            $names[$extraName]->mergeDbExtras($extras);
+                        }
+                    }
+                }
+            }
+            $this->tableNames = $names;
+            $this->addToCache('table_names', $this->tableNames, true);
         }
 
-        if (empty($name)) {
-            throw new BadRequestException('Table name can not be empty.');
-        }
-
-        if (false === array_search($name, $existing)) {
-            throw new NotFoundException("Table '$name' not found.");
-        }
-
-        return $name;
+        return $this->tableNames;
     }
 
-    /**
-     * {@InheritDoc}
-     */
-    protected function handleResource(array $resources)
+    public function refreshTableCache()
     {
-        try {
-            return parent::handleResource($resources);
-        } catch (NotFoundException $ex) {
-            // If version 1.x, the resource could be a table
-//            if ($this->request->getApiVersion())
-//            {
-//                $resource = $this->instantiateResource( Table::class, [ 'name' => $this->resource ] );
-//                $newPath = $this->resourceArray;
-//                array_shift( $newPath );
-//                $newPath = implode( '/', $newPath );
-//
-//                return $resource->handleRequest( $this->request, $newPath, $this->outputFormat );
-//            }
-
-            throw $ex;
-        }
+        $this->removeFromCache('table_names');
+        $this->tableNames = [];
+        $this->tables = [];
     }
 }
