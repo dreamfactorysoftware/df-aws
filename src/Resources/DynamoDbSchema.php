@@ -52,14 +52,6 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
     /**
      * {@inheritdoc}
      */
-    public function listResources($schema = null, $refresh = false)
-    {
-        return $this->parent->getTables();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function describeTable($table, $refresh = true)
     {
         $name =
@@ -110,10 +102,9 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
 
             // Wait until the table is created and active
             $this->parent->getConnection()->waitUntil('TableExists', [static::TABLE_INDICATOR => $table]);
+            $this->refreshCachedTables();
 
-            $out = array_merge(['name' => $table], $result['TableDescription']);
-
-            return $out;
+            return array_merge(['name' => $table], $result['TableDescription']);
         } catch (\Exception $ex) {
             throw new InternalServerErrorException("Failed to create table '$table'.\n{$ex->getMessage()}");
         }
@@ -141,6 +132,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
 
             // Wait until the table is active again after updating
             $this->parent->getConnection()->waitUntil('TableExists', [static::TABLE_INDICATOR => $table]);
+            $this->refreshCachedTables();
 
             return array_merge(['name' => $table], $result['TableDescription']);
         } catch (\Exception $ex) {
@@ -165,6 +157,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
 
             // Wait until the table is truly gone
             $this->parent->getConnection()->waitUntil('TableNotExists', [static::TABLE_INDICATOR => $name]);
+            $this->refreshCachedTables();
 
             return array_merge(['name' => $name], $result['TableDescription']);
         } catch (\Exception $ex) {
