@@ -5,10 +5,8 @@ use Aws\DynamoDb\DynamoDbClient;
 use DreamFactory\Core\Aws\Resources\DynamoDbSchema;
 use DreamFactory\Core\Aws\Resources\DynamoDbTable;
 use DreamFactory\Core\Components\DbSchemaExtras;
-use DreamFactory\Core\Components\TableNameSchema;
-use DreamFactory\Core\Exceptions\BadRequestException;
+use DreamFactory\Core\Database\TableNameSchema;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
-use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Services\BaseNoSqlDbService;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
@@ -171,7 +169,7 @@ class DynamoDb extends BaseNoSqlDbService
                 foreach ($extrasEntries as $extras) {
                     if (!empty($extraName = strtolower(strval($extras['table'])))) {
                         if (array_key_exists($extraName, $tables)) {
-                            $names[$extraName]->mergeDbExtras($extras);
+                            $names[$extraName]->fill($extras);
                         }
                     }
                 }
