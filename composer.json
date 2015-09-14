@@ -32,7 +32,7 @@
     "wiki": "https://wiki.dreamfactory.com"
   },
   "require": {
-    "dreamfactory/df-core": "~0.0.2",
+    "dreamfactory/df-core": "~0.0.6",
     "aws/aws-sdk-php": "~3.2.0"
   },
   "autoload": {

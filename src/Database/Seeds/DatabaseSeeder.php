@@ -29,8 +29,8 @@ class DatabaseSeeder extends BaseModelSeeder
             'name'           => 'aws_dynamodb',
             'class_name'     => DynamoDb::class,
             'config_handler' => AwsConfig::class,
-            'label'          => 'AWS DynamoDb',
-            'description'    => 'A database service supporting the AWS DynamoDb system.',
+            'label'          => 'AWS DynamoDB',
+            'description'    => 'A database service supporting the AWS DynamoDB system.',
             'group'          => ServiceTypeGroups::DATABASE,
             'singleton'      => false
         ],

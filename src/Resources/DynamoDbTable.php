@@ -5,6 +5,7 @@ use Aws\DynamoDb\Marshaler;
 use DreamFactory\Core\Aws\Enums\ComparisonOperator;
 use DreamFactory\Core\Aws\Enums\ReturnValue;
 use DreamFactory\Core\Aws\Enums\Type;
+use DreamFactory\Core\Database\ColumnSchema;
 use DreamFactory\Core\Enums\ApiOptions;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
@@ -83,85 +84,6 @@ class DynamoDbTable extends BaseDbTableResource
         } catch (\Exception $ex) {
             throw new InternalServerErrorException("Failed to filter records from '$table'.\n{$ex->getMessage()}");
         }
-    }
-
-    /**
-     * @param array $record
-     * @param array $fields_info
-     * @param array $filter_info
-     * @param bool  $for_update
-     * @param array $old_record
-     *
-     * @return array
-     * @throws \Exception
-     */
-    protected function parseRecord($record, $fields_info, $filter_info = null, $for_update = false, $old_record = null)
-    {
-//        $record = DataFormat::arrayKeyLower( $record );
-        $parsed = (empty($fields_info)) ? $record : [];
-        if (!empty($fields_info)) {
-            $keys = array_keys($record);
-            $values = array_values($record);
-            foreach ($fields_info as $fieldInfo) {
-//            $name = strtolower( ArrayUtils::get( $field_info, 'name', '' ) );
-                $name = ArrayUtils::get($fieldInfo, 'name', '');
-                $type = ArrayUtils::get($fieldInfo, 'type');
-                $pos = array_search($name, $keys);
-                if (false !== $pos) {
-                    $fieldVal = ArrayUtils::get($values, $pos);
-                    // due to conversion from XML to array, null or empty xml elements have the array value of an empty array
-                    if (is_array($fieldVal) && empty($fieldVal)) {
-                        $fieldVal = null;
-                    }
-
-                    /** validations **/
-
-                    $validations = ArrayUtils::get($fieldInfo, 'validation');
-
-                    if (!static::validateFieldValue($name, $fieldVal, $validations, $for_update, $fieldInfo)) {
-                        unset($keys[$pos]);
-                        unset($values[$pos]);
-                        continue;
-                    }
-
-                    $parsed[$name] = $fieldVal;
-                    unset($keys[$pos]);
-                    unset($values[$pos]);
-                }
-
-                // add or override for specific fields
-                switch ($type) {
-                    case 'timestamp_on_create':
-                        if (!$for_update) {
-                            $parsed[$name] = new \MongoDate();
-                        }
-                        break;
-                    case 'timestamp_on_update':
-                        $parsed[$name] = new \MongoDate();
-                        break;
-                    case 'user_id_on_create':
-                        if (!$for_update) {
-                            $userId = Session::getCurrentUserId();
-                            if (isset($userId)) {
-                                $parsed[$name] = $userId;
-                            }
-                        }
-                        break;
-                    case 'user_id_on_update':
-                        $userId = Session::getCurrentUserId();
-                        if (isset($userId)) {
-                            $parsed[$name] = $userId;
-                        }
-                        break;
-                }
-            }
-        }
-
-        if (!empty($filter_info)) {
-            $this->validateRecord($parsed, $filter_info, $for_update, $old_record);
-        }
-
-        return $parsed;
     }
 
     /**
@@ -284,7 +206,8 @@ class DynamoDbTable extends BaseDbTableResource
             }
 
             $requested_fields[] = $name;
-            $fields[] = ['name' => $name, 'key_type' => $keyType, 'type' => $type, 'required' => true];
+            $fields[] =
+                new ColumnSchema(['name' => $name, 'key_type' => $keyType, 'type' => $type, 'required' => true]);
         }
 
         return $fields;
@@ -705,14 +628,6 @@ class DynamoDbTable extends BaseDbTableResource
     /**
      * {@inheritdoc}
      */
-    protected function initTransaction($handle = null)
-    {
-        return parent::initTransaction($handle);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     protected function addToTransaction(
         $record = null,
         $id = null,
@@ -723,15 +638,13 @@ class DynamoDbTable extends BaseDbTableResource
     ){
         $ssFilters = ArrayUtils::get($extras, 'ss_filters');
         $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
-        $fieldsInfo = ArrayUtils::get($extras, 'fields_info');
-        $idsInfo = ArrayUtils::get($extras, 'ids_info');
         $idFields = ArrayUtils::get($extras, 'id_fields');
         $updates = ArrayUtils::get($extras, 'updates');
 
         $out = [];
         switch ($this->getAction()) {
             case Verbs::POST:
-                $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters);
+                $parsed = $this->parseRecord($record, $this->tableFieldsInfo, $ssFilters);
                 if (empty($parsed)) {
                     throw new BadRequestException('No valid fields were found in record.');
                 }
@@ -747,7 +660,7 @@ class DynamoDbTable extends BaseDbTableResource
                 );
 
                 if ($rollback) {
-                    $key = static::buildKey($idsInfo, $record);
+                    $key = static::buildKey($this->tableIdsInfo, $record);
                     $this->addToRollback($key);
                 }
 
@@ -760,7 +673,7 @@ class DynamoDbTable extends BaseDbTableResource
                     $record = $updates;
                 }
 
-                $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters, true);
+                $parsed = $this->parseRecord($record, $this->tableFieldsInfo, $ssFilters, true);
                 if (empty($parsed)) {
                     throw new BadRequestException('No valid fields were found in record.');
                 }
@@ -797,12 +710,12 @@ class DynamoDbTable extends BaseDbTableResource
                     $record = $updates;
                 }
 
-                $parsed = $this->parseRecord($record, $fieldsInfo, $ssFilters, true);
+                $parsed = $this->parseRecord($record, $this->tableFieldsInfo, $ssFilters, true);
                 if (empty($parsed)) {
                     throw new BadRequestException('No valid fields were found in record.');
                 }
 
-                $key = static::buildKey($idsInfo, $parsed, true);
+                $key = static::buildKey($this->tableIdsInfo, $parsed, true);
                 $native = $this->formatAttributes($parsed, true);
 
                 // simple insert request
@@ -836,7 +749,7 @@ class DynamoDbTable extends BaseDbTableResource
                 }
 
                 $record = [$idFields[0] => $id];
-                $key = static::buildKey($idsInfo, $record);
+                $key = static::buildKey($this->tableIdsInfo, $record);
 
                 $result = $this->parent->getConnection()->deleteItem(
                     [
@@ -858,7 +771,7 @@ class DynamoDbTable extends BaseDbTableResource
 
             case Verbs::GET:
                 $record = [$idFields[0] => $id];
-                $key = static::buildKey($idsInfo, $record);
+                $key = static::buildKey($this->tableIdsInfo, $record);
                 $scanProperties = [
                     static::TABLE_INDICATOR => $this->transactionTable,
                     'Key'                   => $key,
@@ -898,7 +811,6 @@ class DynamoDbTable extends BaseDbTableResource
 //        $ssFilters = ArrayUtils::get( $extras, 'ss_filters' );
         $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
         $requireMore = ArrayUtils::get($extras, 'require_more');
-        $idsInfo = ArrayUtils::get($extras, 'ids_info');
         $idFields = ArrayUtils::get($extras, 'id_fields');
 
         $out = [];
@@ -949,7 +861,7 @@ class DynamoDbTable extends BaseDbTableResource
                 foreach ($this->batchIds as $id) {
                     $record = [$idFields[0] => $id];
                     $out[] = $record;
-                    $key = static::buildKey($idsInfo, $record);
+                    $key = static::buildKey($this->tableIdsInfo, $record);
                     $requests[] = ['DeleteRequest' => ['Key' => $key]];
                 }
                 if ($requireMore) {
@@ -991,7 +903,7 @@ class DynamoDbTable extends BaseDbTableResource
                 $keys = [];
                 foreach ($this->batchIds as $id) {
                     $record = [$idFields[0] => $id];
-                    $key = static::buildKey($idsInfo, $record);
+                    $key = static::buildKey($this->tableIdsInfo, $record);
                     $keys[] = $key;
                 }
 
