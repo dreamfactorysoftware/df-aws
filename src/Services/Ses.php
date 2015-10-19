@@ -6,6 +6,7 @@ use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use Illuminate\Mail\Transport\SesTransport;
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Services\Email\BaseService;
+use Illuminate\Support\Arr;
 
 class Ses extends BaseService
 {
@@ -31,15 +32,22 @@ class Ses extends BaseService
      */
     public static function getTransport($key, $secret, $region)
     {
-        if(empty($key) || empty($secret) || empty($region)){
+        if (empty($key) || empty($secret) || empty($region)) {
             throw new InternalServerErrorException('Missing one or more configuration for SES service.');
         }
-        $sesClient = SesClient::factory([
-            'key'    => $key,
-            'secret' => $secret,
-            'region' => $region
-        ]);
 
-        return new SesTransport($sesClient);
+        $config = [
+            'key'     => $key,
+            'secret'  => $secret,
+            'region'  => $region,
+            'version' => 'latest',
+            'service' => 'email'
+        ];
+
+        if ($config['key'] && $config['secret']) {
+            $config['credentials'] = Arr::only($config, ['key', 'secret']);
+        }
+
+        return new SesTransport(new SesClient($config));
     }
 }
