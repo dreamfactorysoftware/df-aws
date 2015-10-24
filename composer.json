@@ -1,7 +1,7 @@
 {
-  "name": "dreamfactory/df-aws",
+  "name":        "dreamfactory/df-aws",
   "description": "AWS package containing services for the DreamFactory Platform 2.0.",
-  "keywords": [
+  "keywords":    [
     "dreamfactory",
     "dsp",
     "rest",
@@ -9,40 +9,40 @@
     "s3",
     "dynamodb"
   ],
-  "homepage": "https://www.dreamfactory.com/",
-  "license": "Apache-2.0",
-  "authors": [
+  "homepage":    "https://www.dreamfactory.com/",
+  "license":     "Apache-2.0",
+  "authors":     [
     {
-      "name": "Arif Islam",
+      "name":  "Arif Islam",
       "email": "arifislam@dreamfactory.com"
     },
     {
-      "name": "Jerry Ablan",
+      "name":  "Jerry Ablan",
       "email": "jerryablan@dreamfactory.com"
     },
     {
-      "name": "Lee Hicks",
+      "name":  "Lee Hicks",
       "email": "leehicks@dreamfactory.com"
     }
   ],
-  "support": {
-    "email": "support@dreamfactory.com",
+  "support":     {
+    "email":  "support@dreamfactory.com",
     "source": "https://github.com/dreamfactorysoftware/df-aws",
     "issues": "https://github.com/dreamfactorysoftware/df-aws/issues",
-    "wiki": "https://wiki.dreamfactory.com"
+    "wiki":   "https://wiki.dreamfactory.com"
   },
-  "require": {
-    "dreamfactory/df-core": "~0.0.9",
-    "aws/aws-sdk-php": "~3.2.0"
+  "require":     {
+    "dreamfactory/df-core": "~0.1.0",
+    "aws/aws-sdk-php":      "~3.2.0"
   },
-  "autoload": {
+  "autoload":    {
     "psr-4": {
       "DreamFactory\\Core\\Aws\\": "src/"
     }
   },
-  "extra": {
+  "extra":       {
     "branch-alias": {
-      "dev-develop": "0.0.x-dev"
+      "dev-develop": "0.1.x-dev"
     }
   }
 }
