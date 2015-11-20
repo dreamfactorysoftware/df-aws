@@ -219,18 +219,16 @@ class DynamoDbTable extends BaseDbTableResource
         if (!empty($ids_info)) {
             if (1 == count($ids_info)) {
                 $info = $ids_info[0];
-                $name = ArrayUtils::get($info, 'name');
                 if (is_array($record)) {
-                    $value = ArrayUtils::get($record, $name);
+                    $value = ArrayUtils::get($record, $info->name);
                     if ($remove) {
-                        unset($record[$name]);
+                        unset($record[$info->name]);
                     }
                 } else {
                     $value = $record;
                 }
                 if (!empty($value)) {
-                    $type = ArrayUtils::get($info, 'type');
-                    switch ($type) {
+                    switch ($info->type) {
                         case Type::N:
                             $value = intval($value);
                             break;
@@ -240,28 +238,25 @@ class DynamoDbTable extends BaseDbTableResource
                     }
                     $id = $value;
                 } else {
-                    $required = ArrayUtils::getBool($info, 'required');
                     // could be passed in as a parameter affecting all records
-                    $param = ArrayUtils::get($extras, $name);
-                    if ($on_create && $required && empty($param)) {
+                    $param = ArrayUtils::get($extras, $info->name);
+                    if ($on_create && $info->required && empty($param)) {
                         return false;
                     }
                 }
             } else {
                 $id = [];
                 foreach ($ids_info as $info) {
-                    $name = ArrayUtils::get($info, 'name');
                     if (is_array($record)) {
-                        $value = ArrayUtils::get($record, $name);
+                        $value = ArrayUtils::get($record, $info->name);
                         if ($remove) {
-                            unset($record[$name]);
+                            unset($record[$info->name]);
                         }
                     } else {
                         $value = $record;
                     }
                     if (!empty($value)) {
-                        $type = ArrayUtils::get($info, 'type');
-                        switch ($type) {
+                        switch ($info->type) {
                             case Type::N:
                                 $value = intval($value);
                                 break;
@@ -269,12 +264,11 @@ class DynamoDbTable extends BaseDbTableResource
                                 $value = strval($value);
                                 break;
                         }
-                        $id[$name] = $value;
+                        $id[$info->name] = $value;
                     } else {
-                        $required = ArrayUtils::getBool($info, 'required');
                         // could be passed in as a parameter affecting all records
-                        $param = ArrayUtils::get($extras, $name);
-                        if ($on_create && $required && empty($param)) {
+                        $param = ArrayUtils::get($extras, $info->name);
+                        if ($on_create && $info->required && empty($param)) {
                             return false;
                         }
                     }
@@ -295,24 +289,22 @@ class DynamoDbTable extends BaseDbTableResource
     {
         $keys = [];
         foreach ($ids_info as $info) {
-            $name = ArrayUtils::get($info, 'name');
-            $type = ArrayUtils::get($info, 'type');
-            $value = ArrayUtils::get($record, $name, null);
+            $value = ArrayUtils::get($record, $info->name, null);
             if ($remove) {
-                unset($record[$name]);
+                unset($record[$info->name]);
             }
             if (empty($value)) {
                 throw new BadRequestException("Identifying field(s) not found in record.");
             }
 
-            switch ($type) {
+            switch ($info->type) {
                 case Type::N:
                     $value = [Type::N => strval($value)];
                     break;
                 default:
                     $value = [Type::S => $value];
             }
-            $keys[$name] = $value;
+            $keys[$info->name] = $value;
         }
 
         return $keys;
