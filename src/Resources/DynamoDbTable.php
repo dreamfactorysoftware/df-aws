@@ -78,7 +78,17 @@ class DynamoDbTable extends BaseDbTableResource
             }
 
             $next = $this->unformatAttributes($result['LastEvaluatedKey']);
+            $next = current($next); // todo handle more than one index here.
             $count = $result['Count'];
+            $out = static::cleanRecords($out);
+            $needMore = (($count - $offset) > $limit);
+            $addCount = ArrayUtils::getBool($extras, ApiOptions::INCLUDE_COUNT);
+            if ($addCount || $needMore) {
+                $out['meta']['count'] = $count;
+                if ($needMore) {
+                    $out['meta']['next'] = $next;
+                }
+            }
 
             return $out;
         } catch (\Exception $ex) {
