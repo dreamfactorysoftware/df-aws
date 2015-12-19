@@ -5,7 +5,7 @@ use Aws\DynamoDb\DynamoDbClient;
 use DreamFactory\Core\Aws\Resources\DynamoDbSchema;
 use DreamFactory\Core\Aws\Resources\DynamoDbTable;
 use DreamFactory\Core\Components\DbSchemaExtras;
-use DreamFactory\Core\Database\TableNameSchema;
+use DreamFactory\Core\Database\TableSchema;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Services\BaseNoSqlDbService;
 use DreamFactory\Core\Utility\Session;
@@ -158,11 +158,11 @@ class DynamoDb extends BaseNoSqlDbService
             (empty($this->tableNames) &&
                 (null === $this->tableNames = $this->getFromCache('table_names')))
         ) {
-            /** @type TableNameSchema[] $names */
+            /** @type TableSchema[] $names */
             $names = [];
             $tables = $this->getTables();
             foreach ($tables as $table) {
-                $names[strtolower($table)] = new TableNameSchema($table);
+                $names[strtolower($table)] = new TableSchema(['name' => $table]);
             }
             // merge db extras
             if (!empty($extrasEntries = $this->getSchemaExtrasForTables($tables, false))) {
