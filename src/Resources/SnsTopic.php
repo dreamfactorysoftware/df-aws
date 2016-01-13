@@ -35,7 +35,7 @@ class SnsTopic extends BaseSnsResource
     /**
      * {@inheritdoc}
      */
-    protected function getResourceIdentifier()
+    protected static function getResourceIdentifier()
     {
         return 'TopicArn';
     }

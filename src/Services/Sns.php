@@ -2,7 +2,7 @@
 namespace DreamFactory\Core\Aws\Services;
 
 use Aws\Sns\SnsClient;
-use DreamFactory\Core\Utility\ApiDocUtilities;
+use DreamFactory\Core\Models\Service;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Aws\Resources\BaseSnsResource;
@@ -15,6 +15,7 @@ use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Services\BaseRestService;
 use DreamFactory\Core\Resources\BaseRestResource;
+use DreamFactory\Library\Utility\Inflector;
 
 /**
  * Class Sns
@@ -112,12 +113,10 @@ class Sns extends BaseRestService
         Session::replaceLookups($config, true);
         // statically assign the our supported version
         $config['version'] = '2010-03-31';
-        if (isset($config['key']))
-        {
+        if (isset($config['key'])) {
             $config['credentials']['key'] = $config['key'];
         }
-        if (isset($config['secret']))
-        {
+        if (isset($config['secret'])) {
             $config['credentials']['secret'] = $config['secret'];
         }
 
@@ -549,841 +548,783 @@ class Sns extends BaseRestService
     /**
      * {@inheritdoc}
      */
-    public function getApiDocInfo()
+    public static function getApiDocInfo(Service $service)
     {
-        $base = parent::getApiDocInfo();
+        $base = parent::getApiDocInfo($service);
+        $name = strtolower($service->name);
+        $capitalized = Inflector::camelize($service->name);
 
         $apis = [
-            [
-                'path'        => '/{api_name}',
-                'description' => 'Operations available for push notification services.',
-                'operations'  => [
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'simplePublish() - Send a simple message to a topic or endpoint.',
-                        'nickname'         => 'simplePublish',
-                        'notes'            => 'Post data should be an array of topic publish properties.',
-                        'type'             => 'PublishResponse',
-                        'event_name'       => ['{api_name}.publish'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of topic publish parameters.',
-                                'allowMultiple' => false,
-                                'type'          => 'SimplePublishRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+            '/'.$name                                 => [
+                'post' => [
+                    'tags'        => [$name],
+                    'summary'     => 'publish'.$capitalized.'() - Send a message to a topic or endpoint.',
+                    'operationId' => 'publish'.$capitalized,
+                    'description' => 'Post data should be an array of topic publish properties.',
+                    'event_name'  => [$name.'.publish'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of topic message parameters.',
+                            'schema'      => ['$ref' => '#/definitions/PublishRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
                     ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'publish() - Send a message to a topic or endpoint.',
-                        'nickname'         => 'publish',
-                        'notes'            => 'Post data should be an array of topic publish properties.',
-                        'type'             => 'PublishResponse',
-                        'event_name'       => ['{api_name}.publish'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of topic message parameters.',
-                                'allowMultiple' => false,
-                                'type'          => 'PublishRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Publish Response',
+                            'schema'      => ['$ref' => '#/definitions/PublishResponse']
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
                 ],
             ],
-            [
-                'path'        => '/{api_name}/topic',
-                'description' => 'Operations for push topics.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getTopics() - Retrieve all topics available for the push service.',
-                        'nickname'         => 'getTopics',
-                        'notes'            => 'This returns the topics as resources.',
-                        'event_name'       => ['{api_name}.topic.list'],
-                        'type'             => 'GetTopicsResponse',
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                    ],
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'listTopics() - List topics available for the push service.',
-                        'nickname'         => 'listTopics',
-                        'notes'            => 'Returns only the names of the topics in an array.',
-                        'type'             => 'ComponentList',
-                        'event_name'       => ['{api_name}.topic.list'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'names_only',
-                                'description'   => 'Return only the names of the topics in an array.',
-                                'allowMultiple' => false,
-                                'type'          => 'boolean',
-                                'paramType'     => 'query',
-                                'required'      => true,
-                                'default'       => true,
-                            ],
+            '/'.$name.'/topic'                           => [
+                'get'  => [
+                    'tags'        => [$name],
+                    'summary'     => 'get'.$capitalized.'Topics() - Retrieve all topics available for the push service.',
+                    'operationId' => 'get'.$capitalized.'Topics',
+                    'description' => 'This returns the topics as resources.',
+                    'event_name'  => [$name.'.topic.list'],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Topics Response',
+                            'schema'      => ['$ref' => '#/definitions/GetTopicsResponse']
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'createTopic() - Create a topic.',
-                        'nickname'         => 'createTopic',
-                        'notes'            => 'Post data should be an array of topic attributes including \'Name\'.',
-                        'type'             => 'TopicIdentifier',
-                        'event_name'       => ['{api_name}.topic.create'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of topic attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'TopicRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                ],
+                'post' => [
+                    'tags'        => [$name],
+                    'summary'     => 'create'.$capitalized.'Topic() - Create a topic.',
+                    'operationId' => 'create'.$capitalized.'Topic',
+                    'description' => 'Post data should be an array of topic attributes including \'Name\'.',
+                    'event_name'  => [$name.'.topic.create'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of topic attributes.',
+                            'schema'      => ['$ref' => '#/definitions/TopicRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Topic Identifier',
+                            'schema'      => ['$ref' => '#/definitions/TopicIdentifier']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
                 ],
             ],
-            [
-                'path'        => '/{api_name}/topic/{topic_name}',
-                'description' => 'Operations for a specific push topic.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getTopicAttributes() - Retrieve topic definition for the given topic.',
-                        'nickname'         => 'getTopicAttributes',
-                        'notes'            => 'This retrieves the topic, detailing its available properties.',
-                        'event_name'       => ['{api_name}.topic.{topic_name}.retrieve', '{api_name}.topic_retrieved'],
-                        'type'             => 'TopicAttributesResponse',
-                        'parameters'       => [
-                            [
-                                'name'          => 'topic_name',
-                                'description'   => 'Full ARN or simplified name of the topic to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
+            '/'.$name.'/topic/{topic_name}'              => [
+                'get'    => [
+                    'tags'        => [$name],
+                    'summary'     => 'get'.$capitalized.'TopicAttributes() - Retrieve topic definition for the given topic.',
+                    'operationId' => 'get'.$capitalized.'TopicAttributes',
+                    'description' => 'This retrieves the topic, detailing its available properties.',
+                    'event_name'  => [$name.'.topic.{topic_name}.retrieve', $name.'.topic_retrieved'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'topic_name',
+                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
                     ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'simplePublishTopic() - Send a message to the given topic.',
-                        'nickname'         => 'simplePublishTopic',
-                        'notes'            => 'Post data should be an array of topic publish properties.',
-                        'type'             => 'PublishResponse',
-                        'event_name'       => ['{api_name}.topic.{topic_name}.publish', '{api_name}.topic_published'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'topic_name',
-                                'description'   => 'Full ARN or simplified name of the topic to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of topic publish parameters.',
-                                'allowMultiple' => false,
-                                'type'          => 'SimplePublishTopicRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Topic Response',
+                            'schema'      => ['$ref' => '#/definitions/TopicAttributesResponse']
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'publishTopic() - Send a message to the given topic.',
-                        'nickname'         => 'publishTopic',
-                        'notes'            => 'Post data should be an array of topic publish properties.',
-                        'type'             => 'PublishResponse',
-                        'event_name'       => ['{api_name}.topic.{topic_name}.publish', '{api_name}.topic_published'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'topic_name',
-                                'description'   => 'Full ARN or simplified name of the topic to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of topic message parameters.',
-                                'allowMultiple' => false,
-                                'type'          => 'PublishTopicRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                ],
+                'post'   => [
+                    'tags'        => [$name],
+                    'summary'     => 'publish'.$capitalized.'Topic() - Send a message to the given topic.',
+                    'operationId' => 'publish'.$capitalized.'Topic',
+                    'description' => 'Post data should be an array of topic publish properties.',
+                    'event_name'  => [$name.'.topic.{topic_name}.publish', $name.'.topic_published'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'topic_name',
+                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of topic message parameters.',
+                            'schema'      => ['$ref' => '#/definitions/PublishTopicRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
+                        ],
                     ],
-                    [
-                        'method'           => 'PUT',
-                        'summary'          => 'setTopicAttributes() - Update a given topic\'s attributes.',
-                        'nickname'         => 'setTopicAttributes',
-                        'type'             => 'Success',
-                        'event_name'       => ['{api_name}.topic.{topic_name}.update', '{api_name}.topic_updated'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'topic_name',
-                                'description'   => 'Full ARN or simplified name of the topic to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of topic attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'TopicAttributesRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Topic Publish Response',
+                            'schema'      => ['$ref' => '#/definitions/PublishResponse']
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'Post data should be an array of topic attributes including \'Name\'.',
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
-                    [
-                        'method'           => 'DELETE',
-                        'summary'          => 'deleteTopic() - Delete a given topic.',
-                        'nickname'         => 'deleteTopic',
-                        'notes'            => '',
-                        'type'             => 'Success',
-                        'event_name'       => ['{api_name}.topic.{topic_name}.delete', '{api_name}.topic_deleted'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'topic_name',
-                                'description'   => 'Full ARN or simplified name of the topic to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
+                ],
+                'put'    => [
+                    'tags'        => [$name],
+                    'summary'     => 'set'.$capitalized.'TopicAttributes() - Update a given topic\'s attributes.',
+                    'operationId' => 'set'.$capitalized.'TopicAttributes',
+                    'event_name'  => [$name.'.topic.{topic_name}.update', $name.'.topic_updated'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'topic_name',
+                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of topic attributes.',
+                            'schema'      => ['$ref' => '#/definitions/TopicAttributesRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Success',
+                            'schema'      => ['$ref' => '#/definitions/Success']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'Post data should be an array of topic attributes including \'Name\'.',
+                ],
+                'delete' => [
+                    'tags'        => [$name],
+                    'summary'     => 'delete'.$capitalized.'Topic() - Delete a given topic.',
+                    'operationId' => 'delete'.$capitalized.'Topic',
+                    'description' => '',
+                    'event_name'  => [$name.'.topic.{topic_name}.delete', $name.'.topic_deleted'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'topic_name',
+                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Success',
+                            'schema'      => ['$ref' => '#/definitions/Success']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
                 ],
             ],
-            [
-                'path'        => '/{api_name}/topic/{topic_name}/subscription',
-                'description' => 'Operations for push subscriptions.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getSubscriptionsByTopic() - Retrieve subscriptions for the given topic.',
-                        'nickname'         => 'getSubscriptionsByTopic',
-                        'notes'            => 'This return the subscriptions as resources.',
-                        'event_name'       => ['{api_name}.topic.{topic_name}.subscription.list'],
-                        'type'             => 'GetSubscriptionsResponse',
-                        'parameters'       => [
-                            [
-                                'name'          => 'topic_name',
-                                'description'   => 'Full ARN or simplified name of the topic to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
+            '/'.$name.'/topic/{topic_name}/subscription' => [
+                'get'  => [
+                    'tags'        => [$name],
+                    'summary'     => 'list'.$capitalized.'SubscriptionsByTopic() - List subscriptions available for the given topic.',
+                    'operationId' => 'list'.$capitalized.'SubscriptionsByTopic',
+                    'description' => 'Return only the names of the subscriptions in an array.',
+                    'event_name'  => [$name.'.topic.{topic_name}.subscription.list'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'topic_name',
+                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                        [
+                            'name'        => 'names_only',
+                            'description' => 'Return only the names of the subscriptions in an array.',
+                            'type'        => 'boolean',
+                            'in'          => 'query',
+                            'required'    => true,
+                            'default'     => true,
+                        ],
                     ],
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'listSubscriptionsByTopic() - List subscriptions available for the given topic.',
-                        'nickname'         => 'listSubscriptionsByTopic',
-                        'notes'            => 'Return only the names of the subscriptions in an array.',
-                        'type'             => 'ComponentList',
-                        'event_name'       => ['{api_name}.topic.{topic_name}.subscription.list'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'topic_name',
-                                'description'   => 'Full ARN or simplified name of the topic to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'names_only',
-                                'description'   => 'Return only the names of the subscriptions in an array.',
-                                'allowMultiple' => false,
-                                'type'          => 'boolean',
-                                'paramType'     => 'query',
-                                'required'      => true,
-                                'default'       => true,
-                            ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Component List',
+                            'schema'      => ['$ref' => '#/definitions/ComponentList']
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'subscribeTopic() - Create a subscription for the given topic.',
-                        'nickname'         => 'subscribeTopic',
-                        'type'             => 'SubscriptionIdentifier',
-                        'event_name'       => ['{api_name}.topic.{topic_name}.subscription.create'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'topic_name',
-                                'description'   => 'Full ARN or simplified name of the topic to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of subscription attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'SubscriptionTopicRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                ],
+                'post' => [
+                    'tags'        => [$name],
+                    'summary'     => 'subscribe'.$capitalized.'Topic() - Create a subscription for the given topic.',
+                    'operationId' => 'subscribe'.$capitalized.'Topic',
+                    'event_name'  => [$name.'.topic.{topic_name}.subscription.create'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'topic_name',
+                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'Post data should be an array of subscription attributes including \'Name\'.',
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of subscription attributes.',
+                            'schema'      => ['$ref' => '#/definitions/SubscriptionTopicRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Subscription Identifier',
+                            'schema'      => ['$ref' => '#/definitions/SubscriptionIdentifier']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
+                ],
+            ],
+            '/'.$name.'/subscription'                    => [
+                'get'  => [
+                    'tags'        => [$name],
+                    'summary'     => 'get'.$capitalized.'Subscriptions() - Retrieve all subscriptions as resources.',
+                    'operationId' => 'get'.$capitalized.'Subscriptions',
+                    'description' => 'This describes the topic, detailing its available properties.',
+                    'event_name'  => [$name.'.subscription.list'],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Subscriptions',
+                            'schema'      => ['$ref' => '#/definitions/GetSubscriptionsResponse']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                ],
+                'post' => [
+                    'tags'        => [$name],
+                    'summary'     => 'subscribe'.$capitalized.'() - Create a subscription.',
+                    'operationId' => 'subscribe'.$capitalized,
+                    'event_name'  => [$name.'.subscription.create'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of subscription attributes.',
+                            'schema'      => ['$ref' => '#/definitions/SubscriptionRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Subscription Identifier',
+                            'schema'      => ['$ref' => '#/definitions/SubscriptionIdentifier']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
+                ],
+            ],
+            '/'.$name.'/subscription/{sub_name}'         => [
+                'get'    => [
+                    'tags'        => [$name],
+                    'summary'     => 'get'.$capitalized.'SubscriptionAttributes() - Retrieve attributes for the given subscription.',
+                    'operationId' => 'get'.$capitalized.'SubscriptionAttributes',
+                    'event_name'  => [
+                        $name.'.subscription.{subscription_name}.retrieve',
+                        $name.'.subscription_retrieved'
+                    ],
+                    'parameters'  => [
+                        [
+                            'name'        => 'sub_name',
+                            'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Subscription Attributes',
+                            'schema'      => ['$ref' => '#/definitions/SubscriptionAttributesResponse']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'This retrieves the subscription, detailing its available properties.',
+                ],
+                'put'    => [
+                    'tags'        => [$name],
+                    'summary'     => 'set'.$capitalized.'SubscriptionAttributes() - Update a given subscription.',
+                    'operationId' => 'set'.$capitalized.'SubscriptionAttributes',
+                    'event_name'  => [
+                        $name.'.subscription.{subscription_name}.update',
+                        $name.'.subscription_updated'
+                    ],
+                    'parameters'  => [
+                        [
+                            'name'        => 'sub_name',
+                            'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
+                        ],
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of subscription attributes.',
+                            'in'          => 'body',
+                            'schema'      => ['$ref' => '#/definitions/SubscriptionAttributesRequest'],
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Success',
+                            'schema'      => ['$ref' => '#/definitions/Success']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
+                ],
+                'delete' => [
+                    'tags'        => [$name],
+                    'summary'     => 'unsubscribe'.$capitalized.'() - Delete a given subscription.',
+                    'operationId' => 'unsubscribe'.$capitalized,
+                    'description' => '',
+                    'event_name'  => [
+                        $name.'.subscription.{subscription_name}.delete',
+                        $name.'.subscription_deleted'
+                    ],
+                    'parameters'  => [
+                        [
+                            'name'        => 'sub_name',
+                            'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Success',
+                            'schema'      => ['$ref' => '#/definitions/Success']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
                 ],
             ],
-            [
-                'path'        => '/{api_name}/subscription',
-                'description' => 'Operations for push subscriptions.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getSubscriptions() - Retrieve all subscriptions as resources.',
-                        'nickname'         => 'getSubscriptions',
-                        'notes'            => 'This describes the topic, detailing its available properties.',
-                        'event_name'       => ['{api_name}.subscription.list'],
-                        'type'             => 'GetSubscriptionsResponse',
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                    ],
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'listSubscriptions() - List subscriptions available for the push service.',
-                        'nickname'         => 'listSubscriptions',
-                        'notes'            => 'See listed operations for each subscription available.',
-                        'type'             => 'ComponentList',
-                        'event_name'       => ['{api_name}.subscription.list'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'names_only',
-                                'description'   => 'Return only the names of the subscriptions in an array.',
-                                'allowMultiple' => false,
-                                'type'          => 'boolean',
-                                'paramType'     => 'query',
-                                'required'      => true,
-                                'default'       => true,
-                            ],
+            '/'.$name.'/app'                             => [
+                'get'  => [
+                    'tags'        => [$name],
+                    'summary'     => 'get'.$capitalized.'Apps() - Retrieve app definition for the given app.',
+                    'operationId' => 'get'.$capitalized.'Apps',
+                    'event_name'  => [$name.'.app.list'],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Apps Response',
+                            'schema'      => ['$ref' => '#/definitions/GetAppsResponse']
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'subscribe() - Create a subscription.',
-                        'nickname'         => 'subscribe',
-                        'type'             => 'SubscriptionIdentifier',
-                        'event_name'       => ['{api_name}.subscription.create'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of subscription attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'SubscriptionRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                    'description' => 'This describes the app, detailing its available properties.',
+                ],
+                'post' => [
+                    'tags'        => [$name],
+                    'summary'     => 'create'.$capitalized.'App() - Create a given app.',
+                    'operationId' => 'create'.$capitalized.'App',
+                    'event_name'  => [$name.'.app.create'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of app attributes.',
+                            'schema'      => ['$ref' => '#/definitions/AppRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'Post data should be an array of subscription attributes including \'Name\'.',
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'App Identifier',
+                            'schema'      => ['$ref' => '#/definitions/AppIdentifier']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
+                ],
+            ],
+            '/'.$name.'/app/{app_name}'                  => [
+                'get'    => [
+                    'tags'        => [$name],
+                    'summary'     => 'get'.$capitalized.'AppAttributes() - Retrieve app definition for the given app.',
+                    'operationId' => 'get'.$capitalized.'AppAttributes',
+                    'event_name'  => [$name.'.app.{app_name}.retrieve', $name.'.app_retrieved'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'app_name',
+                            'description' => 'Full ARN or simplified name of the app to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'App Attributes',
+                            'schema'      => ['$ref' => '#/definitions/AppAttributesResponse']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'This retrieves the app, detailing its available properties.',
+                ],
+                'put'    => [
+                    'tags'        => [$name],
+                    'summary'     => 'set'.$capitalized.'AppAttributes() - Update a given app.',
+                    'operationId' => 'set'.$capitalized.'AppAttributes',
+                    'event_name'  => [$name.'.app.{app_name}.update', $name.'.app_updated'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'app_name',
+                            'description' => 'Full ARN or simplified name of the app to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
+                        ],
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of app attributes.',
+                            'schema'      => ['$ref' => '#/definitions/AppAttributesRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Success',
+                            'schema'      => ['$ref' => '#/definitions/Success']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
+                ],
+                'delete' => [
+                    'tags'        => [$name],
+                    'summary'     => 'delete'.$capitalized.'App() - Delete a given app.',
+                    'operationId' => 'delete'.$capitalized.'App',
+                    'description' => '',
+                    'event_name'  => [$name.'.app.{app_name}.delete', $name.'.app_deleted'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'app_name',
+                            'description' => 'Full ARN or simplified name of the app to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Success',
+                            'schema'      => ['$ref' => '#/definitions/Success']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
                 ],
             ],
-            [
-                'path'        => '/{api_name}/subscription/{sub_name}',
-                'description' => 'Operations for a specific push subscription.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getSubscriptionAttributes() - Retrieve attributes for the given subscription.',
-                        'nickname'         => 'getSubscriptionAttributes',
-                        'event_name'       => [
-                            '{api_name}.subscription.{subscription_name}.retrieve',
-                            '{api_name}.subscription_retrieved'
+            '/'.$name.'/app/{app_name}/endpoint'         => [
+                'get'  => [
+                    'tags'        => [$name],
+                    'summary'     => 'get'.$capitalized.'EndpointsByApp() - Retrieve endpoints for the given application.',
+                    'operationId' => 'get'.$capitalized.'EndpointsByApp',
+                    'event_name'  => [$name.'.endpoint.list'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'app_name',
+                            'description' => 'Name of the application to get endpoints on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'type'             => 'SubscriptionAttributesResponse',
-                        'parameters'       => [
-                            [
-                                'name'          => 'sub_name',
-                                'description'   => 'Full ARN or simplified name of the subscription to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                        ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'This retrieves the subscription, detailing its available properties.',
                     ],
-                    [
-                        'method'           => 'PUT',
-                        'summary'          => 'setSubscriptionAttributes() - Update a given subscription.',
-                        'nickname'         => 'setSubscriptionAttributes',
-                        'type'             => 'Success',
-                        'event_name'       => [
-                            '{api_name}.subscription.{subscription_name}.update',
-                            '{api_name}.subscription_updated'
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Endpoints Response',
+                            'schema'      => ['$ref' => '#/definitions/GetEndpointsResponse']
                         ],
-                        'parameters'       => [
-                            [
-                                'name'          => 'sub_name',
-                                'description'   => 'Full ARN or simplified name of the subscription to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of subscription attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'SubscriptionAttributesRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
-                        ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'Post data should be an array of subscription attributes including \'Name\'.',
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
-                    [
-                        'method'           => 'DELETE',
-                        'summary'          => 'unsubscribe() - Delete a given subscription.',
-                        'nickname'         => 'unsubscribe',
-                        'notes'            => '',
-                        'type'             => 'Success',
-                        'event_name'       => [
-                            '{api_name}.subscription.{subscription_name}.delete',
-                            '{api_name}.subscription_deleted'
+                    'description' => 'This describes the endpoints, detailing its available properties.',
+                ],
+                'post' => [
+                    'tags'        => [$name],
+                    'summary'     => 'create'.$capitalized.'AppEndpoint() - Create a endpoint for a given application.',
+                    'operationId' => 'create'.$capitalized.'AppEndpoint',
+                    'event_name'  => [$name.'.endpoint.create'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'app_name',
+                            'description' => 'Name of the application to create endpoints on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'parameters'       => [
-                            [
-                                'name'          => 'sub_name',
-                                'description'   => 'Full ARN or simplified name of the subscription to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of endpoint attributes.',
+                            'schema'      => ['$ref' => '#/definitions/AppEndpointRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
                     ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Endpoint Identifier',
+                            'schema'      => ['$ref' => '#/definitions/EndpointIdentifier']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
             ],
-            [
-                'path'        => '/{api_name}/app',
-                'description' => 'Operations for push platform applications.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getApps() - Retrieve app definition for the given app.',
-                        'nickname'         => 'getApps',
-                        'event_name'       => ['{api_name}.app.list'],
-                        'type'             => 'GetAppsResponse',
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'This describes the app, detailing its available properties.',
-                    ],
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'listApps() - List apps available for the push service.',
-                        'nickname'         => 'listApps',
-                        'notes'            => 'See listed operations for each app available.',
-                        'type'             => 'ComponentList',
-                        'event_name'       => ['{api_name}.app.list'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'names_only',
-                                'description'   => 'Return only the names of the apps in an array.',
-                                'allowMultiple' => false,
-                                'type'          => 'boolean',
-                                'paramType'     => 'query',
-                                'required'      => true,
-                                'default'       => true,
-                            ],
+            '/'.$name.'/endpoint'                        => [
+                'get'  => [
+                    'tags'        => [$name],
+                    'summary'     => 'get'.$capitalized.'Endpoints() - Retrieve endpoint definition for the given endpoint.',
+                    'operationId' => 'get'.$capitalized.'Endpoints',
+                    'description' => 'This describes the endpoint, detailing its available properties.',
+                    'event_name'  => [$name.'.endpoint.list'],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Endpoints Response',
+                            'schema'      => ['$ref' => '#/definitions/GetEndpointsResponse']
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                    ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'createApp() - Create a given app.',
-                        'nickname'         => 'createApp',
-                        'type'             => 'AppIdentifier',
-                        'event_name'       => ['{api_name}.app.create'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of app attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'AppRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
-                        ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'Post data should be an array of app attributes including \'Name\'.',
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
                 ],
-            ],
-            [
-                'path'        => '/{api_name}/app/{app_name}',
-                'description' => 'Operations for a specific push platform application.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getAppAttributes() - Retrieve app definition for the given app.',
-                        'nickname'         => 'getAppAttributes',
-                        'event_name'       => ['{api_name}.app.{app_name}.retrieve', '{api_name}.app_retrieved'],
-                        'type'             => 'AppAttributesResponse',
-                        'parameters'       => [
-                            [
-                                'name'          => 'app_name',
-                                'description'   => 'Full ARN or simplified name of the app to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
+                'post' => [
+                    'tags'        => [$name],
+                    'summary'     => 'create'.$capitalized.'Endpoint() - Create a given endpoint.',
+                    'operationId' => 'create'.$capitalized.'Endpoint',
+                    'event_name'  => [$name.'.endpoint.create'],
+                    'parameters'  => [
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of endpoint attributes.',
+                            'schema'      => ['$ref' => '#/definitions/EndpointRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'This retrieves the app, detailing its available properties.',
                     ],
-                    [
-                        'method'           => 'PUT',
-                        'summary'          => 'setAppAttributes() - Update a given app.',
-                        'nickname'         => 'setAppAttributes',
-                        'type'             => 'Success',
-                        'event_name'       => ['{api_name}.app.{app_name}.update', '{api_name}.app_updated'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'app_name',
-                                'description'   => 'Full ARN or simplified name of the app to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of app attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'AppAttributesRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Endpoint Identifier',
+                            'schema'      => ['$ref' => '#/definitions/EndpointIdentifier']
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'Post data should be an array of app attributes including \'Name\'.',
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
-                    [
-                        'method'           => 'DELETE',
-                        'summary'          => 'deleteApp() - Delete a given app.',
-                        'nickname'         => 'deleteApp',
-                        'notes'            => '',
-                        'type'             => 'Success',
-                        'event_name'       => ['{api_name}.app.{app_name}.delete', '{api_name}.app_deleted'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'app_name',
-                                'description'   => 'Full ARN or simplified name of the app to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                        ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                    ],
+                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
             ],
-            [
-                'path'        => '/{api_name}/app/{app_name}/endpoint',
-                'description' => 'Operations for push application endpoints.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getEndpointsByApp() - Retrieve endpoints for the given application.',
-                        'nickname'         => 'getEndpointsByApp',
-                        'event_name'       => ['{api_name}.endpoint.list'],
-                        'type'             => 'GetEndpointsResponse',
-                        'parameters'       => [
-                            [
-                                'name'          => 'app_name',
-                                'description'   => 'Name of the application to get endpoints on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                        ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'This describes the endpoints, detailing its available properties.',
+            '/'.$name.'/endpoint/{endpoint_name}'        => [
+                'get'    => [
+                    'tags'        => [$name],
+                    'summary'     => 'get'.$capitalized.'EndpointAttributes() - Retrieve endpoint definition for the given endpoint.',
+                    'operationId' => 'get'.$capitalized.'EndpointAttributes',
+                    'event_name'  => [
+                        $name.'.endpoint.{endpoint_name}.retrieve',
+                        $name.'.endpoint_retrieved'
                     ],
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'listEndpointsByApp() - List endpoints available for the push service.',
-                        'nickname'         => 'listEndpointsByApp',
-                        'notes'            => 'See listed operations for each endpoint available.',
-                        'type'             => 'ComponentList',
-                        'event_name'       => ['{api_name}.endpoint.list'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'app_name',
-                                'description'   => 'Name of the application to get endpoints on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'names_only',
-                                'description'   => 'Return only the names of the endpoints in an array.',
-                                'allowMultiple' => false,
-                                'type'          => 'boolean',
-                                'paramType'     => 'query',
-                                'required'      => true,
-                                'default'       => true,
-                            ],
+                    'parameters'  => [
+                        [
+                            'name'        => 'endpoint_name',
+                            'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
                     ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'createAppEndpoint() - Create a endpoint for a given application.',
-                        'nickname'         => 'createAppEndpoint',
-                        'type'             => 'EndpointIdentifier',
-                        'event_name'       => ['{api_name}.endpoint.create'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'app_name',
-                                'description'   => 'Name of the application to create endpoints on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of endpoint attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'AppEndpointRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Endpoint Attributes',
+                            'schema'      => ['$ref' => '#/definitions/EndpointAttributesResponse']
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'Post data should be an array of endpoint attributes including \'Name\'.',
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'This retrieves the endpoint, detailing its available properties.',
+                ],
+                'post'   => [
+                    'tags'        => [$name],
+                    'summary'     => 'publish'.$capitalized.'Endpoint() - Send a message to the given endpoint.',
+                    'operationId' => 'publish'.$capitalized.'Endpoint',
+                    'description' => 'Post data should be an array of endpoint publish properties.',
+                    'event_name'  => [
+                        $name.'.topic.{endpoint_name}.publish',
+                        $name.'.endpoint_published'
+                    ],
+                    'parameters'  => [
+                        [
+                            'name'        => 'endpoint_name',
+                            'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
+                        ],
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of topic message parameters.',
+                            'schema'      => ['$ref' => '#/definitions/PublishEndpointRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
+                        ],
+                    ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Publish Response',
+                            'schema'      => ['$ref' => '#/definitions/PublishResponse']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
                 ],
-            ],
-            [
-                'path'        => '/{api_name}/endpoint',
-                'description' => 'Operations for push application endpoints.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getEndpoints() - Retrieve endpoint definition for the given endpoint.',
-                        'nickname'         => 'getEndpoints',
-                        'notes'            => 'This describes the endpoint, detailing its available properties.',
-                        'event_name'       => ['{api_name}.endpoint.list'],
-                        'type'             => 'GetEndpointsResponse',
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                'put'    => [
+                    'tags'        => [$name],
+                    'summary'     => 'set'.$capitalized.'EndpointAttributes() - Update a given endpoint.',
+                    'operationId' => 'set'.$capitalized.'EndpointAttributes',
+                    'event_name'  => [
+                        $name.'.endpoint.{endpoint_name}.update',
+                        $name.'.endpoint_updated'
                     ],
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'listEndpoints() - List endpoints available for the push service.',
-                        'nickname'         => 'listEndpoints',
-                        'notes'            => 'See listed operations for each endpoint available.',
-                        'type'             => 'ComponentList',
-                        'event_name'       => ['{api_name}.endpoint.list'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'names_only',
-                                'description'   => 'Return only the names of the endpoints in an array.',
-                                'allowMultiple' => false,
-                                'type'          => 'boolean',
-                                'paramType'     => 'query',
-                                'required'      => true,
-                                'default'       => true,
-                            ],
+                    'parameters'  => [
+                        [
+                            'name'        => 'endpoint_name',
+                            'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                    ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'createEndpoint() - Create a given endpoint.',
-                        'nickname'         => 'createEndpoint',
-                        'type'             => 'EndpointIdentifier',
-                        'event_name'       => ['{api_name}.endpoint.create'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of endpoint attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'EndpointRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                        [
+                            'name'        => 'body',
+                            'description' => 'Array of endpoint attributes.',
+                            'schema'      => ['$ref' => '#/definitions/EndpointAttributesRequest'],
+                            'in'          => 'body',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'Post data should be an array of endpoint attributes including \'Name\'.',
                     ],
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Success',
+                            'schema'      => ['$ref' => '#/definitions/Success']
+                        ],
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
+                    ],
+                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
-            ],
-            [
-                'path'        => '/{api_name}/endpoint/{endpoint_name}',
-                'description' => 'Operations for a specific push application endpoint.',
-                'operations'  => [
-                    [
-                        'method'           => 'GET',
-                        'summary'          => 'getEndpointAttributes() - Retrieve endpoint definition for the given endpoint.',
-                        'nickname'         => 'getEndpointAttributes',
-                        'event_name'       => [
-                            '{api_name}.endpoint.{endpoint_name}.retrieve',
-                            '{api_name}.endpoint_retrieved'
-                        ],
-                        'type'             => 'EndpointAttributesResponse',
-                        'parameters'       => [
-                            [
-                                'name'          => 'endpoint_name',
-                                'description'   => 'Full ARN or simplified name of the endpoint to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                        ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'This retrieves the endpoint, detailing its available properties.',
+                'delete' => [
+                    'tags'        => [$name],
+                    'summary'     => 'delete'.$capitalized.'Endpoint() - Delete a given endpoint.',
+                    'operationId' => 'delete'.$capitalized.'Endpoint',
+                    'description' => '',
+                    'event_name'  => [
+                        $name.'.endpoint.{endpoint_name}.delete',
+                        $name.'.endpoint_deleted'
                     ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'simplePublishEndpoint() - Send a message to the given endpoint.',
-                        'nickname'         => 'simplePublishEndpoint',
-                        'notes'            => 'Post data should be an array of endpoint publish properties.',
-                        'type'             => 'PublishResponse',
-                        'event_name'       => ['{api_name}.topic.{topic_name}.publish', '{api_name}.topic_published'],
-                        'parameters'       => [
-                            [
-                                'name'          => 'endpoint_name',
-                                'description'   => 'Full ARN or simplified name of the endpoint to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of topic publish parameters.',
-                                'allowMultiple' => false,
-                                'type'          => 'SimplePublishEndpointRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
+                    'parameters'  => [
+                        [
+                            'name'        => 'endpoint_name',
+                            'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
+                            'type'        => 'string',
+                            'in'          => 'path',
+                            'required'    => true,
                         ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
                     ],
-                    [
-                        'method'           => 'POST',
-                        'summary'          => 'publishEndpoint() - Send a message to the given endpoint.',
-                        'nickname'         => 'publishEndpoint',
-                        'notes'            => 'Post data should be an array of endpoint publish properties.',
-                        'type'             => 'PublishResponse',
-                        'event_name'       => [
-                            '{api_name}.topic.{endpoint_name}.publish',
-                            '{api_name}.endpoint_published'
+                    'responses'   => [
+                        '200'     => [
+                            'description' => 'Success',
+                            'schema'      => ['$ref' => '#/definitions/Success']
                         ],
-                        'parameters'       => [
-                            [
-                                'name'          => 'endpoint_name',
-                                'description'   => 'Full ARN or simplified name of the endpoint to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of topic message parameters.',
-                                'allowMultiple' => false,
-                                'type'          => 'PublishEndpointRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
-                        ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                    ],
-                    [
-                        'method'           => 'PUT',
-                        'summary'          => 'setEndpointAttributes() - Update a given endpoint.',
-                        'nickname'         => 'setEndpointAttributes',
-                        'type'             => 'Success',
-                        'event_name'       => [
-                            '{api_name}.endpoint.{endpoint_name}.update',
-                            '{api_name}.endpoint_updated'
-                        ],
-                        'parameters'       => [
-                            [
-                                'name'          => 'endpoint_name',
-                                'description'   => 'Full ARN or simplified name of the endpoint to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                            [
-                                'name'          => 'body',
-                                'description'   => 'Array of endpoint attributes.',
-                                'allowMultiple' => false,
-                                'type'          => 'EndpointAttributesRequest',
-                                'paramType'     => 'body',
-                                'required'      => true,
-                            ],
-                        ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
-                        'notes'            => 'Post data should be an array of endpoint attributes including \'Name\'.',
-                    ],
-                    [
-                        'method'           => 'DELETE',
-                        'summary'          => 'deleteEndpoint() - Delete a given endpoint.',
-                        'nickname'         => 'deleteEndpoint',
-                        'notes'            => '',
-                        'type'             => 'Success',
-                        'event_name'       => [
-                            '{api_name}.endpoint.{endpoint_name}.delete',
-                            '{api_name}.endpoint_deleted'
-                        ],
-                        'parameters'       => [
-                            [
-                                'name'          => 'endpoint_name',
-                                'description'   => 'Full ARN or simplified name of the endpoint to perform operations on.',
-                                'allowMultiple' => false,
-                                'type'          => 'string',
-                                'paramType'     => 'path',
-                                'required'      => true,
-                            ],
-                        ],
-                        'responseMessages' => ApiDocUtilities::getCommonResponses([400, 401, 500]),
+                        'default' => [
+                            'description' => 'Error',
+                            'schema'      => ['$ref' => '#/definitions/Error']
+                        ]
                     ],
                 ],
             ],
@@ -1433,19 +1374,19 @@ class Sns extends BaseRestService
 
         $models = [
             'GetTopicsResponse'              => [
-                'id'         => 'GetTopicsResponse',
+                'type'       => 'object',
                 'properties' => [
                     'resource' => [
                         'type'        => 'Array',
                         'description' => 'An array of identifying attributes for a topic, use either in requests.',
                         'items'       => [
-                            '$ref' => 'TopicIdentifier',
+                            '$ref' => '#/definitions/TopicIdentifier',
                         ],
                     ],
                 ],
             ],
             'TopicRequest'                   => [
-                'id'         => 'TopicRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Name' => [
                         'type'        => 'string',
@@ -1455,7 +1396,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'TopicIdentifier'                => [
-                'id'         => 'TopicIdentifier',
+                'type'       => 'object',
                 'properties' => [
                     'Topic'    => [
                         'type'        => 'string',
@@ -1468,7 +1409,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'TopicAttributesResponse'        => [
-                'id'         => 'TopicAttributesResponse',
+                'type'       => 'object',
                 'properties' => [
                     'Topic'                   => [
                         'type'        => 'string',
@@ -1513,7 +1454,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'TopicAttributesRequest'         => [
-                'id'         => 'TopicAttributesRequest',
+                'type'       => 'object',
                 'properties' => [
                     'AttributeName'  => [
                         'type'        => 'string',
@@ -1529,19 +1470,19 @@ class Sns extends BaseRestService
                 ],
             ],
             'GetSubscriptionsResponse'       => [
-                'id'         => 'GetSubscriptionsResponse',
+                'type'       => 'object',
                 'properties' => [
                     'resource' => [
                         'type'        => 'Array',
                         'description' => 'An array of identifying attributes for a subscription, use either in requests.',
                         'items'       => [
-                            '$ref' => 'SubscriptionIdentifier',
+                            '$ref' => '#/definitions/SubscriptionIdentifier',
                         ],
                     ],
                 ],
             ],
             'SubscriptionRequest'            => [
-                'id'         => 'SubscriptionRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Topic'    => [
                         'type'        => 'string',
@@ -1561,7 +1502,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'SubscriptionTopicRequest'       => [
-                'id'         => 'SubscriptionTopicRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Protocol' => [
                         'type'        => 'string',
@@ -1576,7 +1517,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'SubscriptionIdentifier'         => [
-                'id'         => 'SubscriptionIdentifier',
+                'type'       => 'object',
                 'properties' => [
                     'Subscription'    => [
                         'type'        => 'string',
@@ -1589,7 +1530,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'SubscriptionAttributesResponse' => [
-                'id'         => 'SubscriptionAttributesResponse',
+                'type'       => 'object',
                 'properties' => [
                     'Subscription'                 => [
                         'type'        => 'string',
@@ -1622,7 +1563,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'SubscriptionAttributesRequest'  => [
-                'id'         => 'SubscriptionAttributesRequest',
+                'type'       => 'object',
                 'properties' => [
                     'AttributeName'  => [
                         'type'        => 'string',
@@ -1638,23 +1579,23 @@ class Sns extends BaseRestService
                 ],
             ],
             'GetAppResponse'                 => [
-                'id'         => 'GetAppResponse',
+                'type'       => 'object',
                 'properties' => [
                     'resource' => [
                         'type'        => 'Array',
                         'description' => 'An array of identifying attributes for a app, use either in requests.',
                         'items'       => [
-                            '$ref' => 'AppIdentifier',
+                            '$ref' => '#/definitions/AppIdentifier',
                         ],
                     ],
                 ],
             ],
             'AppAttributes'                  => [
-                'id'         => 'AppAttributes',
+                'type'       => 'object',
                 'properties' => $commonAppAttributes,
             ],
             'AppRequest'                     => [
-                'id'         => 'AppRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Name'       => [
                         'type'        => 'string',
@@ -1674,7 +1615,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'AppIdentifier'                  => [
-                'id'         => 'AppIdentifier',
+                'type'       => 'object',
                 'properties' => [
                     'Application'            => [
                         'type'        => 'string',
@@ -1687,7 +1628,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'AppAttributesResponse'          => [
-                'id'         => 'AppAttributesResponse',
+                'type'       => 'object',
                 'properties' => [
                     'Application'            => [
                         'type'        => 'string',
@@ -1716,7 +1657,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'AppAttributesRequest'           => [
-                'id'         => 'AppAttributesRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Attributes' => [
                         'type'        => 'AppAttributes',
@@ -1726,19 +1667,19 @@ class Sns extends BaseRestService
                 ],
             ],
             'GetEndpointsResponse'           => [
-                'id'         => 'GetEndpointsResponse',
+                'type'       => 'object',
                 'properties' => [
                     'resource' => [
                         'type'        => 'Array',
                         'description' => 'An array of identifying attributes for a topic, use either in requests.',
                         'items'       => [
-                            '$ref' => 'EndpointIdentifier',
+                            '$ref' => '#/definitions/EndpointIdentifier',
                         ],
                     ],
                 ],
             ],
             'AppEndpointRequest'             => [
-                'id'         => 'AppEndpointRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Token'          => [
                         'type'        => 'string',
@@ -1753,13 +1694,13 @@ class Sns extends BaseRestService
                         'type'        => 'Array',
                         'description' => 'An array of key-value pairs containing endpoint attributes.',
                         'items'       => [
-                            '$ref' => 'MessageAttribute',
+                            '$ref' => '#/definitions/MessageAttribute',
                         ],
                     ],
                 ],
             ],
             'EndpointRequest'                => [
-                'id'         => 'EndpointRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Application'    => [
                         'type'        => 'string',
@@ -1779,13 +1720,13 @@ class Sns extends BaseRestService
                         'type'        => 'Array',
                         'description' => 'An array of key-value pairs containing endpoint attributes.',
                         'items'       => [
-                            '$ref' => 'MessageAttribute',
+                            '$ref' => '#/definitions/MessageAttribute',
                         ],
                     ],
                 ],
             ],
             'EndpointIdentifier'             => [
-                'id'         => 'EndpointIdentifier',
+                'type'       => 'object',
                 'properties' => [
                     'Endpoint'    => [
                         'type'        => 'string',
@@ -1798,7 +1739,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'EndpointAttributesResponse'     => [
-                'id'         => 'EndpointAttributesResponse',
+                'type'       => 'object',
                 'properties' => [
                     'Endpoint'       => [
                         'type'        => 'string',
@@ -1823,11 +1764,11 @@ class Sns extends BaseRestService
                 ],
             ],
             'EndpointAttributes'             => [
-                'id'         => 'EndpointAttributes',
+                'type'       => 'object',
                 'properties' => $commonEndpointAttributes,
             ],
             'EndpointAttributesRequest'      => [
-                'id'         => 'EndpointAttributesRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Attributes' => [
                         'type'        => 'EndpointAttributes',
@@ -1837,7 +1778,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'TopicMessage'                   => [
-                'id'         => 'TopicMessage',
+                'type'       => 'object',
                 'properties' => [
                     'default' => [
                         'type'        => 'string',
@@ -1891,7 +1832,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'MessageAttributeData'           => [
-                'id'         => 'MessageAttributeData',
+                'type'       => 'object',
                 'properties' => [
                     'DataType'    => [
                         'type'        => 'string',
@@ -1909,7 +1850,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'MessageAttribute'               => [
-                'id'         => 'MessageAttribute',
+                'type'       => 'object',
                 'properties' => [
                     '_user_defined_name_' => [
                         'type'        => 'MessageAttributeData',
@@ -1918,7 +1859,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'SimplePublishRequest'           => [
-                'id'         => 'SimplePublishRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Topic'             => [
                         'type'        => 'string',
@@ -1943,7 +1884,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'PublishRequest'                 => [
-                'id'         => 'PublishRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Topic'             => [
                         'type'        => 'string',
@@ -1974,7 +1915,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'SimplePublishTopicRequest'      => [
-                'id'         => 'SimplePublishTopicRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Message'           => [
                         'type'        => 'string',
@@ -1991,7 +1932,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'PublishTopicRequest'            => [
-                'id'         => 'PublishTopicRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Message'           => [
                         'type'        => 'TopicMessage',
@@ -2014,7 +1955,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'SimplePublishEndpointRequest'   => [
-                'id'         => 'SimplePublishEndpointRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Message'           => [
                         'type'        => 'string',
@@ -2031,7 +1972,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'PublishEndpointRequest'         => [
-                'id'         => 'PublishEndpointRequest',
+                'type'       => 'object',
                 'properties' => [
                     'Message'           => [
                         'type'        => 'TopicMessage',
@@ -2054,7 +1995,7 @@ class Sns extends BaseRestService
                 ],
             ],
             'PublishResponse'                => [
-                'id'         => 'PublishResponse',
+                'type'       => 'object',
                 'properties' => [
                     'MessageId' => [
                         'type'        => 'string',
@@ -2064,8 +2005,8 @@ class Sns extends BaseRestService
             ],
         ];
 
-        $base['apis'] = array_merge($base['apis'], $apis);
-        $base['models'] = array_merge($base['models'], $models);
+        $base['paths'] = array_merge($base['paths'], $apis);
+        $base['definitions'] = array_merge($base['definitions'], $models);
 
         return $base;
     }
