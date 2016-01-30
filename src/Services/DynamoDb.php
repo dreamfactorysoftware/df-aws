@@ -49,7 +49,7 @@ class DynamoDb extends BaseNoSqlDbService
     /**
      * @var array
      */
-    protected $resources = [
+    protected static $resources = [
         DynamoDbSchema::RESOURCE_NAME => [
             'name'       => DynamoDbSchema::RESOURCE_NAME,
             'class_name' => DynamoDbSchema::class,

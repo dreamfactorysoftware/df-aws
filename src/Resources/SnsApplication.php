@@ -35,7 +35,7 @@ class SnsApplication extends BaseSnsResource
     /**
      * {@inheritdoc}
      */
-    protected function getResourceIdentifier()
+    protected static function getResourceIdentifier()
     {
         return 'PlatformApplicationArn';
     }
