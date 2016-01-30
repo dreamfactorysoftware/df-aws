@@ -431,8 +431,6 @@ class Sns extends BaseRestService
             throw new BadRequestException('No post detected in request.');
         }
 
-        $this->triggerActionEvent($this->response);
-
         $result = $this->publish($payload);
 
         return $result;
