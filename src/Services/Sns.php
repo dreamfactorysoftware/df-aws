@@ -553,14 +553,14 @@ class Sns extends BaseRestService
         $capitalized = Inflector::camelize($service->name);
 
         $apis = [
-            '/'.$name                                 => [
+            '/' . $name                                      => [
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'publish'.$capitalized.'() - Send a message to a topic or endpoint.',
-                    'operationId' => 'publish'.$capitalized,
-                    'description' => 'Post data should be an array of topic publish properties.',
-                    'event_name'  => [$name.'.publish'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'publish' . $capitalized . '() - Send a message to a topic or endpoint.',
+                    'operationId'       => 'publish' . $capitalized,
+                    'description'       => 'Post data should be an array of topic publish properties.',
+                    'x-publishedEvents' => [$name . '.publish'],
+                    'parameters'        => [
                         [
                             'name'        => 'body',
                             'description' => 'Array of topic message parameters.',
@@ -569,7 +569,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Publish Response',
                             'schema'      => ['$ref' => '#/definitions/PublishResponse']
@@ -581,14 +581,16 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            '/'.$name.'/topic'                           => [
+            '/' . $name . '/topic'                           => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get'.$capitalized.'Topics() - Retrieve all topics available for the push service.',
-                    'operationId' => 'get'.$capitalized.'Topics',
-                    'description' => 'This returns the topics as resources.',
-                    'event_name'  => [$name.'.topic.list'],
-                    'responses'   => [
+                    'tags'              => [$name],
+                    'summary'           => 'get' .
+                        $capitalized .
+                        'Topics() - Retrieve all topics available for the push service.',
+                    'operationId'       => 'get' . $capitalized . 'Topics',
+                    'description'       => 'This returns the topics as resources.',
+                    'x-publishedEvents' => [$name . '.topic.list'],
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Topics Response',
                             'schema'      => ['$ref' => '#/definitions/GetTopicsResponse']
@@ -600,12 +602,12 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'create'.$capitalized.'Topic() - Create a topic.',
-                    'operationId' => 'create'.$capitalized.'Topic',
-                    'description' => 'Post data should be an array of topic attributes including \'Name\'.',
-                    'event_name'  => [$name.'.topic.create'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'create' . $capitalized . 'Topic() - Create a topic.',
+                    'operationId'       => 'create' . $capitalized . 'Topic',
+                    'description'       => 'Post data should be an array of topic attributes including \'Name\'.',
+                    'x-publishedEvents' => [$name . '.topic.create'],
+                    'parameters'        => [
                         [
                             'name'        => 'body',
                             'description' => 'Array of topic attributes.',
@@ -614,7 +616,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Topic Identifier',
                             'schema'      => ['$ref' => '#/definitions/TopicIdentifier']
@@ -626,14 +628,16 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            '/'.$name.'/topic/{topic_name}'              => [
+            '/' . $name . '/topic/{topic_name}'              => [
                 'get'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'get'.$capitalized.'TopicAttributes() - Retrieve topic definition for the given topic.',
-                    'operationId' => 'get'.$capitalized.'TopicAttributes',
-                    'description' => 'This retrieves the topic, detailing its available properties.',
-                    'event_name'  => [$name.'.topic.{topic_name}.retrieve', $name.'.topic_retrieved'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'get' .
+                        $capitalized .
+                        'TopicAttributes() - Retrieve topic definition for the given topic.',
+                    'operationId'       => 'get' . $capitalized . 'TopicAttributes',
+                    'description'       => 'This retrieves the topic, detailing its available properties.',
+                    'x-publishedEvents' => [$name . '.topic.{topic_name}.retrieve', $name . '.topic_retrieved'],
+                    'parameters'        => [
                         [
                             'name'        => 'topic_name',
                             'description' => 'Full ARN or simplified name of the topic to perform operations on.',
@@ -642,7 +646,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Topic Response',
                             'schema'      => ['$ref' => '#/definitions/TopicAttributesResponse']
@@ -654,12 +658,12 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'post'   => [
-                    'tags'        => [$name],
-                    'summary'     => 'publish'.$capitalized.'Topic() - Send a message to the given topic.',
-                    'operationId' => 'publish'.$capitalized.'Topic',
-                    'description' => 'Post data should be an array of topic publish properties.',
-                    'event_name'  => [$name.'.topic.{topic_name}.publish', $name.'.topic_published'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'publish' . $capitalized . 'Topic() - Send a message to the given topic.',
+                    'operationId'       => 'publish' . $capitalized . 'Topic',
+                    'description'       => 'Post data should be an array of topic publish properties.',
+                    'x-publishedEvents' => [$name . '.topic.{topic_name}.publish', $name . '.topic_published'],
+                    'parameters'        => [
                         [
                             'name'        => 'topic_name',
                             'description' => 'Full ARN or simplified name of the topic to perform operations on.',
@@ -675,7 +679,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Topic Publish Response',
                             'schema'      => ['$ref' => '#/definitions/PublishResponse']
@@ -687,11 +691,13 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'put'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'set'.$capitalized.'TopicAttributes() - Update a given topic\'s attributes.',
-                    'operationId' => 'set'.$capitalized.'TopicAttributes',
-                    'event_name'  => [$name.'.topic.{topic_name}.update', $name.'.topic_updated'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'set' .
+                        $capitalized .
+                        'TopicAttributes() - Update a given topic\'s attributes.',
+                    'operationId'       => 'set' . $capitalized . 'TopicAttributes',
+                    'x-publishedEvents' => [$name . '.topic.{topic_name}.update', $name . '.topic_updated'],
+                    'parameters'        => [
                         [
                             'name'        => 'topic_name',
                             'description' => 'Full ARN or simplified name of the topic to perform operations on.',
@@ -707,7 +713,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Success',
                             'schema'      => ['$ref' => '#/definitions/Success']
@@ -717,15 +723,15 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'Post data should be an array of topic attributes including \'Name\'.',
+                    'description'       => 'Post data should be an array of topic attributes including \'Name\'.',
                 ],
                 'delete' => [
-                    'tags'        => [$name],
-                    'summary'     => 'delete'.$capitalized.'Topic() - Delete a given topic.',
-                    'operationId' => 'delete'.$capitalized.'Topic',
-                    'description' => '',
-                    'event_name'  => [$name.'.topic.{topic_name}.delete', $name.'.topic_deleted'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'delete' . $capitalized . 'Topic() - Delete a given topic.',
+                    'operationId'       => 'delete' . $capitalized . 'Topic',
+                    'description'       => '',
+                    'x-publishedEvents' => [$name . '.topic.{topic_name}.delete', $name . '.topic_deleted'],
+                    'parameters'        => [
                         [
                             'name'        => 'topic_name',
                             'description' => 'Full ARN or simplified name of the topic to perform operations on.',
@@ -734,7 +740,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Success',
                             'schema'      => ['$ref' => '#/definitions/Success']
@@ -746,14 +752,16 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            '/'.$name.'/topic/{topic_name}/subscription' => [
+            '/' . $name . '/topic/{topic_name}/subscription' => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'list'.$capitalized.'SubscriptionsByTopic() - List subscriptions available for the given topic.',
-                    'operationId' => 'list'.$capitalized.'SubscriptionsByTopic',
-                    'description' => 'Return only the names of the subscriptions in an array.',
-                    'event_name'  => [$name.'.topic.{topic_name}.subscription.list'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'list' .
+                        $capitalized .
+                        'SubscriptionsByTopic() - List subscriptions available for the given topic.',
+                    'operationId'       => 'list' . $capitalized . 'SubscriptionsByTopic',
+                    'description'       => 'Return only the names of the subscriptions in an array.',
+                    'x-publishedEvents' => [$name . '.topic.{topic_name}.subscription.list'],
+                    'parameters'        => [
                         [
                             'name'        => 'topic_name',
                             'description' => 'Full ARN or simplified name of the topic to perform operations on.',
@@ -770,7 +778,7 @@ class Sns extends BaseRestService
                             'default'     => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Component List',
                             'schema'      => ['$ref' => '#/definitions/ComponentList']
@@ -782,11 +790,13 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'subscribe'.$capitalized.'Topic() - Create a subscription for the given topic.',
-                    'operationId' => 'subscribe'.$capitalized.'Topic',
-                    'event_name'  => [$name.'.topic.{topic_name}.subscription.create'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'subscribe' .
+                        $capitalized .
+                        'Topic() - Create a subscription for the given topic.',
+                    'operationId'       => 'subscribe' . $capitalized . 'Topic',
+                    'x-publishedEvents' => [$name . '.topic.{topic_name}.subscription.create'],
+                    'parameters'        => [
                         [
                             'name'        => 'topic_name',
                             'description' => 'Full ARN or simplified name of the topic to perform operations on.',
@@ -802,7 +812,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Subscription Identifier',
                             'schema'      => ['$ref' => '#/definitions/SubscriptionIdentifier']
@@ -812,17 +822,19 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
+                    'description'       => 'Post data should be an array of subscription attributes including \'Name\'.',
                 ],
             ],
-            '/'.$name.'/subscription'                    => [
+            '/' . $name . '/subscription'                    => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get'.$capitalized.'Subscriptions() - Retrieve all subscriptions as resources.',
-                    'operationId' => 'get'.$capitalized.'Subscriptions',
-                    'description' => 'This describes the topic, detailing its available properties.',
-                    'event_name'  => [$name.'.subscription.list'],
-                    'responses'   => [
+                    'tags'              => [$name],
+                    'summary'           => 'get' .
+                        $capitalized .
+                        'Subscriptions() - Retrieve all subscriptions as resources.',
+                    'operationId'       => 'get' . $capitalized . 'Subscriptions',
+                    'description'       => 'This describes the topic, detailing its available properties.',
+                    'x-publishedEvents' => [$name . '.subscription.list'],
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Subscriptions',
                             'schema'      => ['$ref' => '#/definitions/GetSubscriptionsResponse']
@@ -834,11 +846,11 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'subscribe'.$capitalized.'() - Create a subscription.',
-                    'operationId' => 'subscribe'.$capitalized,
-                    'event_name'  => [$name.'.subscription.create'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'subscribe' . $capitalized . '() - Create a subscription.',
+                    'operationId'       => 'subscribe' . $capitalized,
+                    'x-publishedEvents' => [$name . '.subscription.create'],
+                    'parameters'        => [
                         [
                             'name'        => 'body',
                             'description' => 'Array of subscription attributes.',
@@ -847,7 +859,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Subscription Identifier',
                             'schema'      => ['$ref' => '#/definitions/SubscriptionIdentifier']
@@ -857,19 +869,21 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
+                    'description'       => 'Post data should be an array of subscription attributes including \'Name\'.',
                 ],
             ],
-            '/'.$name.'/subscription/{sub_name}'         => [
+            '/' . $name . '/subscription/{sub_name}'         => [
                 'get'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'get'.$capitalized.'SubscriptionAttributes() - Retrieve attributes for the given subscription.',
-                    'operationId' => 'get'.$capitalized.'SubscriptionAttributes',
-                    'event_name'  => [
-                        $name.'.subscription.{subscription_name}.retrieve',
-                        $name.'.subscription_retrieved'
+                    'tags'              => [$name],
+                    'summary'           => 'get' .
+                        $capitalized .
+                        'SubscriptionAttributes() - Retrieve attributes for the given subscription.',
+                    'operationId'       => 'get' . $capitalized . 'SubscriptionAttributes',
+                    'x-publishedEvents' => [
+                        $name . '.subscription.{subscription_name}.retrieve',
+                        $name . '.subscription_retrieved'
                     ],
-                    'parameters'  => [
+                    'parameters'        => [
                         [
                             'name'        => 'sub_name',
                             'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
@@ -878,7 +892,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Subscription Attributes',
                             'schema'      => ['$ref' => '#/definitions/SubscriptionAttributesResponse']
@@ -888,17 +902,19 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'This retrieves the subscription, detailing its available properties.',
+                    'description'       => 'This retrieves the subscription, detailing its available properties.',
                 ],
                 'put'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'set'.$capitalized.'SubscriptionAttributes() - Update a given subscription.',
-                    'operationId' => 'set'.$capitalized.'SubscriptionAttributes',
-                    'event_name'  => [
-                        $name.'.subscription.{subscription_name}.update',
-                        $name.'.subscription_updated'
+                    'tags'              => [$name],
+                    'summary'           => 'set' .
+                        $capitalized .
+                        'SubscriptionAttributes() - Update a given subscription.',
+                    'operationId'       => 'set' . $capitalized . 'SubscriptionAttributes',
+                    'x-publishedEvents' => [
+                        $name . '.subscription.{subscription_name}.update',
+                        $name . '.subscription_updated'
                     ],
-                    'parameters'  => [
+                    'parameters'        => [
                         [
                             'name'        => 'sub_name',
                             'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
@@ -914,7 +930,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Success',
                             'schema'      => ['$ref' => '#/definitions/Success']
@@ -924,18 +940,18 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
+                    'description'       => 'Post data should be an array of subscription attributes including \'Name\'.',
                 ],
                 'delete' => [
-                    'tags'        => [$name],
-                    'summary'     => 'unsubscribe'.$capitalized.'() - Delete a given subscription.',
-                    'operationId' => 'unsubscribe'.$capitalized,
-                    'description' => '',
-                    'event_name'  => [
-                        $name.'.subscription.{subscription_name}.delete',
-                        $name.'.subscription_deleted'
+                    'tags'              => [$name],
+                    'summary'           => 'unsubscribe' . $capitalized . '() - Delete a given subscription.',
+                    'operationId'       => 'unsubscribe' . $capitalized,
+                    'description'       => '',
+                    'x-publishedEvents' => [
+                        $name . '.subscription.{subscription_name}.delete',
+                        $name . '.subscription_deleted'
                     ],
-                    'parameters'  => [
+                    'parameters'        => [
                         [
                             'name'        => 'sub_name',
                             'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
@@ -944,7 +960,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Success',
                             'schema'      => ['$ref' => '#/definitions/Success']
@@ -956,13 +972,13 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            '/'.$name.'/app'                             => [
+            '/' . $name . '/app'                             => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get'.$capitalized.'Apps() - Retrieve app definition for the given app.',
-                    'operationId' => 'get'.$capitalized.'Apps',
-                    'event_name'  => [$name.'.app.list'],
-                    'responses'   => [
+                    'tags'              => [$name],
+                    'summary'           => 'get' . $capitalized . 'Apps() - Retrieve app definition for the given app.',
+                    'operationId'       => 'get' . $capitalized . 'Apps',
+                    'x-publishedEvents' => [$name . '.app.list'],
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Apps Response',
                             'schema'      => ['$ref' => '#/definitions/GetAppsResponse']
@@ -972,14 +988,14 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'This describes the app, detailing its available properties.',
+                    'description'       => 'This describes the app, detailing its available properties.',
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'create'.$capitalized.'App() - Create a given app.',
-                    'operationId' => 'create'.$capitalized.'App',
-                    'event_name'  => [$name.'.app.create'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'create' . $capitalized . 'App() - Create a given app.',
+                    'operationId'       => 'create' . $capitalized . 'App',
+                    'x-publishedEvents' => [$name . '.app.create'],
+                    'parameters'        => [
                         [
                             'name'        => 'body',
                             'description' => 'Array of app attributes.',
@@ -988,7 +1004,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'App Identifier',
                             'schema'      => ['$ref' => '#/definitions/AppIdentifier']
@@ -998,16 +1014,18 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
+                    'description'       => 'Post data should be an array of app attributes including \'Name\'.',
                 ],
             ],
-            '/'.$name.'/app/{app_name}'                  => [
+            '/' . $name . '/app/{app_name}'                  => [
                 'get'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'get'.$capitalized.'AppAttributes() - Retrieve app definition for the given app.',
-                    'operationId' => 'get'.$capitalized.'AppAttributes',
-                    'event_name'  => [$name.'.app.{app_name}.retrieve', $name.'.app_retrieved'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'get' .
+                        $capitalized .
+                        'AppAttributes() - Retrieve app definition for the given app.',
+                    'operationId'       => 'get' . $capitalized . 'AppAttributes',
+                    'x-publishedEvents' => [$name . '.app.{app_name}.retrieve', $name . '.app_retrieved'],
+                    'parameters'        => [
                         [
                             'name'        => 'app_name',
                             'description' => 'Full ARN or simplified name of the app to perform operations on.',
@@ -1016,7 +1034,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'App Attributes',
                             'schema'      => ['$ref' => '#/definitions/AppAttributesResponse']
@@ -1026,14 +1044,14 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'This retrieves the app, detailing its available properties.',
+                    'description'       => 'This retrieves the app, detailing its available properties.',
                 ],
                 'put'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'set'.$capitalized.'AppAttributes() - Update a given app.',
-                    'operationId' => 'set'.$capitalized.'AppAttributes',
-                    'event_name'  => [$name.'.app.{app_name}.update', $name.'.app_updated'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'set' . $capitalized . 'AppAttributes() - Update a given app.',
+                    'operationId'       => 'set' . $capitalized . 'AppAttributes',
+                    'x-publishedEvents' => [$name . '.app.{app_name}.update', $name . '.app_updated'],
+                    'parameters'        => [
                         [
                             'name'        => 'app_name',
                             'description' => 'Full ARN or simplified name of the app to perform operations on.',
@@ -1049,7 +1067,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Success',
                             'schema'      => ['$ref' => '#/definitions/Success']
@@ -1059,15 +1077,15 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
+                    'description'       => 'Post data should be an array of app attributes including \'Name\'.',
                 ],
                 'delete' => [
-                    'tags'        => [$name],
-                    'summary'     => 'delete'.$capitalized.'App() - Delete a given app.',
-                    'operationId' => 'delete'.$capitalized.'App',
-                    'description' => '',
-                    'event_name'  => [$name.'.app.{app_name}.delete', $name.'.app_deleted'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'delete' . $capitalized . 'App() - Delete a given app.',
+                    'operationId'       => 'delete' . $capitalized . 'App',
+                    'description'       => '',
+                    'x-publishedEvents' => [$name . '.app.{app_name}.delete', $name . '.app_deleted'],
+                    'parameters'        => [
                         [
                             'name'        => 'app_name',
                             'description' => 'Full ARN or simplified name of the app to perform operations on.',
@@ -1076,7 +1094,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Success',
                             'schema'      => ['$ref' => '#/definitions/Success']
@@ -1088,13 +1106,15 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            '/'.$name.'/app/{app_name}/endpoint'         => [
+            '/' . $name . '/app/{app_name}/endpoint'         => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get'.$capitalized.'EndpointsByApp() - Retrieve endpoints for the given application.',
-                    'operationId' => 'get'.$capitalized.'EndpointsByApp',
-                    'event_name'  => [$name.'.endpoint.list'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'get' .
+                        $capitalized .
+                        'EndpointsByApp() - Retrieve endpoints for the given application.',
+                    'operationId'       => 'get' . $capitalized . 'EndpointsByApp',
+                    'x-publishedEvents' => [$name . '.endpoint.list'],
+                    'parameters'        => [
                         [
                             'name'        => 'app_name',
                             'description' => 'Name of the application to get endpoints on.',
@@ -1103,7 +1123,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Endpoints Response',
                             'schema'      => ['$ref' => '#/definitions/GetEndpointsResponse']
@@ -1113,14 +1133,16 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'This describes the endpoints, detailing its available properties.',
+                    'description'       => 'This describes the endpoints, detailing its available properties.',
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'create'.$capitalized.'AppEndpoint() - Create a endpoint for a given application.',
-                    'operationId' => 'create'.$capitalized.'AppEndpoint',
-                    'event_name'  => [$name.'.endpoint.create'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'create' .
+                        $capitalized .
+                        'AppEndpoint() - Create a endpoint for a given application.',
+                    'operationId'       => 'create' . $capitalized . 'AppEndpoint',
+                    'x-publishedEvents' => [$name . '.endpoint.create'],
+                    'parameters'        => [
                         [
                             'name'        => 'app_name',
                             'description' => 'Name of the application to create endpoints on.',
@@ -1136,7 +1158,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Endpoint Identifier',
                             'schema'      => ['$ref' => '#/definitions/EndpointIdentifier']
@@ -1146,17 +1168,19 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
+                    'description'       => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
             ],
-            '/'.$name.'/endpoint'                        => [
+            '/' . $name . '/endpoint'                        => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get'.$capitalized.'Endpoints() - Retrieve endpoint definition for the given endpoint.',
-                    'operationId' => 'get'.$capitalized.'Endpoints',
-                    'description' => 'This describes the endpoint, detailing its available properties.',
-                    'event_name'  => [$name.'.endpoint.list'],
-                    'responses'   => [
+                    'tags'              => [$name],
+                    'summary'           => 'get' .
+                        $capitalized .
+                        'Endpoints() - Retrieve endpoint definition for the given endpoint.',
+                    'operationId'       => 'get' . $capitalized . 'Endpoints',
+                    'description'       => 'This describes the endpoint, detailing its available properties.',
+                    'x-publishedEvents' => [$name . '.endpoint.list'],
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Endpoints Response',
                             'schema'      => ['$ref' => '#/definitions/GetEndpointsResponse']
@@ -1168,11 +1192,11 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'create'.$capitalized.'Endpoint() - Create a given endpoint.',
-                    'operationId' => 'create'.$capitalized.'Endpoint',
-                    'event_name'  => [$name.'.endpoint.create'],
-                    'parameters'  => [
+                    'tags'              => [$name],
+                    'summary'           => 'create' . $capitalized . 'Endpoint() - Create a given endpoint.',
+                    'operationId'       => 'create' . $capitalized . 'Endpoint',
+                    'x-publishedEvents' => [$name . '.endpoint.create'],
+                    'parameters'        => [
                         [
                             'name'        => 'body',
                             'description' => 'Array of endpoint attributes.',
@@ -1181,7 +1205,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Endpoint Identifier',
                             'schema'      => ['$ref' => '#/definitions/EndpointIdentifier']
@@ -1191,19 +1215,21 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
+                    'description'       => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
             ],
-            '/'.$name.'/endpoint/{endpoint_name}'        => [
+            '/' . $name . '/endpoint/{endpoint_name}'        => [
                 'get'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'get'.$capitalized.'EndpointAttributes() - Retrieve endpoint definition for the given endpoint.',
-                    'operationId' => 'get'.$capitalized.'EndpointAttributes',
-                    'event_name'  => [
-                        $name.'.endpoint.{endpoint_name}.retrieve',
-                        $name.'.endpoint_retrieved'
+                    'tags'              => [$name],
+                    'summary'           => 'get' .
+                        $capitalized .
+                        'EndpointAttributes() - Retrieve endpoint definition for the given endpoint.',
+                    'operationId'       => 'get' . $capitalized . 'EndpointAttributes',
+                    'x-publishedEvents' => [
+                        $name . '.endpoint.{endpoint_name}.retrieve',
+                        $name . '.endpoint_retrieved'
                     ],
-                    'parameters'  => [
+                    'parameters'        => [
                         [
                             'name'        => 'endpoint_name',
                             'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
@@ -1212,7 +1238,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Endpoint Attributes',
                             'schema'      => ['$ref' => '#/definitions/EndpointAttributesResponse']
@@ -1222,18 +1248,20 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'This retrieves the endpoint, detailing its available properties.',
+                    'description'       => 'This retrieves the endpoint, detailing its available properties.',
                 ],
                 'post'   => [
-                    'tags'        => [$name],
-                    'summary'     => 'publish'.$capitalized.'Endpoint() - Send a message to the given endpoint.',
-                    'operationId' => 'publish'.$capitalized.'Endpoint',
-                    'description' => 'Post data should be an array of endpoint publish properties.',
-                    'event_name'  => [
-                        $name.'.topic.{endpoint_name}.publish',
-                        $name.'.endpoint_published'
+                    'tags'              => [$name],
+                    'summary'           => 'publish' .
+                        $capitalized .
+                        'Endpoint() - Send a message to the given endpoint.',
+                    'operationId'       => 'publish' . $capitalized . 'Endpoint',
+                    'description'       => 'Post data should be an array of endpoint publish properties.',
+                    'x-publishedEvents' => [
+                        $name . '.topic.{endpoint_name}.publish',
+                        $name . '.endpoint_published'
                     ],
-                    'parameters'  => [
+                    'parameters'        => [
                         [
                             'name'        => 'endpoint_name',
                             'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
@@ -1249,7 +1277,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Publish Response',
                             'schema'      => ['$ref' => '#/definitions/PublishResponse']
@@ -1261,14 +1289,14 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'put'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'set'.$capitalized.'EndpointAttributes() - Update a given endpoint.',
-                    'operationId' => 'set'.$capitalized.'EndpointAttributes',
-                    'event_name'  => [
-                        $name.'.endpoint.{endpoint_name}.update',
-                        $name.'.endpoint_updated'
+                    'tags'              => [$name],
+                    'summary'           => 'set' . $capitalized . 'EndpointAttributes() - Update a given endpoint.',
+                    'operationId'       => 'set' . $capitalized . 'EndpointAttributes',
+                    'x-publishedEvents' => [
+                        $name . '.endpoint.{endpoint_name}.update',
+                        $name . '.endpoint_updated'
                     ],
-                    'parameters'  => [
+                    'parameters'        => [
                         [
                             'name'        => 'endpoint_name',
                             'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
@@ -1284,7 +1312,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Success',
                             'schema'      => ['$ref' => '#/definitions/Success']
@@ -1294,18 +1322,18 @@ class Sns extends BaseRestService
                             'schema'      => ['$ref' => '#/definitions/Error']
                         ]
                     ],
-                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
+                    'description'       => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
                 'delete' => [
-                    'tags'        => [$name],
-                    'summary'     => 'delete'.$capitalized.'Endpoint() - Delete a given endpoint.',
-                    'operationId' => 'delete'.$capitalized.'Endpoint',
-                    'description' => '',
-                    'event_name'  => [
-                        $name.'.endpoint.{endpoint_name}.delete',
-                        $name.'.endpoint_deleted'
+                    'tags'              => [$name],
+                    'summary'           => 'delete' . $capitalized . 'Endpoint() - Delete a given endpoint.',
+                    'operationId'       => 'delete' . $capitalized . 'Endpoint',
+                    'description'       => '',
+                    'x-publishedEvents' => [
+                        $name . '.endpoint.{endpoint_name}.delete',
+                        $name . '.endpoint_deleted'
                     ],
-                    'parameters'  => [
+                    'parameters'        => [
                         [
                             'name'        => 'endpoint_name',
                             'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
@@ -1314,7 +1342,7 @@ class Sns extends BaseRestService
                             'required'    => true,
                         ],
                     ],
-                    'responses'   => [
+                    'responses'         => [
                         '200'     => [
                             'description' => 'Success',
                             'schema'      => ['$ref' => '#/definitions/Success']
@@ -1375,7 +1403,7 @@ class Sns extends BaseRestService
                 'type'       => 'object',
                 'properties' => [
                     'resource' => [
-                        'type'        => 'Array',
+                        'type'        => 'array',
                         'description' => 'An array of identifying attributes for a topic, use either in requests.',
                         'items'       => [
                             '$ref' => '#/definitions/TopicIdentifier',
@@ -1471,7 +1499,7 @@ class Sns extends BaseRestService
                 'type'       => 'object',
                 'properties' => [
                     'resource' => [
-                        'type'        => 'Array',
+                        'type'        => 'array',
                         'description' => 'An array of identifying attributes for a subscription, use either in requests.',
                         'items'       => [
                             '$ref' => '#/definitions/SubscriptionIdentifier',
@@ -1580,7 +1608,7 @@ class Sns extends BaseRestService
                 'type'       => 'object',
                 'properties' => [
                     'resource' => [
-                        'type'        => 'Array',
+                        'type'        => 'array',
                         'description' => 'An array of identifying attributes for a app, use either in requests.',
                         'items'       => [
                             '$ref' => '#/definitions/AppIdentifier',
@@ -1668,7 +1696,7 @@ class Sns extends BaseRestService
                 'type'       => 'object',
                 'properties' => [
                     'resource' => [
-                        'type'        => 'Array',
+                        'type'        => 'array',
                         'description' => 'An array of identifying attributes for a topic, use either in requests.',
                         'items'       => [
                             '$ref' => '#/definitions/EndpointIdentifier',
@@ -1689,7 +1717,7 @@ class Sns extends BaseRestService
                         'description' => 'Arbitrary user data to associate with the endpoint.',
                     ],
                     'Attributes'     => [
-                        'type'        => 'Array',
+                        'type'        => 'array',
                         'description' => 'An array of key-value pairs containing endpoint attributes.',
                         'items'       => [
                             '$ref' => '#/definitions/MessageAttribute',
@@ -1715,7 +1743,7 @@ class Sns extends BaseRestService
                         'description' => 'Arbitrary user data to associate with the endpoint.',
                     ],
                     'Attributes'     => [
-                        'type'        => 'Array',
+                        'type'        => 'array',
                         'description' => 'An array of key-value pairs containing endpoint attributes.',
                         'items'       => [
                             '$ref' => '#/definitions/MessageAttribute',
