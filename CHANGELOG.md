@@ -9,6 +9,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+## [0.2.1] - 2016-03-08
+### Fixed
+- Upgrade to latest 3.x sdk version
+- Swagger output cleanup
+
 ## [0.2.0]
 ### Added
 
