@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+## [0.2.2] - 2016-03-11
+### Fixed
+- Table listing on latest sdk version
+
 ## [0.2.1] - 2016-03-08
 ### Fixed
 - Upgrade to latest 3.x sdk version
@@ -34,7 +38,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## 0.1.0 - 2015-10-24
 First official release working with the new [df-core](https://github.com/dreamfactorysoftware/df-core) library.
 
-[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.2.2...HEAD
+[0.2.2]: https://github.com/dreamfactorysoftware/df-aws/compare/0.2.1...0.2.2
+[0.2.1]: https://github.com/dreamfactorysoftware/df-aws/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.1.2...0.2.0
 [0.1.2]: https://github.com/dreamfactorysoftware/df-aws/compare/0.1.1...0.1.2
 [0.1.1]: https://github.com/dreamfactorysoftware/df-aws/compare/0.1.0...0.1.1
