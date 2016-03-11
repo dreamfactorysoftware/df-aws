@@ -138,14 +138,12 @@ class DynamoDb extends BaseNoSqlDbService
     public function getTables()
     {
         $out = [];
+        $options = ['Limit' => 100]; // arbitrary limit
         do {
-            $result = $this->dbConn->listTables(
-                [
-                    'Limit'                   => 100, // arbitrary limit
-                    'ExclusiveStartTableName' => isset($result) ? $result['LastEvaluatedTableName'] : null
-                ]
-            );
-
+            if (isset($result, $result['LastEvaluatedTableName'])){
+                $options['ExclusiveStartTableName'] = $result['LastEvaluatedTableName'];
+            }
+            $result = $this->dbConn->listTables($options);
             $out = array_merge($out, $result['TableNames']);
         } while ($result['LastEvaluatedTableName']);
 
