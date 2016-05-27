@@ -2,7 +2,6 @@
 namespace DreamFactory\Core\Aws\Services;
 
 use Aws\Sns\SnsClient;
-use DreamFactory\Core\Models\Service;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Aws\Resources\BaseSnsResource;
@@ -546,11 +545,11 @@ class Sns extends BaseRestService
     /**
      * {@inheritdoc}
      */
-    public static function getApiDocInfo(Service $service)
+    public function getApiDocInfo()
     {
-        $base = parent::getApiDocInfo($service);
-        $name = strtolower($service->name);
-        $capitalized = Inflector::camelize($service->name);
+        $base = parent::getApiDocInfo();
+        $name = strtolower($this->name);
+        $capitalized = Inflector::camelize($this->name);
 
         $apis = [
             '/' . $name                                      => [

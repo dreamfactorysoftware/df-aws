@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+## [0.3.0] - 2016-05-27
+### Changed
+- Moved seeding functionality to service provider to adhere to df-core changes.
+
 ## [0.2.2] - 2016-03-11
 ### Fixed
 - Table listing on latest sdk version
@@ -19,12 +23,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Swagger output cleanup
 
 ## [0.2.0]
-### Added
-
 ### Changed
 - **MAJOR** Updated code base to use OpenAPI (fka Swagger) Specification 2.0 from 1.2
-
-### Fixed
 
 ## [0.1.2] - 2015-12-18
 ### Changed
@@ -38,7 +38,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## 0.1.0 - 2015-10-24
 First official release working with the new [df-core](https://github.com/dreamfactorysoftware/df-core) library.
 
-[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.2.2...HEAD
+[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.2.1...0.3.0
 [0.2.2]: https://github.com/dreamfactorysoftware/df-aws/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/dreamfactorysoftware/df-aws/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.1.2...0.2.0

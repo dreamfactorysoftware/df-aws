@@ -5,7 +5,7 @@ use Aws\DynamoDb\Marshaler;
 use DreamFactory\Core\Aws\Enums\ComparisonOperator;
 use DreamFactory\Core\Aws\Enums\ReturnValue;
 use DreamFactory\Core\Aws\Enums\Type;
-use DreamFactory\Core\Database\ColumnSchema;
+use DreamFactory\Core\Database\Schema\ColumnSchema;
 use DreamFactory\Core\Enums\ApiOptions;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
@@ -653,7 +653,7 @@ class DynamoDbTable extends BaseDbTableResource
 
                 $native = $this->formatAttributes($parsed);
 
-                $result = $this->parent->getConnection()->putItem(
+                $this->parent->getConnection()->putItem(
                     [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Item'                  => $native,
