@@ -7,16 +7,16 @@ use DreamFactory\Core\Aws\Enums\ReturnValue;
 use DreamFactory\Core\Aws\Enums\Type;
 use DreamFactory\Core\Database\Schema\ColumnSchema;
 use DreamFactory\Core\Enums\ApiOptions;
+use DreamFactory\Core\Resources\BaseNoSqlDbTableResource;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Library\Utility\Enums\Verbs;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
-use DreamFactory\Core\Resources\BaseDbTableResource;
 use DreamFactory\Core\Aws\Services\DynamoDb;
 
-class DynamoDbTable extends BaseDbTableResource
+class DynamoDbTable extends BaseNoSqlDbTableResource
 {
     //*************************************************************************
     //	Constants
