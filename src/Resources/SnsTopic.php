@@ -1,7 +1,6 @@
 <?php
 namespace DreamFactory\Core\Aws\Resources;
 
-use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Aws\Services\Sns;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
@@ -90,15 +89,15 @@ class SnsTopic extends BaseSnsResource
             switch ($fields) {
                 case false:
                 case Sns::FORMAT_SIMPLE:
-                    $resources[] = $this->service->stripArnPrefix(ArrayUtils::get($topic, 'TopicArn'));
+                    $resources[] = $this->service->stripArnPrefix(array_get($topic, 'TopicArn'));
                     break;
                 case Sns::FORMAT_ARN:
-                    $resources[] = ArrayUtils::get($topic, 'TopicArn');
+                    $resources[] = array_get($topic, 'TopicArn');
                     break;
                 case true:
                 case Sns::FORMAT_FULL:
                 default:
-                    $topic['Topic'] = $this->service->stripArnPrefix(ArrayUtils::get($topic, 'TopicArn'));
+                    $topic['Topic'] = $this->service->stripArnPrefix(array_get($topic, 'TopicArn'));
                     $resources[] = $topic;
                     break;
             }
@@ -178,7 +177,7 @@ class SnsTopic extends BaseSnsResource
 
         try {
             if (null !== $result = $this->service->getConnection()->getTopicAttributes($request)) {
-                $out = ArrayUtils::get($result->toArray(), 'Attributes');
+                $out = array_get($result->toArray(), 'Attributes');
                 $out['Topic'] = $this->service->stripArnPrefix($resource);
 
                 return $out;
@@ -199,7 +198,7 @@ class SnsTopic extends BaseSnsResource
     {
         $data = [];
         if (is_array($request)) {
-            $name = ArrayUtils::get($request, 'Name');
+            $name = array_get($request, 'Name');
             if (empty($name)) {
                 throw new BadRequestException("Create Topic request contains no 'Name' field.");
             }
@@ -211,7 +210,7 @@ class SnsTopic extends BaseSnsResource
 
         try {
             if (null !== $result = $this->service->getConnection()->createTopic($data)) {
-                $arn = ArrayUtils::get($result->toArray(), 'TopicArn', '');
+                $arn = array_get($result->toArray(), 'TopicArn', '');
 
                 return ['Topic' => $this->service->stripArnPrefix($arn), 'TopicArn' => $arn];
             }
@@ -230,7 +229,7 @@ class SnsTopic extends BaseSnsResource
     public function updateTopic($request)
     {
         if (is_array($request)) {
-            $name = ArrayUtils::get($request, 'Topic', ArrayUtils::get($request, 'TopicArn'));
+            $name = array_get($request, 'Topic', array_get($request, 'TopicArn'));
             if (empty($name)) {
                 throw new BadRequestException("Update topic request contains no 'Topic' field.");
             }
@@ -260,7 +259,7 @@ class SnsTopic extends BaseSnsResource
     {
         $data = [];
         if (is_array($request)) {
-            $name = ArrayUtils::get($request, 'Topic', ArrayUtils::get($request, 'TopicArn'));
+            $name = array_get($request, 'Topic', array_get($request, 'TopicArn'));
             if (empty($name)) {
                 throw new BadRequestException("Delete Topic request contains no 'Topic' field.");
             }

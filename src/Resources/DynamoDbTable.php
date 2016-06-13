@@ -8,13 +8,13 @@ use DreamFactory\Core\Aws\Enums\Type;
 use DreamFactory\Core\Database\Schema\ColumnSchema;
 use DreamFactory\Core\Enums\ApiOptions;
 use DreamFactory\Core\Utility\Session;
-use DreamFactory\Library\Utility\ArrayUtils;
-use DreamFactory\Library\Utility\Enums\Verbs;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Resources\BaseDbTableResource;
 use DreamFactory\Core\Aws\Services\DynamoDb;
+use DreamFactory\Library\Utility\Enums\Verbs;
+use DreamFactory\Library\Utility\Scalar;
 
 class DynamoDbTable extends BaseDbTableResource
 {
@@ -42,8 +42,8 @@ class DynamoDbTable extends BaseDbTableResource
      */
     public function retrieveRecordsByFilter($table, $filter = null, $params = [], $extras = [])
     {
-        $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
-        $ssFilters = ArrayUtils::get($extras, 'ss_filters');
+        $fields = array_get($extras, ApiOptions::FIELDS);
+        $ssFilters = array_get($extras, 'ss_filters');
 
         $scanProperties = [static::TABLE_INDICATOR => $table];
 
@@ -57,12 +57,12 @@ class DynamoDbTable extends BaseDbTableResource
             $scanProperties['ScanFilter'] = $parsedFilter;
         }
 
-        $limit = intval(ArrayUtils::get($extras, ApiOptions::LIMIT));
+        $limit = intval(array_get($extras, ApiOptions::LIMIT));
         if ($limit > 0) {
             $scanProperties['Limit'] = $limit;
             $scanProperties['Count'] = true;
         }
-        $offset = intval(ArrayUtils::get($extras, ApiOptions::OFFSET));
+        $offset = intval(array_get($extras, ApiOptions::OFFSET));
         if ($offset > 0) {
             $scanProperties['ExclusiveStartKey'] = $offset;
             $scanProperties['Count'] = true;
@@ -70,7 +70,7 @@ class DynamoDbTable extends BaseDbTableResource
 
         try {
             $result = $this->parent->getConnection()->scan($scanProperties);
-            $items = ArrayUtils::clean($result['Items']);
+            $items = (array)$result['Items'];
 
             $out = [];
             foreach ($items as $item) {
@@ -82,7 +82,7 @@ class DynamoDbTable extends BaseDbTableResource
             $count = $result['Count'];
             $out = static::cleanRecords($out);
             $needMore = (($count - $offset) > $limit);
-            $addCount = ArrayUtils::getBool($extras, ApiOptions::INCLUDE_COUNT);
+            $addCount = Scalar::boolval(array_get($extras, ApiOptions::INCLUDE_COUNT));
             if ($addCount || $needMore) {
                 $out['meta']['count'] = $count;
                 if ($needMore) {
@@ -202,16 +202,16 @@ class DynamoDbTable extends BaseDbTableResource
         $requested_fields = [];
         $result = $this->parent->getConnection()->describeTable([static::TABLE_INDICATOR => $table]);
         $result = $result['Table'];
-        $keys = ArrayUtils::get($result, 'KeySchema', []);
-        $definitions = ArrayUtils::get($result, 'AttributeDefinitions', []);
+        $keys = array_get($result, 'KeySchema', []);
+        $definitions = array_get($result, 'AttributeDefinitions', []);
         $fields = [];
         foreach ($keys as $key) {
-            $name = ArrayUtils::get($key, 'AttributeName');
-            $keyType = ArrayUtils::get($key, 'KeyType');
+            $name = array_get($key, 'AttributeName');
+            $keyType = array_get($key, 'KeyType');
             $type = null;
             foreach ($definitions as $type) {
-                if (0 == strcmp($name, ArrayUtils::get($type, 'AttributeName'))) {
-                    $type = ArrayUtils::get($type, 'AttributeType');
+                if (0 == strcmp($name, array_get($type, 'AttributeName'))) {
+                    $type = array_get($type, 'AttributeType');
                 }
             }
 
@@ -230,7 +230,7 @@ class DynamoDbTable extends BaseDbTableResource
             if (1 == count($ids_info)) {
                 $info = $ids_info[0];
                 if (is_array($record)) {
-                    $value = ArrayUtils::get($record, $info->name);
+                    $value = array_get($record, $info->name);
                     if ($remove) {
                         unset($record[$info->name]);
                     }
@@ -249,8 +249,8 @@ class DynamoDbTable extends BaseDbTableResource
                     $id = $value;
                 } else {
                     // could be passed in as a parameter affecting all records
-                    $param = ArrayUtils::get($extras, $info->name);
-                    if ($on_create && $info->required && empty($param)) {
+                    $param = array_get($extras, $info->name);
+                    if ($on_create && $info->getRequired() && empty($param)) {
                         return false;
                     }
                 }
@@ -258,7 +258,7 @@ class DynamoDbTable extends BaseDbTableResource
                 $id = [];
                 foreach ($ids_info as $info) {
                     if (is_array($record)) {
-                        $value = ArrayUtils::get($record, $info->name);
+                        $value = array_get($record, $info->name);
                         if ($remove) {
                             unset($record[$info->name]);
                         }
@@ -277,8 +277,8 @@ class DynamoDbTable extends BaseDbTableResource
                         $id[$info->name] = $value;
                     } else {
                         // could be passed in as a parameter affecting all records
-                        $param = ArrayUtils::get($extras, $info->name);
-                        if ($on_create && $info->required && empty($param)) {
+                        $param = array_get($extras, $info->name);
+                        if ($on_create && $info->getRequired() && empty($param)) {
                             return false;
                         }
                     }
@@ -299,7 +299,7 @@ class DynamoDbTable extends BaseDbTableResource
     {
         $keys = [];
         foreach ($ids_info as $info) {
-            $value = ArrayUtils::get($record, $info->name, null);
+            $value = array_get($record, $info->name, null);
             if ($remove) {
                 unset($record[$info->name]);
             }
@@ -347,22 +347,22 @@ class DynamoDbTable extends BaseDbTableResource
         }
 
         // build the server side criteria
-        $filters = ArrayUtils::get($ss_filters, 'filters');
+        $filters = array_get($ss_filters, 'filters');
         if (empty($filters)) {
             return null;
         }
 
         $criteria = [];
-        $combiner = ArrayUtils::get($ss_filters, 'filter_op', 'and');
+        $combiner = array_get($ss_filters, 'filter_op', 'and');
         foreach ($filters as $filter) {
-            $name = ArrayUtils::get($filter, 'name');
-            $op = ArrayUtils::get($filter, 'operator');
+            $name = array_get($filter, 'name');
+            $op = array_get($filter, 'operator');
             if (empty($name) || empty($op)) {
                 // log and bail
                 throw new InternalServerErrorException('Invalid server-side filter configuration detected.');
             }
 
-            $value = ArrayUtils::get($filter, 'value');
+            $value = array_get($filter, 'value');
             $value = static::interpretFilterValue($value);
 
             $criteria[] = static::buildFilterArray("$name $op $value");
@@ -638,10 +638,10 @@ class DynamoDbTable extends BaseDbTableResource
         $continue = false,
         $single = false
     ){
-        $ssFilters = ArrayUtils::get($extras, 'ss_filters');
-        $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
-        $idFields = ArrayUtils::get($extras, 'id_fields');
-        $updates = ArrayUtils::get($extras, 'updates');
+        $ssFilters = array_get($extras, 'ss_filters');
+        $fields = array_get($extras, ApiOptions::FIELDS);
+        $idFields = array_get($extras, 'id_fields');
+        $updates = array_get($extras, 'updates');
 
         $out = [];
         switch ($this->getAction()) {
@@ -810,10 +810,10 @@ class DynamoDbTable extends BaseDbTableResource
             return null;
         }
 
-//        $ssFilters = ArrayUtils::get( $extras, 'ss_filters' );
-        $fields = ArrayUtils::get($extras, ApiOptions::FIELDS);
-        $requireMore = ArrayUtils::get($extras, 'require_more');
-        $idFields = ArrayUtils::get($extras, 'id_fields');
+//        $ssFilters = array_get( $extras, 'ss_filters' );
+        $fields = array_get($extras, ApiOptions::FIELDS);
+        $requireMore = array_get($extras, 'require_more');
+        $idFields = array_get($extras, 'id_fields');
 
         $out = [];
         switch ($this->getAction()) {
@@ -887,7 +887,7 @@ class DynamoDbTable extends BaseDbTableResource
                     );
 
                     $out = [];
-                    $items = $result->getPath("Responses/{$this->transactionTable}");
+                    $items = $result->search(str_replace('/', '.', "Responses/{$this->transactionTable}"));
                     foreach ($items as $item) {
                         $out[] = $this->unformatAttributes($item);
                     }
@@ -928,7 +928,7 @@ class DynamoDbTable extends BaseDbTableResource
                     ]
                 );
 
-                $items = $result->getPath("Responses/{$this->transactionTable}");
+                $items = $result->search(str_replace('/', '.', "Responses/{$this->transactionTable}"));
                 foreach ($items as $item) {
                     $out[] = $this->unformatAttributes($item);
                 }

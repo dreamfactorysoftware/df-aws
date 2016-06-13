@@ -5,7 +5,6 @@ use Aws\DynamoDb\Exception\DynamoDbException;
 use DreamFactory\Core\Aws\Enums\KeyType;
 use DreamFactory\Core\Aws\Enums\Type;
 use DreamFactory\Core\Exceptions\NotFoundException;
-use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Resources\BaseNoSqlDbSchemaResource;
@@ -55,7 +54,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
     public function describeTable($table, $refresh = true)
     {
         $name =
-            (is_array($table)) ? ArrayUtils::get($table, 'name', ArrayUtils::get($table, static::TABLE_INDICATOR))
+            (is_array($table)) ? array_get($table, 'name', array_get($table, static::TABLE_INDICATOR))
                 : $table;
         try {
             $result = $this->parent->getConnection()->describeTable([static::TABLE_INDICATOR => $name]);
@@ -86,7 +85,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
     public function createTable($table, $properties = [], $check_exist = false, $return_schema = false)
     {
         if (empty($table)) {
-            $table = ArrayUtils::get($properties, static::TABLE_INDICATOR);
+            $table = array_get($properties, static::TABLE_INDICATOR);
         }
         if (empty($table)) {
             throw new BadRequestException("No 'name' field in data.");
@@ -116,7 +115,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
     public function updateTable($table, $properties = [], $allow_delete_fields = false, $return_schema = false)
     {
         if (empty($table)) {
-            $table = ArrayUtils::get($properties, static::TABLE_INDICATOR);
+            $table = array_get($properties, static::TABLE_INDICATOR);
         }
         if (empty($table)) {
             throw new BadRequestException("No 'name' field in data.");
@@ -146,7 +145,7 @@ class DynamoDbSchema extends BaseNoSqlDbSchemaResource
     public function deleteTable($table, $check_empty = false)
     {
         $name =
-            (is_array($table)) ? ArrayUtils::get($table, 'name', ArrayUtils::get($table, static::TABLE_INDICATOR))
+            (is_array($table)) ? array_get($table, 'name', array_get($table, static::TABLE_INDICATOR))
                 : $table;
         if (empty($name)) {
             throw new BadRequestException('Table name can not be empty.');

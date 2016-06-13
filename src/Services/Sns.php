@@ -3,7 +3,6 @@ namespace DreamFactory\Core\Aws\Services;
 
 use Aws\Sns\SnsClient;
 use DreamFactory\Core\Utility\Session;
-use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Aws\Resources\BaseSnsResource;
 use DreamFactory\Core\Aws\Resources\SnsApplication;
 use DreamFactory\Core\Aws\Resources\SnsEndpoint;
@@ -107,7 +106,7 @@ class Sns extends BaseRestService
     {
         parent::__construct($settings);
 
-        $config = ArrayUtils::clean(ArrayUtils::get($settings, 'config', []));
+        $config = (array)array_get($settings, 'config', []);
         //  Replace any private lookups
         Session::replaceLookups($config, true);
         // statically assign the our supported version
@@ -125,7 +124,7 @@ class Sns extends BaseRestService
             throw new InternalServerErrorException("AWS SNS Service Exception:\n{$ex->getMessage()}",
                 $ex->getCode());
         }
-        $this->region = ArrayUtils::get($config, 'region');
+        $this->region = array_get($config, 'region');
     }
 
     /**
@@ -195,7 +194,7 @@ class Sns extends BaseRestService
             ((SnsEndpoint::RESOURCE_NAME == $this->relatedResource) &&
                 (SnsApplication::RESOURCE_NAME == $this->resource))
         ) {
-            $child = ArrayUtils::get($this->resources, $this->relatedResource);
+            $child = array_get($this->resources, $this->relatedResource);
             if (isset($child, $child['class_name'])) {
                 $className = $child['class_name'];
 
@@ -317,37 +316,37 @@ class Sns extends BaseRestService
     {
         parent::setResourceMembers($resourcePath);
 
-        $this->resourceId = ArrayUtils::get($this->resourceArray, 1);
+        $this->resourceId = array_get($this->resourceArray, 1);
 
         $pos = 2;
-        $more = ArrayUtils::get($this->resourceArray, $pos);
+        $more = array_get($this->resourceArray, $pos);
 
         if (!empty($more)) {
             if ((SnsApplication::RESOURCE_NAME == $this->resource) && (SnsEndpoint::RESOURCE_NAME !== $more)) {
                 do {
                     $this->resourceId .= '/' . $more;
                     $pos++;
-                    $more = ArrayUtils::get($this->resourceArray, $pos);
+                    $more = array_get($this->resourceArray, $pos);
                 } while (!empty($more) && (SnsEndpoint::RESOURCE_NAME !== $more));
             } elseif (SnsEndpoint::RESOURCE_NAME == $this->resource) {
                 //  This will be the full resource path
                 do {
                     $this->resourceId .= '/' . $more;
                     $pos++;
-                    $more = ArrayUtils::get($this->resourceArray, $pos);
+                    $more = array_get($this->resourceArray, $pos);
                 } while (!empty($more));
             }
         }
 
-        $this->relatedResource = ArrayUtils::get($this->resourceArray, $pos++);
-        $this->relatedResourceId = ArrayUtils::get($this->resourceArray, $pos++);
-        $more = ArrayUtils::get($this->resourceArray, $pos);
+        $this->relatedResource = array_get($this->resourceArray, $pos++);
+        $this->relatedResourceId = array_get($this->resourceArray, $pos++);
+        $more = array_get($this->resourceArray, $pos);
 
         if (!empty($more) && (SnsEndpoint::RESOURCE_NAME == $this->relatedResource)) {
             do {
                 $this->relatedResourceId .= '/' . $more;
                 $pos++;
-                $more = ArrayUtils::get($this->resourceArray, $pos);
+                $more = array_get($this->resourceArray, $pos);
             } while (!empty($more));
         }
 
@@ -451,12 +450,12 @@ class Sns extends BaseRestService
         /** http://docs.aws.amazon.com/aws-sdk-php/latest/class-Aws.Sns.SnsClient.html#_publish */
         $data = [];
         if (is_array($request)) {
-            if (null !== $message = ArrayUtils::get($request, 'Message')) {
+            if (null !== $message = array_get($request, 'Message')) {
                 $data = array_merge($data, $request);
                 if (is_array($message)) {
                     $data['Message'] = json_encode($message);
 
-                    if (!ArrayUtils::has($request, 'MessageStructure')) {
+                    if (!array_key_exists('MessageStructure', $request)) {
                         $data['MessageStructure'] = 'json';
                     }
                 }
@@ -479,10 +478,10 @@ class Sns extends BaseRestService
                 break;
             default:
                 //  Must contain resource, either Topic or Endpoint ARN
-                $topic = ArrayUtils::get($data, 'Topic', ArrayUtils::get($data, 'TopicArn'));
+                $topic = array_get($data, 'Topic', array_get($data, 'TopicArn'));
                 $endpoint =
-                    ArrayUtils::get($data, 'Endpoint',
-                        ArrayUtils::get($data, 'EndpointArn', ArrayUtils::get($data, 'TargetArn')));
+                    array_get($data, 'Endpoint',
+                        array_get($data, 'EndpointArn', array_get($data, 'TargetArn')));
                 if (!empty($topic)) {
                     $data['TopicArn'] = $this->addArnPrefix($topic);
                 } elseif (!empty($endpoint)) {
@@ -496,7 +495,7 @@ class Sns extends BaseRestService
 
         try {
             if (null !== $result = $this->conn->publish($data)) {
-                $id = ArrayUtils::get($result->toArray(), 'MessageId', '');
+                $id = array_get($result->toArray(), 'MessageId', '');
 
                 return ['MessageId' => $id];
             }

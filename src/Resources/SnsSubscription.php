@@ -1,7 +1,6 @@
 <?php
 namespace DreamFactory\Core\Aws\Resources;
 
-use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Aws\Services\Sns;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
@@ -100,15 +99,15 @@ class SnsSubscription extends BaseSnsResource
             switch ($fields) {
                 case false:
                 case Sns::FORMAT_SIMPLE:
-                    $resources[] = $this->service->stripArnPrefix(ArrayUtils::get($sub, 'SubscriptionArn'));
+                    $resources[] = $this->service->stripArnPrefix(array_get($sub, 'SubscriptionArn'));
                     break;
                 case Sns::FORMAT_ARN:
-                    $resources[] = ArrayUtils::get($sub, 'SubscriptionArn');
+                    $resources[] = array_get($sub, 'SubscriptionArn');
                     break;
                 case true:
                 case Sns::FORMAT_FULL:
                 default:
-                    $sub['Subscription'] = $this->service->stripArnPrefix(ArrayUtils::get($sub, 'SubscriptionArn'));
+                    $sub['Subscription'] = $this->service->stripArnPrefix(array_get($sub, 'SubscriptionArn'));
                     $resources[] = $sub;
                     break;
             }
@@ -192,7 +191,7 @@ class SnsSubscription extends BaseSnsResource
 
         try {
             if (null !== $result = $this->service->getConnection()->getSubscriptionAttributes($request)) {
-                $out = array_merge($request, ArrayUtils::get($result->toArray(), 'Attributes', []));
+                $out = array_merge($request, array_get($result->toArray(), 'Attributes', []));
                 $out['Subscription'] = $this->service->stripArnPrefix($resource);
 
                 return $out;
@@ -212,7 +211,7 @@ class SnsSubscription extends BaseSnsResource
     public function createSubscription($request)
     {
         if (is_array($request)) {
-            $name = ArrayUtils::get($request, 'Topic', ArrayUtils::get($request, 'TopicArn'));
+            $name = array_get($request, 'Topic', array_get($request, 'TopicArn'));
             if (empty($name)) {
                 throw new BadRequestException("Create Subscription request contains no 'Topic' field.");
             }
@@ -224,7 +223,7 @@ class SnsSubscription extends BaseSnsResource
 
         try {
             if (null !== $result = $this->service->getConnection()->subscribe($request)) {
-                $arn = ArrayUtils::get($result->toArray(), 'SubscriptionArn', '');
+                $arn = array_get($result->toArray(), 'SubscriptionArn', '');
 
                 return ['Subscription' => $this->service->stripArnPrefix($arn), 'SubscriptionArn' => $arn];
             }
@@ -243,7 +242,7 @@ class SnsSubscription extends BaseSnsResource
     public function updateSubscription($request)
     {
         if (is_array($request)) {
-            $name = ArrayUtils::get($request, 'Subscription', ArrayUtils::get($request, 'SubscriptionArn'));
+            $name = array_get($request, 'Subscription', array_get($request, 'SubscriptionArn'));
             if (empty($name)) {
                 throw new BadRequestException("Update subscription request contains no 'Subscription' field.");
             }
@@ -273,7 +272,7 @@ class SnsSubscription extends BaseSnsResource
     {
         $data = [];
         if (is_array($request)) {
-            $name = ArrayUtils::get($request, 'Subscription', ArrayUtils::get($request, 'SubscriptionArn'));
+            $name = array_get($request, 'Subscription', array_get($request, 'SubscriptionArn'));
             if (empty($name)) {
                 throw new BadRequestException("Delete subscription request contains no 'Subscription' field.");
             }

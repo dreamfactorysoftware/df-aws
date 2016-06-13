@@ -50,14 +50,14 @@ class AwsS3Config implements ServiceConfigHandlerInterface
         $awsConfig = AwsConfig::find($id);
         $pathConfig = FilePublicPath::find($id);
         $configPath = [
-            'public_path' => ArrayUtils::get($config, 'public_path'),
-            'container'   => ArrayUtils::get($config, 'container')
+            'public_path' => array_get($config, 'public_path'),
+            'container'   => array_get($config, 'container')
         ];
         $configAws = [
-            'service_id' => ArrayUtils::get($config, 'service_id'),
-            'key'        => ArrayUtils::get($config, 'key'),
-            'secret'     => ArrayUtils::get($config, 'secret'),
-            'region'     => ArrayUtils::get($config, 'region')
+            'service_id' => array_get($config, 'service_id'),
+            'key'        => array_get($config, 'key'),
+            'secret'     => array_get($config, 'secret'),
+            'region'     => array_get($config, 'region')
         ];
 
         ArrayUtils::removeNull($configAws);
