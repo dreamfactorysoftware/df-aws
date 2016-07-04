@@ -12,7 +12,6 @@ class FileServiceS3Test extends \DreamFactory\Core\Testing\FileServiceTestCase
         parent::stage();
 
         Artisan::call('migrate', ['--path' => 'vendor/dreamfactory/df-aws/database/migrations/']);
-        Artisan::call('db:seed', ['--class' => DreamFactory\Core\Aws\Database\Seeds\DatabaseSeeder::class]);
         if (!$this->serviceExists('s3')) {
             \DreamFactory\Core\Models\Service::create(
                 [
