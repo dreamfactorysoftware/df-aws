@@ -4,7 +4,6 @@ namespace DreamFactory\Core\Aws\Services;
 use Aws\Ses\SesClient;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use Illuminate\Mail\Transport\SesTransport;
-use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Services\Email\BaseService;
 use Illuminate\Support\Arr;
 
@@ -15,9 +14,9 @@ class Ses extends BaseService
      */
     protected function setTransport($config)
     {
-        $key = ArrayUtils::get($config, 'key');
-        $secret = ArrayUtils::get($config, 'secret');
-        $region = ArrayUtils::get($config, 'region', 'us-east-1');
+        $key = array_get($config, 'key');
+        $secret = array_get($config, 'secret');
+        $region = array_get($config, 'region', 'us-east-1');
 
         $this->transport = static::getTransport($key, $secret, $region);
     }

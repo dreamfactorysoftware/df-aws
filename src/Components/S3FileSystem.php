@@ -3,7 +3,6 @@ namespace DreamFactory\Core\Aws\Components;
 
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Utility\Session;
-use DreamFactory\Library\Utility\ArrayUtils;
 use DreamFactory\Core\Components\RemoteFileSystem;
 use DreamFactory\Core\Exceptions\DfException;
 use DreamFactory\Core\Exceptions\BadRequestException;
@@ -66,7 +65,7 @@ class S3FileSystem extends RemoteFileSystem
                 $ex->getCode());
         }
 
-        $this->container = ArrayUtils::get($config, 'container');
+        $this->container = array_get($config, 'container');
 
         if (!$this->containerExists($this->container)) {
             $this->createContainer(['name' => $this->container]);
@@ -166,7 +165,7 @@ class S3FileSystem extends RemoteFileSystem
      */
     public function createContainer($properties, $metadata = [])
     {
-        $name = ArrayUtils::get($properties, 'name', ArrayUtils::get($properties, 'path'));
+        $name = array_get($properties, 'name', array_get($properties, 'path'));
         if (empty($name)) {
             throw new BadRequestException('No name found for container in create request.');
         }

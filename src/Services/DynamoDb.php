@@ -9,7 +9,6 @@ use DreamFactory\Core\Database\Schema\TableSchema;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Services\BaseNoSqlDbService;
 use DreamFactory\Core\Utility\Session;
-use DreamFactory\Library\Utility\ArrayUtils;
 
 /**
  * DynamoDb
@@ -78,7 +77,7 @@ class DynamoDb extends BaseNoSqlDbService
     {
         parent::__construct($settings);
 
-        $config = ArrayUtils::clean(ArrayUtils::get($settings, 'config'));
+        $config = (array)array_get($settings, 'config');
         //  Replace any private lookups
         Session::replaceLookups($config, true);
         // statically assign our supported version
@@ -93,9 +92,9 @@ class DynamoDb extends BaseNoSqlDbService
         }
 
         // set up a default table schema
-        $parameters = ArrayUtils::clean(ArrayUtils::get($config, 'parameters'));
+        $parameters = (array)array_get($config, 'parameters');
         Session::replaceLookups($parameters);
-        if (null !== ($table = ArrayUtils::get($parameters, 'default_create_table'))) {
+        if (null !== ($table = array_get($parameters, 'default_create_table'))) {
             $this->defaultCreateTable = $table;
         }
 
