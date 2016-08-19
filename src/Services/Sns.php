@@ -544,11 +544,11 @@ class Sns extends BaseRestService
     /**
      * {@inheritdoc}
      */
-    public function getApiDocInfo()
+    public static function getApiDocInfo($service)
     {
-        $base = parent::getApiDocInfo();
-        $name = strtolower($this->name);
-        $capitalized = Inflector::camelize($this->name);
+        $base = parent::getApiDocInfo($service);
+        $name = strtolower($service->name);
+        $capitalized = Inflector::camelize($service->name);
 
         $apis = [
             '/' . $name                                      => [
@@ -557,7 +557,6 @@ class Sns extends BaseRestService
                     'summary'           => 'publish' . $capitalized . '() - Send a message to a topic or endpoint.',
                     'operationId'       => 'publish' . $capitalized,
                     'description'       => 'Post data should be an array of topic publish properties.',
-                    'x-publishedEvents' => [$name . '.publish'],
                     'parameters'        => [
                         [
                             'name'        => 'body',
@@ -587,7 +586,6 @@ class Sns extends BaseRestService
                         'Topics() - Retrieve all topics available for the push service.',
                     'operationId'       => 'get' . $capitalized . 'Topics',
                     'description'       => 'This returns the topics as resources.',
-                    'x-publishedEvents' => [$name . '.topic.list'],
                     'responses'         => [
                         '200'     => [
                             'description' => 'Topics Response',
@@ -604,7 +602,6 @@ class Sns extends BaseRestService
                     'summary'           => 'create' . $capitalized . 'Topic() - Create a topic.',
                     'operationId'       => 'create' . $capitalized . 'Topic',
                     'description'       => 'Post data should be an array of topic attributes including \'Name\'.',
-                    'x-publishedEvents' => [$name . '.topic.create'],
                     'parameters'        => [
                         [
                             'name'        => 'body',
@@ -634,7 +631,6 @@ class Sns extends BaseRestService
                         'TopicAttributes() - Retrieve topic definition for the given topic.',
                     'operationId'       => 'get' . $capitalized . 'TopicAttributes',
                     'description'       => 'This retrieves the topic, detailing its available properties.',
-                    'x-publishedEvents' => [$name . '.topic.{topic_name}.retrieve', $name . '.topic_retrieved'],
                     'parameters'        => [
                         [
                             'name'        => 'topic_name',
@@ -660,7 +656,6 @@ class Sns extends BaseRestService
                     'summary'           => 'publish' . $capitalized . 'Topic() - Send a message to the given topic.',
                     'operationId'       => 'publish' . $capitalized . 'Topic',
                     'description'       => 'Post data should be an array of topic publish properties.',
-                    'x-publishedEvents' => [$name . '.topic.{topic_name}.publish', $name . '.topic_published'],
                     'parameters'        => [
                         [
                             'name'        => 'topic_name',
@@ -694,7 +689,6 @@ class Sns extends BaseRestService
                         $capitalized .
                         'TopicAttributes() - Update a given topic\'s attributes.',
                     'operationId'       => 'set' . $capitalized . 'TopicAttributes',
-                    'x-publishedEvents' => [$name . '.topic.{topic_name}.update', $name . '.topic_updated'],
                     'parameters'        => [
                         [
                             'name'        => 'topic_name',
@@ -728,7 +722,6 @@ class Sns extends BaseRestService
                     'summary'           => 'delete' . $capitalized . 'Topic() - Delete a given topic.',
                     'operationId'       => 'delete' . $capitalized . 'Topic',
                     'description'       => '',
-                    'x-publishedEvents' => [$name . '.topic.{topic_name}.delete', $name . '.topic_deleted'],
                     'parameters'        => [
                         [
                             'name'        => 'topic_name',
@@ -758,7 +751,6 @@ class Sns extends BaseRestService
                         'SubscriptionsByTopic() - List subscriptions available for the given topic.',
                     'operationId'       => 'list' . $capitalized . 'SubscriptionsByTopic',
                     'description'       => 'Return only the names of the subscriptions in an array.',
-                    'x-publishedEvents' => [$name . '.topic.{topic_name}.subscription.list'],
                     'parameters'        => [
                         [
                             'name'        => 'topic_name',
@@ -793,7 +785,6 @@ class Sns extends BaseRestService
                         $capitalized .
                         'Topic() - Create a subscription for the given topic.',
                     'operationId'       => 'subscribe' . $capitalized . 'Topic',
-                    'x-publishedEvents' => [$name . '.topic.{topic_name}.subscription.create'],
                     'parameters'        => [
                         [
                             'name'        => 'topic_name',
@@ -831,7 +822,6 @@ class Sns extends BaseRestService
                         'Subscriptions() - Retrieve all subscriptions as resources.',
                     'operationId'       => 'get' . $capitalized . 'Subscriptions',
                     'description'       => 'This describes the topic, detailing its available properties.',
-                    'x-publishedEvents' => [$name . '.subscription.list'],
                     'responses'         => [
                         '200'     => [
                             'description' => 'Subscriptions',
@@ -847,7 +837,6 @@ class Sns extends BaseRestService
                     'tags'              => [$name],
                     'summary'           => 'subscribe' . $capitalized . '() - Create a subscription.',
                     'operationId'       => 'subscribe' . $capitalized,
-                    'x-publishedEvents' => [$name . '.subscription.create'],
                     'parameters'        => [
                         [
                             'name'        => 'body',
@@ -877,10 +866,6 @@ class Sns extends BaseRestService
                         $capitalized .
                         'SubscriptionAttributes() - Retrieve attributes for the given subscription.',
                     'operationId'       => 'get' . $capitalized . 'SubscriptionAttributes',
-                    'x-publishedEvents' => [
-                        $name . '.subscription.{subscription_name}.retrieve',
-                        $name . '.subscription_retrieved'
-                    ],
                     'parameters'        => [
                         [
                             'name'        => 'sub_name',
@@ -908,10 +893,6 @@ class Sns extends BaseRestService
                         $capitalized .
                         'SubscriptionAttributes() - Update a given subscription.',
                     'operationId'       => 'set' . $capitalized . 'SubscriptionAttributes',
-                    'x-publishedEvents' => [
-                        $name . '.subscription.{subscription_name}.update',
-                        $name . '.subscription_updated'
-                    ],
                     'parameters'        => [
                         [
                             'name'        => 'sub_name',
@@ -945,10 +926,6 @@ class Sns extends BaseRestService
                     'summary'           => 'unsubscribe' . $capitalized . '() - Delete a given subscription.',
                     'operationId'       => 'unsubscribe' . $capitalized,
                     'description'       => '',
-                    'x-publishedEvents' => [
-                        $name . '.subscription.{subscription_name}.delete',
-                        $name . '.subscription_deleted'
-                    ],
                     'parameters'        => [
                         [
                             'name'        => 'sub_name',
@@ -975,7 +952,6 @@ class Sns extends BaseRestService
                     'tags'              => [$name],
                     'summary'           => 'get' . $capitalized . 'Apps() - Retrieve app definition for the given app.',
                     'operationId'       => 'get' . $capitalized . 'Apps',
-                    'x-publishedEvents' => [$name . '.app.list'],
                     'responses'         => [
                         '200'     => [
                             'description' => 'Apps Response',
@@ -992,7 +968,6 @@ class Sns extends BaseRestService
                     'tags'              => [$name],
                     'summary'           => 'create' . $capitalized . 'App() - Create a given app.',
                     'operationId'       => 'create' . $capitalized . 'App',
-                    'x-publishedEvents' => [$name . '.app.create'],
                     'parameters'        => [
                         [
                             'name'        => 'body',
@@ -1022,7 +997,6 @@ class Sns extends BaseRestService
                         $capitalized .
                         'AppAttributes() - Retrieve app definition for the given app.',
                     'operationId'       => 'get' . $capitalized . 'AppAttributes',
-                    'x-publishedEvents' => [$name . '.app.{app_name}.retrieve', $name . '.app_retrieved'],
                     'parameters'        => [
                         [
                             'name'        => 'app_name',
@@ -1048,7 +1022,6 @@ class Sns extends BaseRestService
                     'tags'              => [$name],
                     'summary'           => 'set' . $capitalized . 'AppAttributes() - Update a given app.',
                     'operationId'       => 'set' . $capitalized . 'AppAttributes',
-                    'x-publishedEvents' => [$name . '.app.{app_name}.update', $name . '.app_updated'],
                     'parameters'        => [
                         [
                             'name'        => 'app_name',
@@ -1082,7 +1055,6 @@ class Sns extends BaseRestService
                     'summary'           => 'delete' . $capitalized . 'App() - Delete a given app.',
                     'operationId'       => 'delete' . $capitalized . 'App',
                     'description'       => '',
-                    'x-publishedEvents' => [$name . '.app.{app_name}.delete', $name . '.app_deleted'],
                     'parameters'        => [
                         [
                             'name'        => 'app_name',
@@ -1111,7 +1083,6 @@ class Sns extends BaseRestService
                         $capitalized .
                         'EndpointsByApp() - Retrieve endpoints for the given application.',
                     'operationId'       => 'get' . $capitalized . 'EndpointsByApp',
-                    'x-publishedEvents' => [$name . '.endpoint.list'],
                     'parameters'        => [
                         [
                             'name'        => 'app_name',
@@ -1139,7 +1110,6 @@ class Sns extends BaseRestService
                         $capitalized .
                         'AppEndpoint() - Create a endpoint for a given application.',
                     'operationId'       => 'create' . $capitalized . 'AppEndpoint',
-                    'x-publishedEvents' => [$name . '.endpoint.create'],
                     'parameters'        => [
                         [
                             'name'        => 'app_name',
@@ -1177,7 +1147,6 @@ class Sns extends BaseRestService
                         'Endpoints() - Retrieve endpoint definition for the given endpoint.',
                     'operationId'       => 'get' . $capitalized . 'Endpoints',
                     'description'       => 'This describes the endpoint, detailing its available properties.',
-                    'x-publishedEvents' => [$name . '.endpoint.list'],
                     'responses'         => [
                         '200'     => [
                             'description' => 'Endpoints Response',
@@ -1193,7 +1162,6 @@ class Sns extends BaseRestService
                     'tags'              => [$name],
                     'summary'           => 'create' . $capitalized . 'Endpoint() - Create a given endpoint.',
                     'operationId'       => 'create' . $capitalized . 'Endpoint',
-                    'x-publishedEvents' => [$name . '.endpoint.create'],
                     'parameters'        => [
                         [
                             'name'        => 'body',
@@ -1223,10 +1191,6 @@ class Sns extends BaseRestService
                         $capitalized .
                         'EndpointAttributes() - Retrieve endpoint definition for the given endpoint.',
                     'operationId'       => 'get' . $capitalized . 'EndpointAttributes',
-                    'x-publishedEvents' => [
-                        $name . '.endpoint.{endpoint_name}.retrieve',
-                        $name . '.endpoint_retrieved'
-                    ],
                     'parameters'        => [
                         [
                             'name'        => 'endpoint_name',
@@ -1255,10 +1219,6 @@ class Sns extends BaseRestService
                         'Endpoint() - Send a message to the given endpoint.',
                     'operationId'       => 'publish' . $capitalized . 'Endpoint',
                     'description'       => 'Post data should be an array of endpoint publish properties.',
-                    'x-publishedEvents' => [
-                        $name . '.topic.{endpoint_name}.publish',
-                        $name . '.endpoint_published'
-                    ],
                     'parameters'        => [
                         [
                             'name'        => 'endpoint_name',
@@ -1290,10 +1250,6 @@ class Sns extends BaseRestService
                     'tags'              => [$name],
                     'summary'           => 'set' . $capitalized . 'EndpointAttributes() - Update a given endpoint.',
                     'operationId'       => 'set' . $capitalized . 'EndpointAttributes',
-                    'x-publishedEvents' => [
-                        $name . '.endpoint.{endpoint_name}.update',
-                        $name . '.endpoint_updated'
-                    ],
                     'parameters'        => [
                         [
                             'name'        => 'endpoint_name',
@@ -1327,10 +1283,6 @@ class Sns extends BaseRestService
                     'summary'           => 'delete' . $capitalized . 'Endpoint() - Delete a given endpoint.',
                     'operationId'       => 'delete' . $capitalized . 'Endpoint',
                     'description'       => '',
-                    'x-publishedEvents' => [
-                        $name . '.endpoint.{endpoint_name}.delete',
-                        $name . '.endpoint_deleted'
-                    ],
                     'parameters'        => [
                         [
                             'name'        => 'endpoint_name',
