@@ -12,22 +12,20 @@ class AwsS3Config implements ServiceConfigHandlerInterface
     use FileServiceWithContainer;
 
     /**
-     * @param int $id
-     *
-     * @return array
+     * {@inheritdoc}
      */
-    public static function getConfig($id)
+    public static function getConfig($id, $protect = true)
     {
-        $awsConfig = AwsConfig::find($id);
-        $pathConfig = FilePublicPath::find($id);
-
         $config = [];
 
-        if (!empty($awsConfig)) {
+        /** @var AwsConfig $awsConfig */
+        if (!empty($awsConfig = AwsConfig::find($id))) {
+            $awsConfig->protectedView = $protect;
             $config = $awsConfig->toArray();
         }
 
-        if (!empty($pathConfig)) {
+        /** @var FilePublicPath $pathConfig */
+        if (!empty($pathConfig = FilePublicPath::find($id))) {
             $config = array_merge($config, $pathConfig->toArray());
         }
 
@@ -37,7 +35,7 @@ class AwsS3Config implements ServiceConfigHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public static function validateConfig($config, $create=true)
+    public static function validateConfig($config, $create = true)
     {
         return (AwsConfig::validateConfig($config, $create) && FilePublicPath::validateConfig($config, $create));
     }
@@ -47,7 +45,9 @@ class AwsS3Config implements ServiceConfigHandlerInterface
      */
     public static function setConfig($id, $config)
     {
+        /** @var AwsConfig $awsConfig */
         $awsConfig = AwsConfig::find($id);
+        /** @var FilePublicPath $pathConfig */
         $pathConfig = FilePublicPath::find($id);
         $configPath = [
             'public_path' => array_get($config, 'public_path'),

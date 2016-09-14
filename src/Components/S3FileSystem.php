@@ -46,15 +46,13 @@ class S3FileSystem extends RemoteFileSystem
     public function __construct($config)
     {
         //  Replace any private lookups
-        Session::replaceLookups( $config, true );
+        Session::replaceLookups($config, true);
         // statically assign the our supported version
         $config['version'] = '2006-03-01';
-        if (isset($config['key']))
-        {
+        if (isset($config['key'])) {
             $config['credentials']['key'] = $config['key'];
         }
-        if (isset($config['secret']))
-        {
+        if (isset($config['secret'])) {
             $config['credentials']['secret'] = $config['secret'];
         }
 
