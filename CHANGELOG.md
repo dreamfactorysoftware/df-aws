@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 ### Changed
+- DF-641 Download files in chunks
 
 ### Fixed
 
