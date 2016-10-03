@@ -16,6 +16,8 @@ class AwsConfig extends BaseServiceConfigModel implements ServiceConfigHandlerIn
 
     protected $encrypted = ['key', 'secret'];
 
+    protected $protected = ['secret'];
+
     protected $fillable = ['service_id', 'region', 'key', 'secret'];
 
     /**

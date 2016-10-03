@@ -2,15 +2,22 @@
 namespace DreamFactory\Core\Aws;
 
 use DreamFactory\Core\Aws\Components\AwsS3Config;
+use DreamFactory\Core\Aws\Database\Connectors\RedshiftConnector;
+use DreamFactory\Core\Aws\Database\RedshiftConnection;
+use DreamFactory\Core\Aws\Database\Schema\RedshiftSchema;
 use DreamFactory\Core\Aws\Models\AwsConfig;
+use DreamFactory\Core\Aws\Models\RedshiftDbConfig;
 use DreamFactory\Core\Aws\Services\DynamoDb;
+use DreamFactory\Core\Aws\Services\RedshiftDb;
 use DreamFactory\Core\Aws\Services\S3;
 use DreamFactory\Core\Aws\Services\Ses;
 use DreamFactory\Core\Aws\Services\Sns;
 use DreamFactory\Core\Components\ServiceDocBuilder;
+use DreamFactory\Core\Database\DbSchemaExtensions;
 use DreamFactory\Core\Enums\ServiceTypeGroups;
 use DreamFactory\Core\Services\ServiceManager;
 use DreamFactory\Core\Services\ServiceType;
+use Illuminate\Database\DatabaseManager;
 
 class ServiceProvider extends \Illuminate\Support\ServiceProvider
 {
@@ -80,6 +87,38 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                     }
                 ])
             );
+            $df->addType(
+                new ServiceType([
+                    'name'            => 'aws_redshift_db',
+                    'label'           => 'AWS Redshift DB',
+                    'description'     => 'A database service supporting AWS Redshift.',
+                    'group'           => ServiceTypeGroups::DATABASE,
+                    'config_handler'  => RedshiftDbConfig::class,
+                    'default_api_doc' => function ($service) {
+                        return $this->buildServiceDoc($service->id, RedshiftDb::getApiDocInfo($service));
+                    },
+                    'factory'         => function ($config) {
+                        return new RedshiftDb($config);
+                    }
+                ])
+            );
+        });
+
+        // Add our database drivers.
+        $this->app->resolving('db', function (DatabaseManager $db) {
+            $db->extend('redshift', function ($config) {
+                $connector = new RedshiftConnector();
+                $connection = $connector->connect($config);
+
+                return new RedshiftConnection($connection, $config["database"], $config["prefix"], $config);
+            });
+        });
+
+        // Add our database extensions.
+        $this->app->resolving('db.schema', function (DbSchemaExtensions $db){
+            $db->extend('redshift', function ($connection){
+                return new RedshiftSchema($connection);
+            });
         });
     }
 }

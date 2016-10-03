@@ -2,32 +2,27 @@
 namespace DreamFactory\Core\Aws\Components;
 
 use DreamFactory\Core\Aws\Models\AwsConfig;
-use DreamFactory\Core\Components\FileServiceWithContainer;
 use DreamFactory\Core\Contracts\ServiceConfigHandlerInterface;
 use DreamFactory\Core\Models\FilePublicPath;
 use DreamFactory\Library\Utility\ArrayUtils;
 
 class AwsS3Config implements ServiceConfigHandlerInterface
 {
-    use FileServiceWithContainer;
-
     /**
-     * @param int $id
-     *
-     * @return array
+     * {@inheritdoc}
      */
-    public static function getConfig($id)
+    public static function getConfig($id, $protect = true)
     {
-        $awsConfig = AwsConfig::find($id);
-        $pathConfig = FilePublicPath::find($id);
-
         $config = [];
 
-        if (!empty($awsConfig)) {
+        /** @var AwsConfig $awsConfig */
+        if (!empty($awsConfig = AwsConfig::find($id))) {
+            $awsConfig->protectedView = $protect;
             $config = $awsConfig->toArray();
         }
 
-        if (!empty($pathConfig)) {
+        /** @var FilePublicPath $pathConfig */
+        if (!empty($pathConfig = FilePublicPath::find($id))) {
             $config = array_merge($config, $pathConfig->toArray());
         }
 
@@ -37,7 +32,7 @@ class AwsS3Config implements ServiceConfigHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public static function validateConfig($config, $create=true)
+    public static function validateConfig($config, $create = true)
     {
         return (AwsConfig::validateConfig($config, $create) && FilePublicPath::validateConfig($config, $create));
     }
@@ -47,7 +42,9 @@ class AwsS3Config implements ServiceConfigHandlerInterface
      */
     public static function setConfig($id, $config)
     {
+        /** @var AwsConfig $awsConfig */
         $awsConfig = AwsConfig::find($id);
+        /** @var FilePublicPath $pathConfig */
         $pathConfig = FilePublicPath::find($id);
         $configPath = [
             'public_path' => array_get($config, 'public_path'),
@@ -95,19 +92,13 @@ class AwsS3Config implements ServiceConfigHandlerInterface
      */
     public static function getConfigSchema()
     {
-        $awsConfig = new AwsConfig();
-        $pathConfig = new FilePublicPath();
         $out = null;
-
-        $awsSchema = $awsConfig->getConfigSchema();
-        $pathSchema = $pathConfig->getConfigSchema();
-
-        static::updatePathSchema($pathSchema);
-
-        if (!empty($awsSchema)) {
+        $awsConfig = new AwsConfig();
+        if (!empty($awsSchema = $awsConfig->getConfigSchema())) {
             $out = $awsSchema;
         }
-        if (!empty($pathSchema)) {
+        $pathConfig = new FilePublicPath();
+        if (!empty($pathSchema = $pathConfig->getConfigSchema())) {
             $out = ($out) ? array_merge($out, $pathSchema) : $pathSchema;
         }
 

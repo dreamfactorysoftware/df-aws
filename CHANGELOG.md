@@ -4,8 +4,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+### Changed
+### Fixed
+
+## [0.5.0] - 2016-10-03
+### Added
+- Beta release of Redshift service support
 
 ### Changed
+- DF-641 Download files in chunks
+- DF-826 Protecting secret key using service config rework from df-core
 
 ### Fixed
 
@@ -20,7 +28,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [0.3.0] - 2016-05-27
 ### Changed
-- Moved seeding functionality to service provider to adhere to df-core changes.
+- Moved seeding functionality to service provider to adhere to df-core changes
 
 ## [0.2.2] - 2016-03-11
 ### Fixed

@@ -46,15 +46,13 @@ class S3FileSystem extends RemoteFileSystem
     public function __construct($config)
     {
         //  Replace any private lookups
-        Session::replaceLookups( $config, true );
+        Session::replaceLookups($config, true);
         // statically assign the our supported version
         $config['version'] = '2006-03-01';
-        if (isset($config['key']))
-        {
+        if (isset($config['key'])) {
             $config['credentials']['key'] = $config['key'];
         }
-        if (isset($config['secret']))
-        {
+        if (isset($config['secret'])) {
             $config['credentials']['secret'] = $config['secret'];
         }
 
@@ -550,7 +548,12 @@ class S3FileSystem extends RemoteFileSystem
                 (isset($params['disposition']) && !empty($params['disposition'])) ? $params['disposition'] : 'inline';
 
             header('Content-Disposition: ' . $disposition . '; filename="' . $name . '";');
-            echo $result->get('Body');
+            //echo $result->get('Body');
+            $result['Body']->rewind();
+            $chunk = \Config::get('df.file_chunk_size');
+            while ($data = $result['Body']->read($chunk)) {
+                echo $data;
+            }
         } catch (\Exception $ex) {
             if ('Resource could not be accessed.' == $ex->getMessage()) {
                 $status_header = "HTTP/1.1 404 The specified file '$name' does not exist.";
