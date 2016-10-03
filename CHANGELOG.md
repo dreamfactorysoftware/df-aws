@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Beta release of Redshift service support.
 
 ### Changed
 - DF-641 Download files in chunks
