@@ -7,7 +7,8 @@
     "rest",
     "aws",
     "s3",
-    "dynamodb"
+    "dynamodb",
+    "redshift"
   ],
   "homepage":    "https://www.dreamfactory.com/",
   "license":     "Apache-2.0",
@@ -28,7 +29,7 @@
     "wiki":   "https://wiki.dreamfactory.com"
   },
   "require":     {
-    "dreamfactory/df-core": "~0.4.0",
+    "dreamfactory/df-core": "~0.5.0",
     "aws/aws-sdk-php":      "3.*"
   },
   "autoload":    {
@@ -38,7 +39,7 @@
   },
   "extra":       {
     "branch-alias": {
-      "dev-develop": "0.4.x-dev"
+      "dev-develop": "0.5.x-dev"
     }
   }
 }
