@@ -1,6 +1,7 @@
 <?php
 namespace DreamFactory\Core\Aws\Services;
 
+use Aws\Iam\IamClient;
 use Aws\Sns\SnsClient;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Core\Aws\Resources\BaseSnsResource;
@@ -81,6 +82,11 @@ class Sns extends BaseRestService
      * @var string|null
      */
     protected $region = null;
+
+    /**
+     * @var string|null
+     */
+    protected $accountId = null;
     /**
      * @var string|null
      */
@@ -120,11 +126,26 @@ class Sns extends BaseRestService
 
         try {
             $this->conn = new SnsClient($config);
+            $this->setAccountId($config);
         } catch (\Exception $ex) {
             throw new InternalServerErrorException("AWS SNS Service Exception:\n{$ex->getMessage()}",
                 $ex->getCode());
         }
         $this->region = array_get($config, 'region');
+    }
+
+    /**
+     * Sets the AWS account id.
+     *
+     * @param $config
+     */
+    protected function setAccountId($config)
+    {
+        $config['version'] = '2010-05-08';
+        $iam = new IamClient($config);
+        $user = $iam->getUser()->get('User');
+        $arn = explode(':', array_get($user, 'Arn'));
+        $this->accountId = array_get($arn, 4);
     }
 
     /**
@@ -154,7 +175,7 @@ class Sns extends BaseRestService
     public function addArnPrefix($name)
     {
         if (0 !== substr_compare($name, static::ARN_PREFIX, 0, strlen(static::ARN_PREFIX))) {
-            $name = static::ARN_PREFIX . $this->region . ':' . $name;
+            $name = static::ARN_PREFIX . $this->region . ':' . $this->accountId . ':' . $name;
         }
 
         return $name;
@@ -163,7 +184,7 @@ class Sns extends BaseRestService
     public function stripArnPrefix($name)
     {
         if (0 === substr_compare($name, static::ARN_PREFIX, 0, strlen(static::ARN_PREFIX))) {
-            $name = substr($name, strlen(static::ARN_PREFIX . $this->region . ':'));
+            $name = substr($name, strlen(static::ARN_PREFIX . $this->region . ':' . $this->accountId . ':'));
         }
 
         return $name;
@@ -208,6 +229,8 @@ class Sns extends BaseRestService
                 $resource->setParentResource($this->resourceId);
 
                 $newPath = $this->resourceArray;
+                array_shift($newPath);
+                array_shift($newPath);
                 array_shift($newPath);
                 array_shift($newPath);
                 array_shift($newPath);

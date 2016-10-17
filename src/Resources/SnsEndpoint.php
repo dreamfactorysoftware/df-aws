@@ -110,6 +110,16 @@ class SnsEndpoint extends BaseSnsResource
         return $this;
     }
 
+    /** {@inheritdoc} */
+    public function getResources($only_handlers = false)
+    {
+        if ($only_handlers) {
+            return [];
+        }
+
+        return $this->getEndpointsAsArray($this->parentResource);
+    }
+
     /**
      * @param mixed $fields Use boolean, comma-delimited string, or array of properties
      *

@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 ### Changed
 ### Fixed
+- DF-853 Fixed SNS APIs
 
 ## [0.5.0] - 2016-10-03
 ### Added
