@@ -172,6 +172,11 @@ class Sns extends BaseRestService
         return $this->conn;
     }
 
+    /**
+     * @param $name
+     *
+     * @return string
+     */
     public function addArnPrefix($name)
     {
         if (0 !== substr_compare($name, static::ARN_PREFIX, 0, strlen(static::ARN_PREFIX))) {
@@ -181,6 +186,11 @@ class Sns extends BaseRestService
         return $name;
     }
 
+    /**
+     * @param $name
+     *
+     * @return string
+     */
     public function stripArnPrefix($name)
     {
         if (0 === substr_compare($name, static::ARN_PREFIX, 0, strlen(static::ARN_PREFIX))) {
@@ -243,11 +253,12 @@ class Sns extends BaseRestService
         throw new BadRequestException("Invalid related resource '{$this->relatedResource}' for resource '{$this->resource}'.");
     }
 
+    /**
+     * @return array
+     */
     public function getAccessList()
     {
         $resources = parent::getAccessList();
-
-//        $refresh = $this->request->getParameterAsBool( 'refresh' );
 
         $name = SnsTopic::RESOURCE_NAME . '/';
         $access = $this->getPermissions($name);
@@ -377,6 +388,7 @@ class Sns extends BaseRestService
     }
 
     /**
+     *
      */
     protected function validateResourceAccess()
     {
