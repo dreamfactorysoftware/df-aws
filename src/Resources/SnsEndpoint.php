@@ -117,7 +117,16 @@ class SnsEndpoint extends BaseSnsResource
             return [];
         }
 
-        return $this->getEndpointsAsArray($this->parentResource);
+        if(!empty($this->parentResource)) {
+            return $this->getEndpointsAsArray($this->parentResource);
+        } else {
+            $resources = $this->listResources(Sns::FORMAT_ARN);
+            foreach ($resources as $key => $value){
+                $resources[$key] = ['EndpointArn' => $value];
+            }
+
+            return $resources;
+        }
     }
 
     /**
