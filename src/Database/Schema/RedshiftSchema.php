@@ -297,10 +297,7 @@ class RedshiftSchema extends Schema
      */
     protected function loadTable(TableSchema $table)
     {
-        if (!$this->findColumns($table)) {
-            return null;
-        }
-        $this->findConstraints($table);
+        parent::loadTable($table);
 
         if (is_string($table->primaryKey) && isset($this->sequences[$table->rawName . '.' . $table->primaryKey])) {
 //            $table->sequenceName = $this->sequences[$table->rawName . '.' . $table->primaryKey];
@@ -325,7 +322,7 @@ class RedshiftSchema extends Schema
      *
      * @return boolean whether the table exists in the database
      */
-    protected function findColumns($table)
+    protected function findColumns(TableSchema $table)
     {
         $sql = <<<EOD
 SELECT a.attname AS "name", LOWER(format_type(a.atttypid, a.atttypmod)) AS db_type, a.attnotnull, a.atthasdef,
@@ -335,7 +332,7 @@ SELECT a.attname AS "name", LOWER(format_type(a.atttypid, a.atttypmod)) AS db_ty
 	CASE c.contype WHEN 'u' THEN true ELSE false END AS is_unique,
 	CASE c.contype WHEN 'f' THEN true ELSE false END AS is_foreign_key,
 	c.confupdtype AS ref_on_update, c.confdeltype AS ref_on_update, f.relname AS ref_table,
-    (SELECT a2.attname FROM pg_attribute a2 WHERE a2.attrelid = f.oid AND a2.attnum = c.confkey[1] AND a2.attisdropped = false) AS ref_fields
+    (SELECT a2.attname FROM pg_attribute a2 WHERE a2.attrelid = f.oid AND a2.attnum = c.confkey[1] AND a2.attisdropped = false) AS ref_field
 FROM pg_attribute a 
 LEFT JOIN pg_attrdef d ON a.attrelid = d.adrelid AND a.attnum = d.adnum
 LEFT JOIN pg_constraint c ON c.conrelid = a.attrelid AND (a.attnum = ANY (c.conkey))
@@ -398,11 +395,9 @@ EOD;
     }
 
     /**
-     * Collects the primary and foreign key column details for the given table.
-     *
-     * @param TableSchema $table the table metadata
+     * @inheritdoc
      */
-    protected function findConstraints($table)
+    protected function findTableReferences()
     {
         $sql = <<<EOD
         SELECT
@@ -421,9 +416,7 @@ WHERE
   o.contype = 'f' AND o.conrelid IN (SELECT oid FROM pg_class c WHERE c.relkind = 'r');
 EOD;
 
-        $constraints = $this->connection->select($sql);
-
-        $this->buildTableRelations($table, $constraints);
+        return $this->connection->select($sql);
     }
 
     protected function findSchemaNames()
