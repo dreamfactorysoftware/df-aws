@@ -2,56 +2,31 @@
 namespace DreamFactory\Core\Aws\Services;
 
 use Aws\DynamoDb\DynamoDbClient;
-use DreamFactory\Core\Aws\Resources\DynamoDbSchema;
+use DreamFactory\Core\Aws\Database\Schema\DynamoDbSchema;
 use DreamFactory\Core\Aws\Resources\DynamoDbTable;
-use DreamFactory\Core\Components\DbSchemaExtras;
-use DreamFactory\Core\Database\Schema\TableSchema;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
-use DreamFactory\Core\Services\BaseNoSqlDbService;
+use DreamFactory\Core\Resources\DbSchemaResource;
+use DreamFactory\Core\Services\BaseDbService;
 use DreamFactory\Core\Utility\Session;
 
 /**
  * DynamoDb
  *
- * A service to handle DynamoDb NoSQL (schema-less) database
- * services accessed through the REST API.
+ * A service to handle DynamoDb NoSQL (schema-less) database services accessed through the REST API.
  */
-class DynamoDb extends BaseNoSqlDbService
+class DynamoDb extends BaseDbService
 {
-    use DbSchemaExtras;
-
-    //*************************************************************************
-    //	Constants
-    //*************************************************************************
-
-    /**
-     *
-     */
-    const TABLE_INDICATOR = 'TableName';
-
     //*************************************************************************
     //	Members
     //*************************************************************************
 
     /**
-     * @var DynamoDbClient|null
-     */
-    protected $dbConn = null;
-    /**
-     * @var array
-     */
-    protected $tableNames = [];
-    /**
-     * @var array
-     */
-    protected $tables = [];
-    /**
      * @var array
      */
     protected static $resources = [
-        DynamoDbSchema::RESOURCE_NAME => [
-            'name'       => DynamoDbSchema::RESOURCE_NAME,
-            'class_name' => DynamoDbSchema::class,
+        DbSchemaResource::RESOURCE_NAME => [
+            'name'       => DbSchemaResource::RESOURCE_NAME,
+            'class_name' => DbSchemaResource::class,
             'label'      => 'Schema',
         ],
         DynamoDbTable::RESOURCE_NAME  => [
@@ -94,94 +69,19 @@ class DynamoDb extends BaseNoSqlDbService
         // set up a default table schema
         $parameters = (array)array_get($config, 'parameters');
         Session::replaceLookups($parameters);
-        if (null !== ($table = array_get($parameters, 'default_create_table'))) {
-            $this->defaultCreateTable = $table;
-        }
+//        if (null !== ($table = array_get($parameters, 'default_create_table'))) {
+//            $this->defaultCreateTable = $table;
+//        }
 
         try {
             $this->dbConn = new DynamoDbClient($config);
+            /** @noinspection PhpParamsInspection */
+            $this->schema = new DynamoDbSchema($this->dbConn);
+            $this->schema->setCache($this);
+            $this->schema->setExtraStore($this);
         } catch (\Exception $ex) {
             throw new InternalServerErrorException("AWS DynamoDb Service Exception:\n{$ex->getMessage()}",
                 $ex->getCode());
         }
-    }
-
-    /**
-     * Object destructor
-     */
-    public function __destruct()
-    {
-        try {
-            $this->dbConn = null;
-        } catch (\Exception $ex) {
-            error_log("Failed to disconnect from database.\n{$ex->getMessage()}");
-        }
-    }
-
-    /**
-     * @throws \Exception
-     * @return DynamoDbClient
-     */
-    public function getConnection()
-    {
-        if (!isset($this->dbConn)) {
-            throw new InternalServerErrorException('Database connection has not been initialized.');
-        }
-
-        return $this->dbConn;
-    }
-
-    /**
-     * @return array
-     */
-    public function getTables()
-    {
-        $out = [];
-        $options = ['Limit' => 100]; // arbitrary limit
-        do {
-            if (isset($result, $result['LastEvaluatedTableName'])){
-                $options['ExclusiveStartTableName'] = $result['LastEvaluatedTableName'];
-            }
-            $result = $this->dbConn->listTables($options);
-            $out = array_merge($out, $result['TableNames']);
-        } while ($result['LastEvaluatedTableName']);
-
-        return $out;
-    }
-
-    public function getTableNames($schema = null, $refresh = false, $use_alias = false)
-    {
-        if ($refresh ||
-            (empty($this->tableNames) &&
-                (null === $this->tableNames = $this->getFromCache('table_names')))
-        ) {
-            /** @type TableSchema[] $names */
-            $names = [];
-            $tables = $this->getTables();
-            foreach ($tables as $table) {
-                $names[strtolower($table)] = new TableSchema(['name' => $table]);
-            }
-            // merge db extras
-            if (!empty($extrasEntries = $this->getSchemaExtrasForTables($tables))) {
-                foreach ($extrasEntries as $extras) {
-                    if (!empty($extraName = strtolower(strval($extras['table'])))) {
-                        if (array_key_exists($extraName, $tables)) {
-                            $names[$extraName]->fill($extras);
-                        }
-                    }
-                }
-            }
-            $this->tableNames = $names;
-            $this->addToCache('table_names', $this->tableNames, true);
-        }
-
-        return $this->tableNames;
-    }
-
-    public function refreshTableCache()
-    {
-        $this->removeFromCache('table_names');
-        $this->tableNames = [];
-        $this->tables = [];
     }
 }

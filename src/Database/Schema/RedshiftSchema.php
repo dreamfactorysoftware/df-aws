@@ -12,9 +12,12 @@ use DreamFactory\Core\Exceptions\BadRequestException;
  */
 class RedshiftSchema extends Schema
 {
-    const DEFAULT_SCHEMA = 'public';
+    /**
+     * Underlying database provides field-level schema, i.e. SQL (true) vs NoSQL (false)
+     */
+    const PROVIDES_FIELD_SCHEMA = true;
 
-    private $sequences = [];
+    const DEFAULT_SCHEMA = 'public';
 
     /**
      * @param boolean $refresh if we need to refresh schema cache.
@@ -295,33 +298,6 @@ class RedshiftSchema extends Schema
     /**
      * @inheritdoc
      */
-    protected function loadTable(TableSchema $table)
-    {
-        parent::loadTable($table);
-
-        if (is_string($table->primaryKey) && isset($this->sequences[$table->rawName . '.' . $table->primaryKey])) {
-//            $table->sequenceName = $this->sequences[$table->rawName . '.' . $table->primaryKey];
-            $table->sequenceName = $table->primaryKey;
-        } elseif (is_array($table->primaryKey)) {
-            foreach ($table->primaryKey as $pk) {
-                if (isset($this->sequences[$table->rawName . '.' . $pk])) {
-//                    $table->sequenceName = $this->sequences[$table->rawName . '.' . $pk];
-                    $table->sequenceName = $pk;
-                    break;
-                }
-            }
-        }
-
-        return $table;
-    }
-
-    /**
-     * Collects the table column metadata.
-     *
-     * @param TableSchema $table the table metadata
-     *
-     * @return boolean whether the table exists in the database
-     */
     protected function findColumns(TableSchema $table)
     {
         $sql = <<<EOD
@@ -342,33 +318,8 @@ WHERE a.attnum > 0 AND NOT a.attisdropped
 		AND relnamespace = (SELECT oid FROM pg_catalog.pg_namespace WHERE nspname = :schema))
 ORDER BY a.attnum
 EOD;
-        $columns = $this->connection->select($sql, [':table' => $table->tableName, ':schema' => $table->schemaName]);
 
-        if (empty($columns)) {
-            return false;
-        }
-
-        $table->primaryKey = null;
-        foreach ($columns as $column) {
-            $column = (array)$column;
-            $c = $this->createColumn($column);
-
-            if ($c->isPrimaryKey) {
-                if ((DbSimpleTypes::TYPE_INTEGER === $c->type) && $c->autoIncrement) {
-                    $c->type = DbSimpleTypes::TYPE_ID;
-                }
-                if ($table->primaryKey === null) {
-                    $table->primaryKey = $c->name;
-                } elseif (is_string($table->primaryKey)) {
-                    $table->primaryKey = [$table->primaryKey, $c->name];
-                } else {
-                    $table->primaryKey[] = $c->name;
-                }
-            }
-            $table->addColumn($c);
-        }
-
-        return true;
+        return $this->connection->select($sql, [':table' => $table->tableName, ':schema' => $table->schemaName]);
     }
 
     /**
@@ -422,7 +373,7 @@ EOD;
     protected function findSchemaNames()
     {
         $sql = <<<MYSQL
-SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema','pg_catalog')
+SELECT nspname FROM pg_namespace WHERE nspname NOT IN ('information_schema','pg_catalog')
 MYSQL;
         $rows = $this->selectColumn($sql);
 
@@ -434,14 +385,7 @@ MYSQL;
     }
 
     /**
-     * Returns all table names in the database.
-     *
-     * @param string  $schema        the schema of the tables. Defaults to empty string, meaning the current or default
-     *                               schema. If not empty, the returned table names will be prefixed with the schema
-     *                               name.
-     * @param boolean $include_views whether to include views in the result. Defaults to true.
-     *
-     * @return array all table names in the database.
+     * @inheritdoc
      */
     protected function findTableNames($schema = '', $include_views = true)
     {
@@ -655,9 +599,7 @@ MYSQL;
     }
 
     /**
-     * Extracts the PHP type from DB type.
-     *
-     * @param string $dbType DB type
+     * @inheritdoc
      */
     public function extractType(ColumnSchema &$column, $dbType)
     {
@@ -740,21 +682,5 @@ MYSQL;
     public function getTimestampForSet()
     {
         return $this->connection->raw('(GETDATE())');
-    }
-
-    /**
-     * @return boolean
-     */
-    public function supportsFunctions()
-    {
-        return false;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function supportsProcedures()
-    {
-        return false;
     }
 }
