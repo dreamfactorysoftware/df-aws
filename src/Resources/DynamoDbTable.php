@@ -141,37 +141,13 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         $marshaler = new Marshaler();
 
         return $marshaler->unmarshalValue($value);
+    }
 
-        // represented as arrays, though there is only ever one item present
-//        foreach ($value as $type => $actual) {
-//            switch ($type) {
-//                case Type::S:
-//                case Type::B:
-//                    return $actual;
-//                case Type::N:
-//                    if (intval($actual) == $actual) {
-//                        return intval($actual);
-//                    } else {
-//                        return floatval($actual);
-//                    }
-//                case Type::SS:
-//                case Type::BS:
-//                    return $actual;
-//                case Type::NS:
-//                    $out = [];
-//                    foreach ($actual as $item) {
-//                        if (intval($item) == $item) {
-//                            $out[] = intval($item);
-//                        } else {
-//                            $out[] = floatval($item);
-//                        }
-//                    }
-//
-//                    return $out;
-//            }
-//        }
-//
-//        return $value;
+    protected static function formatValue($value)
+    {
+        $marshaler = new Marshaler();
+
+        return $marshaler->marshalValue($value);
     }
 
     protected static function buildAttributesToGet($fields = null, $id_fields = null)
@@ -501,7 +477,6 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         foreach ($sqlOperators as $key => $sqlOp) {
             $ops = array_map('trim', explode($sqlOp, $filter));
             if (count($ops) > 1) {
-//                $field = $ops[0];
                 $val = static::determineValue($ops[1], $params);
                 $dynamoOp = $dynamoOperators[$key];
                 switch ($dynamoOp) {
@@ -607,25 +582,16 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         }
 
         if (trim($value, "'\"") !== $value) {
-            return [[Type::S => trim($value, "'\"")]]; // meant to be a string
-        }
-
-        if (is_numeric($value)) {
+            $value = trim($value, "'\""); // meant to be a string
+        } elseif (is_numeric($value)) {
             $value = ($value == strval(intval($value))) ? intval($value) : floatval($value);
-
-            // Scan strangely requires numbers to be strings.
-            return [[Type::N => strval($value)]];
+        } elseif (0 == strcasecmp($value, 'true')) {
+            $value = true;
+        } elseif (0 == strcasecmp($value, 'false')) {
+            $value = false;
         }
 
-        if (0 == strcasecmp($value, 'true')) {
-            return [[Type::N => 1]];
-        }
-
-        if (0 == strcasecmp($value, 'false')) {
-            return [[Type::N => 0]];
-        }
-
-        return [[Type::S => $value]];
+        return [static::formatValue($value)];
     }
 
     /**
