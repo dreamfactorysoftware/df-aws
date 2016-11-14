@@ -434,6 +434,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             throw new BadRequestException('NOT logical comparison not currently supported on DynamoDb.');
         }
 
+        $filter = trim($filter, '()');
         // the rest should be comparison operators
         $search = [
             ' eq ',
