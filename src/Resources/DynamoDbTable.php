@@ -624,7 +624,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             return [[Type::N => 0]];
         }
 
-        return $value;
+        return [[Type::S => $value]];
     }
 
     /**
