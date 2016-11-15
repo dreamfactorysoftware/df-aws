@@ -48,7 +48,7 @@ class DynamoDbSchema extends Schema
         ]
     ];
 
-    public function findTableNames($schema = '', $include_views = true)
+    protected function findTableNames($schema = '', $include_views = true)
     {
         $tables = [];
         $options = ['Limit' => 100]; // arbitrary limit
@@ -88,7 +88,7 @@ class DynamoDbSchema extends Schema
     /**
      * {@inheritdoc}
      */
-    public function findColumns(TableSchema $table)
+    protected function findColumns(TableSchema $table)
     {
         try {
             $result = $this->connection->describeTable([static::TABLE_INDICATOR => $table->name]);
@@ -126,37 +126,45 @@ class DynamoDbSchema extends Schema
     /**
      * {@inheritdoc}
      */
-    public function createTable($table, $columns, $options = null)
+    protected function createTable($table, $options)
     {
+        if (empty($tableName = array_get($table, 'name'))) {
+            throw new \Exception("No valid name exist in the received table schema.");
+        }
+
         $properties = array_merge(
-            [static::TABLE_INDICATOR => $table],
+            [static::TABLE_INDICATOR => $tableName],
             $this->defaultCreateTable,
-            (array)$options
+            (array)array_get($table, 'native')
         );
         $result = $this->connection->createTable($properties);
 
         // Wait until the table is created and active
-        $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $table]);
+        $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $tableName]);
 
-        return array_merge(['name' => $table], $result['TableDescription']);
+        return array_merge(['name' => $tableName], $result['TableDescription']);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function updateTable($table_name, $schema)
+    protected function updateTable($table, $changes)
     {
-//        // Update the provisioned throughput capacity of the table
-//        $properties = array_merge(
-//            [static::TABLE_INDICATOR => $table_name],
-//            $schema
-//        );
-//        $result = $this->connection->updateTable($properties);
-//
-//        // Wait until the table is active again after updating
-//        $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $table_name]);
-//
-//        return array_merge(['name' => $table_name], $result['TableDescription']);
+        if (empty($tableName = array_get($table, 'name'))) {
+            throw new \Exception("No valid name exist in the received table schema.");
+        }
+
+        // Update the provisioned throughput capacity of the table
+        $properties = array_merge(
+            [static::TABLE_INDICATOR => $tableName],
+            (array)array_get($table, 'native')
+        );
+        $result = $this->connection->updateTable($properties);
+
+        // Wait until the table is active again after updating
+        $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $tableName]);
+
+        return array_merge(['name' => $tableName], $result['TableDescription']);
     }
 
     /**
