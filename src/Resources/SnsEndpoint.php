@@ -110,6 +110,25 @@ class SnsEndpoint extends BaseSnsResource
         return $this;
     }
 
+    /** {@inheritdoc} */
+    public function getResources($only_handlers = false)
+    {
+        if ($only_handlers) {
+            return [];
+        }
+
+        if(!empty($this->parentResource)) {
+            return $this->getEndpointsAsArray($this->parentResource);
+        } else {
+            $resources = $this->listResources(Sns::FORMAT_ARN);
+            foreach ($resources as $key => $value){
+                $resources[$key] = ['EndpointArn' => $value];
+            }
+
+            return $resources;
+        }
+    }
+
     /**
      * @param mixed $fields Use boolean, comma-delimited string, or array of properties
      *
@@ -177,6 +196,7 @@ class SnsEndpoint extends BaseSnsResource
         return $resources;
     }
 
+    /** {@inheritdoc} */
     protected function handleGET()
     {
         if (empty($this->resource)) {
@@ -186,6 +206,7 @@ class SnsEndpoint extends BaseSnsResource
         }
     }
 
+    /** {@inheritdoc} */
     protected function handlePOST()
     {
         $payload = $this->request->getPayloadData();
@@ -200,6 +221,7 @@ class SnsEndpoint extends BaseSnsResource
         }
     }
 
+    /** {@inheritdoc} */
     protected function handlePUT()
     {
         $payload = $this->request->getPayloadData();
@@ -214,11 +236,13 @@ class SnsEndpoint extends BaseSnsResource
         return $this->updateEndpoint($payload);
     }
 
+    /** {@inheritdoc} */
     protected function handlePATCH()
     {
         return $this->handlePUT();
     }
 
+    /** {@inheritdoc} */
     protected function handleDELETE()
     {
         $payload = $this->request->getPayloadData();
@@ -268,6 +292,13 @@ class SnsEndpoint extends BaseSnsResource
         return [];
     }
 
+    /**
+     * @param $request
+     *
+     * @return array
+     * @throws \DreamFactory\Core\Exceptions\BadRequestException
+     * @throws \DreamFactory\Core\Exceptions\InternalServerErrorException
+     */
     public function createEndpoint($request)
     {
         if (is_array($request)) {
@@ -304,6 +335,13 @@ class SnsEndpoint extends BaseSnsResource
         return [];
     }
 
+    /**
+     * @param $request
+     *
+     * @return array
+     * @throws \DreamFactory\Core\Exceptions\BadRequestException
+     * @throws \DreamFactory\Core\Exceptions\InternalServerErrorException
+     */
     public function updateEndpoint($request)
     {
         if (is_array($request)) {
@@ -333,6 +371,13 @@ class SnsEndpoint extends BaseSnsResource
         return [];
     }
 
+    /**
+     * @param $request
+     *
+     * @return array
+     * @throws \DreamFactory\Core\Exceptions\BadRequestException
+     * @throws \DreamFactory\Core\Exceptions\InternalServerErrorException
+     */
     public function deleteEndpoint($request)
     {
         $data = [];
