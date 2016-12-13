@@ -4,7 +4,7 @@ namespace DreamFactory\Core\Aws\Services;
 use Aws\Ses\SesClient;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use Illuminate\Mail\Transport\SesTransport;
-use DreamFactory\Core\Services\Email\BaseService;
+use DreamFactory\Core\Email\Services\BaseService;
 use Illuminate\Support\Arr;
 
 class Ses extends BaseService

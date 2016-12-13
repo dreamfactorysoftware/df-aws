@@ -29,8 +29,9 @@
     "wiki":   "https://wiki.dreamfactory.com"
   },
   "require":     {
-    "dreamfactory/df-core": "~0.6.0",
-    "aws/aws-sdk-php":      "3.*"
+    "dreamfactory/df-core":     "~0.6.0",
+    "dreamfactory/df-database": "~0.1.0",
+    "aws/aws-sdk-php":          "3.*"
   },
   "autoload":    {
     "psr-4": {

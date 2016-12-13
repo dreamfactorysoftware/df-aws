@@ -2,7 +2,7 @@
 namespace DreamFactory\Core\Aws\Database\Schema;
 
 use DreamFactory\Core\Database\Schema\ColumnSchema;
-use DreamFactory\Core\Database\Schema\Schema;
+use DreamFactory\Core\Database\Components\Schema;
 use DreamFactory\Core\Database\Schema\TableSchema;
 use DreamFactory\Core\Enums\DbSimpleTypes;
 use DreamFactory\Core\Exceptions\BadRequestException;
@@ -268,7 +268,7 @@ class RedshiftSchema extends Schema
         if ($value !== null) {
             $value = (int)$value;
         } else {
-            $value = "(SELECT COALESCE(MAX(\"{$table->primaryKey}\"),0) FROM {$table->rawName})+1";
+            $value = "(SELECT COALESCE(MAX(\"{$table->primaryKey}\"),0) FROM {$table->quotedName})+1";
         }
         $this->connection->statement("SELECT SETVAL('$sequence',$value,false)");
     }
@@ -332,7 +332,7 @@ EOD;
     protected function createColumn($column)
     {
         $c = new ColumnSchema(array_except($column, ['atthasdef', 'default', 'attnotnull']));
-        $c->rawName = $this->quoteColumnName($c->name);
+        $c->quotedName = $this->quoteColumnName($c->name);
         $c->allowNull = !boolval($column['attnotnull']);
         $this->extractLimit($c, $c->dbType);
         $c->fixedLength = $this->extractFixedLength($c->dbType);
@@ -387,24 +387,17 @@ MYSQL;
     /**
      * @inheritdoc
      */
-    protected function findTableNames($schema = '', $include_views = true)
+    protected function findTableNames($schema = '')
     {
-        if ($include_views) {
-            $condition = "table_type in ('BASE TABLE','VIEW')";
-        } else {
-            $condition = "table_type = 'BASE TABLE'";
-        }
-
         $sql = <<<EOD
-SELECT table_name, table_schema, table_type FROM information_schema.tables
-WHERE $condition
+SELECT table_name, table_schema, table_type FROM information_schema.tables WHERE table_type = 'BASE TABLE'
 EOD;
 
         if (!empty($schema)) {
             $sql .= " AND table_schema = '$schema'";
         }
 
-        $defaultSchema = self::DEFAULT_SCHEMA;
+        $defaultSchema = $this->getNamingSchema();
         $addSchema = (!empty($schema) && ($defaultSchema !== $schema));
 
         $rows = $this->connection->select($sql);
@@ -414,16 +407,44 @@ EOD;
             $row = (array)$row;
             $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
             $tableName = isset($row['table_name']) ? $row['table_name'] : '';
-            $isView = (0 === strcasecmp('VIEW', $row['table_type']));
-            if ($addSchema) {
-                $name = $schemaName . '.' . $tableName;
-                $rawName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($tableName);;
-            } else {
-                $name = $tableName;
-                $rawName = $this->quoteTableName($tableName);
-            }
-            $settings = compact('schemaName', 'tableName', 'name', 'rawName', 'isView');
+            $internalName = $schemaName . '.' . $tableName;
+            $name = ($addSchema) ? $internalName : $tableName;
+            $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($tableName);
+            $settings = compact('schemaName', 'tableName', 'name', 'internalName','quotedName');
+            $names[strtolower($name)] = new TableSchema($settings);
+        }
 
+        return $names;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function findViewNames($schema = '')
+    {
+        $sql = <<<EOD
+SELECT table_name, table_schema, table_type FROM information_schema.tables WHERE table_type = 'VIEW'
+EOD;
+
+        if (!empty($schema)) {
+            $sql .= " AND table_schema = '$schema'";
+        }
+
+        $defaultSchema = $this->getNamingSchema();
+        $addSchema = (!empty($schema) && ($defaultSchema !== $schema));
+
+        $rows = $this->connection->select($sql);
+
+        $names = [];
+        foreach ($rows as $row) {
+            $row = (array)$row;
+            $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
+            $tableName = isset($row['table_name']) ? $row['table_name'] : '';
+            $internalName = $schemaName . '.' . $tableName;
+            $name = ($addSchema) ? $internalName : $tableName;
+            $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($tableName);
+            $settings = compact('schemaName', 'tableName', 'name', 'internalName','quotedName');
+            $settings['isView'] = true;
             $names[strtolower($name)] = new TableSchema($settings);
         }
 
@@ -601,7 +622,7 @@ MYSQL;
     /**
      * @inheritdoc
      */
-    public function extractType(ColumnSchema &$column, $dbType)
+    public function extractType(ColumnSchema $column, $dbType)
     {
         parent::extractType($column, $dbType);
         if (strpos($dbType, '[') !== false || strpos($dbType, 'char') !== false || strpos($dbType, 'text') !== false) {
@@ -636,7 +657,7 @@ MYSQL;
      * @param ColumnSchema $field
      * @param string       $dbType the column's DB type
      */
-    public function extractLimit(ColumnSchema &$field, $dbType)
+    public function extractLimit(ColumnSchema $field, $dbType)
     {
         if (strpos($dbType, '(')) {
             if (preg_match('/^time.*\((.*)\)/', $dbType, $matches)) {
@@ -658,7 +679,7 @@ MYSQL;
      * @param ColumnSchema $field
      * @param mixed        $defaultValue the default value obtained from metadata
      */
-    public function extractDefault(ColumnSchema &$field, $defaultValue)
+    public function extractDefault(ColumnSchema $field, $defaultValue)
     {
         if ($defaultValue === 'true') {
             $field->defaultValue = true;

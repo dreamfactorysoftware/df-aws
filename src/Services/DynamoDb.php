@@ -5,8 +5,8 @@ use Aws\DynamoDb\DynamoDbClient;
 use DreamFactory\Core\Aws\Database\Schema\DynamoDbSchema;
 use DreamFactory\Core\Aws\Resources\DynamoDbTable;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
-use DreamFactory\Core\Resources\DbSchemaResource;
-use DreamFactory\Core\Services\BaseDbService;
+use DreamFactory\Core\Database\Resources\DbSchemaResource;
+use DreamFactory\Core\Database\Services\BaseDbService;
 use DreamFactory\Core\Utility\Session;
 
 /**
