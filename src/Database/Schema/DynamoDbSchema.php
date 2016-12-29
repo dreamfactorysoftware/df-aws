@@ -58,9 +58,7 @@ class DynamoDbSchema extends Schema
             }
             $result = $this->connection->listTables($options);
             foreach ($result['TableNames'] as $name) {
-                $internalName = $quotedName = $tableName = $name;
-                $settings = compact('tableName', 'name', 'internalName','quotedName');
-                $tables[strtolower($name)] = new TableSchema($settings);
+                $tables[strtolower($name)] = new TableSchema(['name' => $name]);
             }
         } while ($result['LastEvaluatedTableName']);
 

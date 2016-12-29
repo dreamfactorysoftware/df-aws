@@ -285,13 +285,8 @@ class RedshiftSchema extends Schema
         $enable = $check ? 'ENABLE' : 'DISABLE';
         $tableNames = $this->getTableNames($schema);
         $db = $this->connection;
-        foreach ($tableNames as $tableInfo) {
-            $tableName = $tableInfo['name'];
-            $tableName = '"' . $tableName . '"';
-            if (strpos($tableName, '.') !== false) {
-                $tableName = str_replace('.', '"."', $tableName);
-            }
-            $db->statement("ALTER TABLE $tableName $enable TRIGGER ALL");
+        foreach ($tableNames as $table) {
+            $db->statement("ALTER TABLE {$table->quotedName} $enable TRIGGER ALL");
         }
     }
 
@@ -319,7 +314,7 @@ WHERE a.attnum > 0 AND NOT a.attisdropped
 ORDER BY a.attnum
 EOD;
 
-        return $this->connection->select($sql, [':table' => $table->tableName, ':schema' => $table->schemaName]);
+        return $this->connection->select($sql, [':table' => $table->resourceName, ':schema' => $table->schemaName]);
     }
 
     /**
@@ -406,11 +401,11 @@ EOD;
         foreach ($rows as $row) {
             $row = (array)$row;
             $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
-            $tableName = isset($row['table_name']) ? $row['table_name'] : '';
-            $internalName = $schemaName . '.' . $tableName;
-            $name = ($addSchema) ? $internalName : $tableName;
-            $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($tableName);
-            $settings = compact('schemaName', 'tableName', 'name', 'internalName','quotedName');
+            $resourceName = isset($row['table_name']) ? $row['table_name'] : '';
+            $internalName = $schemaName . '.' . $resourceName;
+            $name = ($addSchema) ? $internalName : $resourceName;
+            $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($resourceName);
+            $settings = compact('schemaName', 'resourceName', 'name', 'internalName','quotedName');
             $names[strtolower($name)] = new TableSchema($settings);
         }
 
@@ -439,11 +434,11 @@ EOD;
         foreach ($rows as $row) {
             $row = (array)$row;
             $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
-            $tableName = isset($row['table_name']) ? $row['table_name'] : '';
-            $internalName = $schemaName . '.' . $tableName;
-            $name = ($addSchema) ? $internalName : $tableName;
-            $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($tableName);
-            $settings = compact('schemaName', 'tableName', 'name', 'internalName','quotedName');
+            $resourceName = isset($row['table_name']) ? $row['table_name'] : '';
+            $internalName = $schemaName . '.' . $resourceName;
+            $name = ($addSchema) ? $internalName : $resourceName;
+            $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($resourceName);
+            $settings = compact('schemaName', 'resourceName', 'name', 'internalName','quotedName');
             $settings['isView'] = true;
             $names[strtolower($name)] = new TableSchema($settings);
         }
@@ -598,11 +593,11 @@ MYSQL;
     {
         switch ($field_info->type) {
             case DbSimpleTypes::TYPE_BOOLEAN:
-                $value = (filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'TRUE' : 'FALSE');
+                $value = ($value ? 'TRUE' : 'FALSE');
                 break;
         }
 
-        return $value;
+        return parent::parseValueForSet($value, $field_info);
     }
 
     public function formatValue($value, $type)
@@ -632,23 +627,6 @@ MYSQL;
         } elseif (preg_match('/(integer|oid|serial|smallint)/', $dbType)) {
             $column->type = DbSimpleTypes::TYPE_INTEGER;
         }
-    }
-
-    /**
-     * Extracts the PHP type from DF type.
-     *
-     * @param string $type DF type
-     *
-     * @return string
-     */
-    public static function extractPhpType($type)
-    {
-        switch ($type) {
-            case DbSimpleTypes::TYPE_MONEY:
-                return 'string';
-        }
-
-        return parent::extractPhpType($type);
     }
 
     /**
