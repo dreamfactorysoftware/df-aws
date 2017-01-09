@@ -829,7 +829,6 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 }
                 break;
 
-            case Verbs::MERGE:
             case Verbs::PATCH:
                 throw new BadRequestException('Batch operation not supported for patch.');
                 break;
@@ -950,7 +949,6 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
                 case Verbs::PUT:
                 case Verbs::PATCH:
-                case Verbs::MERGE:
                 case Verbs::DELETE:
                     $requests = [];
                     foreach ($this->rollbackRecords as $item) {
