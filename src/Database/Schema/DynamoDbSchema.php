@@ -148,23 +148,19 @@ class DynamoDbSchema extends Schema
     /**
      * {@inheritdoc}
      */
-    protected function updateTable($table, $changes)
+    protected function updateTable($tableSchema, $changes)
     {
-        if (empty($tableName = array_get($table, 'name'))) {
-            throw new \Exception("No valid name exist in the received table schema.");
-        }
-
         // Update the provisioned throughput capacity of the table
         $properties = array_merge(
-            [static::TABLE_INDICATOR => $tableName],
-            (array)array_get($table, 'native')
+            [static::TABLE_INDICATOR => $tableSchema->quotedName],
+            (array)array_get($changes, 'native')
         );
         $result = $this->connection->updateTable($properties);
 
         // Wait until the table is active again after updating
-        $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $tableName]);
+        $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $tableSchema->quotedName]);
 
-        return array_merge(['name' => $tableName], $result['TableDescription']);
+        return array_merge(['name' => $tableSchema->quotedName], $result['TableDescription']);
     }
 
     /**
