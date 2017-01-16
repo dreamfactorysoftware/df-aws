@@ -5,7 +5,7 @@ use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Exception\DynamoDbException;
 use DreamFactory\Core\Aws\Enums\KeyType;
 use DreamFactory\Core\Aws\Enums\Type;
-use DreamFactory\Core\Database\Schema\Schema;
+use DreamFactory\Core\Database\Components\Schema;
 use DreamFactory\Core\Database\Schema\TableSchema;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Exceptions\BadRequestException;
@@ -48,7 +48,7 @@ class DynamoDbSchema extends Schema
         ]
     ];
 
-    protected function findTableNames($schema = '', $include_views = true)
+    protected function findTableNames($schema = '')
     {
         $tables = [];
         $options = ['Limit' => 100]; // arbitrary limit
@@ -148,23 +148,19 @@ class DynamoDbSchema extends Schema
     /**
      * {@inheritdoc}
      */
-    protected function updateTable($table, $changes)
+    protected function updateTable($tableSchema, $changes)
     {
-        if (empty($tableName = array_get($table, 'name'))) {
-            throw new \Exception("No valid name exist in the received table schema.");
-        }
-
         // Update the provisioned throughput capacity of the table
         $properties = array_merge(
-            [static::TABLE_INDICATOR => $tableName],
-            (array)array_get($table, 'native')
+            [static::TABLE_INDICATOR => $tableSchema->quotedName],
+            (array)array_get($changes, 'native')
         );
         $result = $this->connection->updateTable($properties);
 
         // Wait until the table is active again after updating
-        $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $tableName]);
+        $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $tableSchema->quotedName]);
 
-        return array_merge(['name' => $tableName], $result['TableDescription']);
+        return array_merge(['name' => $tableSchema->quotedName], $result['TableDescription']);
     }
 
     /**

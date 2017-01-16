@@ -264,7 +264,7 @@ class S3FileSystem extends RemoteFileSystem
                 $options['ContentType'] = $type;
             }
 
-            $result = $this->blobConn->putObject($options);
+            $this->blobConn->putObject($options);
         } catch (\Exception $ex) {
             throw new DfException('Failed to create blob "' . $name . '": ' . $ex->getMessage());
         }
@@ -293,7 +293,7 @@ class S3FileSystem extends RemoteFileSystem
                 $options['ContentType'] = $type;
             }
 
-            $result = $this->blobConn->putObject($options);
+            $this->blobConn->putObject($options);
         } catch (\Exception $ex) {
             throw new DfException('Failed to create blob "' . $name . '": ' . $ex->getMessage());
         }
@@ -321,7 +321,7 @@ class S3FileSystem extends RemoteFileSystem
                 'CopySource' => urlencode($src_container . '/' . $src_name)
             ];
 
-            $result = $this->blobConn->copyObject($options);
+            $this->blobConn->copyObject($options);
         } catch (\Exception $ex) {
             throw new DfException('Failed to copy blob "' . $name . '": ' . $ex->getMessage());
         }
@@ -347,7 +347,7 @@ class S3FileSystem extends RemoteFileSystem
                 'SaveAs' => $localFileName
             ];
 
-            $result = $this->blobConn->getObject($options);
+            $this->blobConn->getObject($options);
         } catch (\Exception $ex) {
             throw new DfException('Failed to retrieve blob "' . $name . '": ' . $ex->getMessage());
         }

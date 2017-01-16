@@ -3,7 +3,7 @@
   "description": "AWS package containing services for the DreamFactory Platform 2.0.",
   "keywords":    [
     "dreamfactory",
-    "dsp",
+    "api",
     "rest",
     "aws",
     "s3",
@@ -29,8 +29,11 @@
     "wiki":   "https://wiki.dreamfactory.com"
   },
   "require":     {
-    "dreamfactory/df-core": "~0.6.0",
-    "aws/aws-sdk-php":      "3.*"
+    "dreamfactory/df-core":     "~0.6.0",
+    "dreamfactory/df-database": "~0.1.0",
+    "dreamfactory/df-email":    "~0.1.0",
+    "dreamfactory/df-sqldb":    "~0.7.0",
+    "aws/aws-sdk-php":          "3.*"
   },
   "autoload":    {
     "psr-4": {
@@ -39,7 +42,7 @@
   },
   "extra":       {
     "branch-alias": {
-      "dev-develop": "0.6.x-dev"
+      "dev-develop": "0.7.x-dev"
     }
   }
 }

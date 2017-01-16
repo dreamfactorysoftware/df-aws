@@ -1,13 +1,14 @@
 <?php
 namespace DreamFactory\Core\Aws\Resources;
 
+use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
 use DreamFactory\Core\Aws\Enums\ComparisonOperator;
 use DreamFactory\Core\Aws\Enums\ReturnValue;
 use DreamFactory\Core\Aws\Enums\Type;
 use DreamFactory\Core\Database\Schema\ColumnSchema;
 use DreamFactory\Core\Enums\ApiOptions;
-use DreamFactory\Core\Resources\BaseNoSqlDbTableResource;
+use DreamFactory\Core\Database\Resources\BaseNoSqlDbTableResource;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
@@ -36,6 +37,14 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
     //*************************************************************************
     //	Methods
     //*************************************************************************
+
+    /**
+     * @return DynamoDbClient
+     */
+    protected function getConnection()
+    {
+        return $this->parent->getConnection();
+    }
 
     /**
      * {@inheritdoc}
@@ -69,7 +78,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         }
 
         try {
-            $result = $this->parent->getConnection()->scan($scanProperties);
+            $result = $this->getConnection()->scan($scanProperties);
             $items = (array)$result['Items'];
 
             $out = [];
@@ -176,7 +185,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
     protected function getIdsInfo($table, $fields_info = null, &$requested_fields = null, $requested_types = null)
     {
         $requested_fields = [];
-        $result = $this->parent->getConnection()->describeTable([static::TABLE_INDICATOR => $table]);
+        $result = $this->getConnection()->describeTable([static::TABLE_INDICATOR => $table]);
         $result = $result['Table'];
         $keys = array_get($result, 'KeySchema', []);
         $definitions = array_get($result, 'AttributeDefinitions', []);
@@ -620,7 +629,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
                 $native = $this->formatAttributes($parsed);
 
-                $this->parent->getConnection()->putItem(
+                $this->getConnection()->putItem(
                     [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Item'                  => $native,
@@ -654,7 +663,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 }
 
                 $options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::NONE;
-                $result = $this->parent->getConnection()->putItem(
+                $result = $this->getConnection()->putItem(
                     [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Item'                  => $native,
@@ -690,7 +699,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 // simple insert request
                 $options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::ALL_NEW;
 
-                $result = $this->parent->getConnection()->updateItem(
+                $result = $this->getConnection()->updateItem(
                     [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Key'                   => $key,
@@ -720,7 +729,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 $record = [$idFields[0] => $id];
                 $key = static::buildKey($this->tableIdsInfo, $record);
 
-                $result = $this->parent->getConnection()->deleteItem(
+                $result = $this->getConnection()->deleteItem(
                     [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Key'                   => $key,
@@ -752,7 +761,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     $scanProperties['AttributesToGet'] = $fields;
                 }
 
-                $result = $this->parent->getConnection()->getItem($scanProperties);
+                $result = $this->getConnection()->getItem($scanProperties);
                 $result = $result['Item'];
                 if (empty($result)) {
                     throw new NotFoundException('Record not found.');
@@ -791,7 +800,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 }
 
                 /*$result = */
-                $this->parent->getConnection()->batchWriteItem(
+                $this->getConnection()->batchWriteItem(
                     ['RequestItems' => [$this->transactionTable => $requests]]
                 );
 
@@ -809,7 +818,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 }
 
                 /*$result = */
-                $this->parent->getConnection()->batchWriteItem(
+                $this->getConnection()->batchWriteItem(
                     ['RequestItems' => [$this->transactionTable => $requests]]
                 );
 
@@ -820,7 +829,6 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 }
                 break;
 
-            case Verbs::MERGE:
             case Verbs::PATCH:
                 throw new BadRequestException('Batch operation not supported for patch.');
                 break;
@@ -845,7 +853,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     }
 
                     // Get multiple items by key in a BatchGetItem request
-                    $result = $this->parent->getConnection()->batchGetItem(
+                    $result = $this->getConnection()->batchGetItem(
                         [
                             'RequestItems' => [
                                 $this->transactionTable => $scanProperties
@@ -861,7 +869,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 }
 
                 /*$result = */
-                $this->parent->getConnection()->batchWriteItem(
+                $this->getConnection()->batchWriteItem(
                     ['RequestItems' => [$this->transactionTable => $requests]]
                 );
 
@@ -887,7 +895,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 }
 
                 // Get multiple items by key in a BatchGetItem request
-                $result = $this->parent->getConnection()->batchGetItem(
+                $result = $this->getConnection()->batchGetItem(
                     [
                         'RequestItems' => [
                             $this->transactionTable => $scanProperties
@@ -932,7 +940,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     }
 
                     /* $result = */
-                    $this->parent->getConnection()->batchWriteItem(
+                    $this->getConnection()->batchWriteItem(
                         ['RequestItems' => [$this->transactionTable => $requests]]
                     );
 
@@ -941,7 +949,6 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
                 case Verbs::PUT:
                 case Verbs::PATCH:
-                case Verbs::MERGE:
                 case Verbs::DELETE:
                     $requests = [];
                     foreach ($this->rollbackRecords as $item) {
@@ -949,7 +956,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     }
 
                     /* $result = */
-                    $this->parent->getConnection()->batchWriteItem(
+                    $this->getConnection()->batchWriteItem(
                         ['RequestItems' => [$this->transactionTable => $requests]]
                     );
 

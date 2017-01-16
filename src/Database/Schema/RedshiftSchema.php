@@ -2,7 +2,7 @@
 namespace DreamFactory\Core\Aws\Database\Schema;
 
 use DreamFactory\Core\Database\Schema\ColumnSchema;
-use DreamFactory\Core\Database\Schema\Schema;
+use DreamFactory\Core\Database\Components\Schema;
 use DreamFactory\Core\Database\Schema\TableSchema;
 use DreamFactory\Core\Enums\DbSimpleTypes;
 use DreamFactory\Core\Exceptions\BadRequestException;
@@ -268,7 +268,7 @@ class RedshiftSchema extends Schema
         if ($value !== null) {
             $value = (int)$value;
         } else {
-            $value = "(SELECT COALESCE(MAX(\"{$table->primaryKey}\"),0) FROM {$table->rawName})+1";
+            $value = "(SELECT COALESCE(MAX(\"{$table->primaryKey}\"),0) FROM {$table->quotedName})+1";
         }
         $this->connection->statement("SELECT SETVAL('$sequence',$value,false)");
     }
@@ -285,13 +285,8 @@ class RedshiftSchema extends Schema
         $enable = $check ? 'ENABLE' : 'DISABLE';
         $tableNames = $this->getTableNames($schema);
         $db = $this->connection;
-        foreach ($tableNames as $tableInfo) {
-            $tableName = $tableInfo['name'];
-            $tableName = '"' . $tableName . '"';
-            if (strpos($tableName, '.') !== false) {
-                $tableName = str_replace('.', '"."', $tableName);
-            }
-            $db->statement("ALTER TABLE $tableName $enable TRIGGER ALL");
+        foreach ($tableNames as $table) {
+            $db->statement("ALTER TABLE {$table->quotedName} $enable TRIGGER ALL");
         }
     }
 
@@ -319,7 +314,7 @@ WHERE a.attnum > 0 AND NOT a.attisdropped
 ORDER BY a.attnum
 EOD;
 
-        return $this->connection->select($sql, [':table' => $table->tableName, ':schema' => $table->schemaName]);
+        return $this->connection->select($sql, [':table' => $table->resourceName, ':schema' => $table->schemaName]);
     }
 
     /**
@@ -332,7 +327,7 @@ EOD;
     protected function createColumn($column)
     {
         $c = new ColumnSchema(array_except($column, ['atthasdef', 'default', 'attnotnull']));
-        $c->rawName = $this->quoteColumnName($c->name);
+        $c->quotedName = $this->quoteColumnName($c->name);
         $c->allowNull = !boolval($column['attnotnull']);
         $this->extractLimit($c, $c->dbType);
         $c->fixedLength = $this->extractFixedLength($c->dbType);
@@ -387,24 +382,17 @@ MYSQL;
     /**
      * @inheritdoc
      */
-    protected function findTableNames($schema = '', $include_views = true)
+    protected function findTableNames($schema = '')
     {
-        if ($include_views) {
-            $condition = "table_type in ('BASE TABLE','VIEW')";
-        } else {
-            $condition = "table_type = 'BASE TABLE'";
-        }
-
         $sql = <<<EOD
-SELECT table_name, table_schema, table_type FROM information_schema.tables
-WHERE $condition
+SELECT table_name, table_schema, table_type FROM information_schema.tables WHERE table_type = 'BASE TABLE'
 EOD;
 
         if (!empty($schema)) {
             $sql .= " AND table_schema = '$schema'";
         }
 
-        $defaultSchema = self::DEFAULT_SCHEMA;
+        $defaultSchema = $this->getNamingSchema();
         $addSchema = (!empty($schema) && ($defaultSchema !== $schema));
 
         $rows = $this->connection->select($sql);
@@ -413,17 +401,45 @@ EOD;
         foreach ($rows as $row) {
             $row = (array)$row;
             $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
-            $tableName = isset($row['table_name']) ? $row['table_name'] : '';
-            $isView = (0 === strcasecmp('VIEW', $row['table_type']));
-            if ($addSchema) {
-                $name = $schemaName . '.' . $tableName;
-                $rawName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($tableName);;
-            } else {
-                $name = $tableName;
-                $rawName = $this->quoteTableName($tableName);
-            }
-            $settings = compact('schemaName', 'tableName', 'name', 'rawName', 'isView');
+            $resourceName = isset($row['table_name']) ? $row['table_name'] : '';
+            $internalName = $schemaName . '.' . $resourceName;
+            $name = ($addSchema) ? $internalName : $resourceName;
+            $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($resourceName);
+            $settings = compact('schemaName', 'resourceName', 'name', 'internalName','quotedName');
+            $names[strtolower($name)] = new TableSchema($settings);
+        }
 
+        return $names;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function findViewNames($schema = '')
+    {
+        $sql = <<<EOD
+SELECT table_name, table_schema, table_type FROM information_schema.tables WHERE table_type = 'VIEW'
+EOD;
+
+        if (!empty($schema)) {
+            $sql .= " AND table_schema = '$schema'";
+        }
+
+        $defaultSchema = $this->getNamingSchema();
+        $addSchema = (!empty($schema) && ($defaultSchema !== $schema));
+
+        $rows = $this->connection->select($sql);
+
+        $names = [];
+        foreach ($rows as $row) {
+            $row = (array)$row;
+            $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
+            $resourceName = isset($row['table_name']) ? $row['table_name'] : '';
+            $internalName = $schemaName . '.' . $resourceName;
+            $name = ($addSchema) ? $internalName : $resourceName;
+            $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($resourceName);
+            $settings = compact('schemaName', 'resourceName', 'name', 'internalName','quotedName');
+            $settings['isView'] = true;
             $names[strtolower($name)] = new TableSchema($settings);
         }
 
@@ -445,48 +461,12 @@ EOD;
     }
 
     /**
-     * Builds a SQL statement for adding a new DB column.
-     *
-     * @param string $table  the table that the new column will be added to. The table name will be properly quoted by
-     *                       the method.
-     * @param string $column the name of the new column. The name will be properly quoted by the method.
-     * @param string $type   the column type. The {@link getColumnType} method will be invoked to convert abstract
-     *                       column type (if any) into the physical one. Anything that is not recognized as abstract
-     *                       type will be kept in the generated SQL. For example, 'string' will be turned into
-     *                       'varchar(255)', while 'string not null' will become 'varchar(255) not null'.
-     *
-     * @return string the SQL statement for adding a new column.
-     * @since 1.1.6
-     */
-    public function addColumn($table, $column, $type)
-    {
-        $sql = <<<MYSQL
-ALTER TABLE  {$this->quoteTableName($table)}
-ADD COLUMN {$this->quoteColumnName($column)} {$this->getColumnType($type)}
-MYSQL;
-
-        return $sql;
-    }
-
-    /**
-     * Builds a SQL statement for changing the definition of a column.
-     *
-     * @param string $table      the table whose column is to be changed. The table name will be properly quoted by the
-     *                           method.
-     * @param string $column     the name of the column to be changed. The name will be properly quoted by the method.
-     * @param string $definition the new column type. The {@link getColumnType} method will be invoked to convert
-     *                           abstract column type (if any) into the physical one. Anything that is not recognized
-     *                           as abstract type will be kept in the generated SQL. For example, 'string' will be
-     *                           turned into 'varchar(255)', while 'string not null' will become 'varchar(255) not
-     *                           null'.
-     *
-     * @return string the SQL statement for changing the definition of a column.
-     * @since 1.1.6
+     * @inheritdoc
      */
     public function alterColumn($table, $column, $definition)
     {
         /** @noinspection SqlNoDataSourceInspection */
-        $sql = 'ALTER TABLE ' . $this->quoteTableName($table) . ' ALTER COLUMN ' . $this->quoteColumnName($column);
+        $sql = "ALTER TABLE $table ALTER COLUMN " . $this->quoteColumnName($column);
         if (false !== $pos = strpos($definition, ' ')) {
             $sql .= ' TYPE ' . $this->getColumnType(substr($definition, 0, $pos));
             switch (substr($definition, $pos + 1)) {
@@ -577,11 +557,11 @@ MYSQL;
     {
         switch ($field_info->type) {
             case DbSimpleTypes::TYPE_BOOLEAN:
-                $value = (filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'TRUE' : 'FALSE');
+                $value = ($value ? 'TRUE' : 'FALSE');
                 break;
         }
 
-        return $value;
+        return parent::parseValueForSet($value, $field_info);
     }
 
     public function formatValue($value, $type)
@@ -601,7 +581,7 @@ MYSQL;
     /**
      * @inheritdoc
      */
-    public function extractType(ColumnSchema &$column, $dbType)
+    public function extractType(ColumnSchema $column, $dbType)
     {
         parent::extractType($column, $dbType);
         if (strpos($dbType, '[') !== false || strpos($dbType, 'char') !== false || strpos($dbType, 'text') !== false) {
@@ -614,29 +594,12 @@ MYSQL;
     }
 
     /**
-     * Extracts the PHP type from DF type.
-     *
-     * @param string $type DF type
-     *
-     * @return string
-     */
-    public static function extractPhpType($type)
-    {
-        switch ($type) {
-            case DbSimpleTypes::TYPE_MONEY:
-                return 'string';
-        }
-
-        return parent::extractPhpType($type);
-    }
-
-    /**
      * Extracts size, precision and scale information from column's DB type.
      *
      * @param ColumnSchema $field
      * @param string       $dbType the column's DB type
      */
-    public function extractLimit(ColumnSchema &$field, $dbType)
+    public function extractLimit(ColumnSchema $field, $dbType)
     {
         if (strpos($dbType, '(')) {
             if (preg_match('/^time.*\((.*)\)/', $dbType, $matches)) {
@@ -658,7 +621,7 @@ MYSQL;
      * @param ColumnSchema $field
      * @param mixed        $defaultValue the default value obtained from metadata
      */
-    public function extractDefault(ColumnSchema &$field, $defaultValue)
+    public function extractDefault(ColumnSchema $field, $defaultValue)
     {
         if ($defaultValue === 'true') {
             $field->defaultValue = true;

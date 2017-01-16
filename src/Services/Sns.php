@@ -340,11 +340,7 @@ class Sns extends BaseRestService
     }
 
     /**
-     * Apply the commonly used REST path members to the class.
-     *
-     * @param string $resourcePath
-     *
-     * @return $this
+     * @inheritdoc
      */
     protected function setResourceMembers($resourcePath = null)
     {
@@ -443,7 +439,7 @@ class Sns extends BaseRestService
     }
 
     /**
-     * @return mixed
+     * @inheritdoc
      */
     protected function preProcess()
     {
@@ -454,8 +450,7 @@ class Sns extends BaseRestService
     }
 
     /**
-     * @return array
-     * @throws BadRequestException
+     * @inheritdoc
      */
     protected function handlePost()
     {
