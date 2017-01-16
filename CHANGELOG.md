@@ -7,6 +7,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 ### Fixed
 
+## [0.7.0] - 2017-01-16
+- Adhere to refactored df-core, see df-database and df-email
+- Clean out use of MERGE verb, handled at router/controller level
+- Cleanup schema management issues
+
 ## [0.6.0] - 2016-11-17
 ### Changed
 - DB base class changes to support field configuration across all database types
@@ -63,7 +68,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## 0.1.0 - 2015-10-24
 First official release working with the new [df-core](https://github.com/dreamfactorysoftware/df-core) library.
 
-[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.3.1...0.4.0
