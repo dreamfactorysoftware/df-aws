@@ -23,7 +23,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
 {
     use ServiceDocBuilder;
 
-    public function boot()
+    public function register()
     {
         // Add our service types.
         $this->app->resolving('df.service', function (ServiceManager $df) {
@@ -115,12 +115,15 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
         });
 
         // Add our database extensions.
-        $this->app->resolving('db.schema', function (DbSchemaExtensions $db){
-            $db->extend('redshift', function ($connection){
+        $this->app->resolving('db.schema', function (DbSchemaExtensions $db) {
+            $db->extend('redshift', function ($connection) {
                 return new RedshiftSchema($connection);
             });
         });
+    }
 
+    public function boot()
+    {
         // add migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
     }
