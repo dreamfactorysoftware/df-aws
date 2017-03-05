@@ -4,11 +4,12 @@ namespace DreamFactory\Core\Aws\Database\Schema;
 use DreamFactory\Core\Database\Schema\ColumnSchema;
 use DreamFactory\Core\Database\Components\Schema;
 use DreamFactory\Core\Database\Schema\TableSchema;
+use DreamFactory\Core\Enums\DbResourceTypes;
 use DreamFactory\Core\Enums\DbSimpleTypes;
 use DreamFactory\Core\Exceptions\BadRequestException;
 
 /**
- * Schema is the class for retrieving metadata information from a PostgreSQL database.
+ * Schema is the class for retrieving metadata information from a AWS Redshift database.
  */
 class RedshiftSchema extends Schema
 {
@@ -27,6 +28,17 @@ class RedshiftSchema extends Schema
     public function getDefaultSchema($refresh = false)
     {
         return static::DEFAULT_SCHEMA;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSupportedResourceTypes()
+    {
+        return [
+            DbResourceTypes::TYPE_TABLE,
+            DbResourceTypes::TYPE_VIEW,
+        ];
     }
 
     protected function translateSimpleColumnTypes(array &$info)
@@ -368,7 +380,7 @@ EOD;
     protected function findSchemaNames()
     {
         $sql = <<<MYSQL
-SELECT nspname FROM pg_namespace WHERE nspname NOT IN ('information_schema','pg_catalog')
+SELECT nspname FROM pg_namespace WHERE nspname NOT IN ('information_schema','pg_catalog','pg_internal')
 MYSQL;
         $rows = $this->selectColumn($sql);
 

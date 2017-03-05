@@ -3,12 +3,14 @@ namespace DreamFactory\Core\Aws\Resources;
 
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
-use DreamFactory\Core\Aws\Enums\ComparisonOperator;
 use DreamFactory\Core\Aws\Enums\ReturnValue;
 use DreamFactory\Core\Aws\Enums\Type;
 use DreamFactory\Core\Database\Schema\ColumnSchema;
 use DreamFactory\Core\Enums\ApiOptions;
 use DreamFactory\Core\Database\Resources\BaseNoSqlDbTableResource;
+use DreamFactory\Core\Enums\DbComparisonOperators;
+use DreamFactory\Core\Enums\DbLogicalOperators;
+use DreamFactory\Core\Enums\DbSimpleTypes;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
@@ -56,15 +58,12 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
         $scanProperties = [static::TABLE_INDICATOR => $table];
 
-        $fields = static::buildAttributesToGet($fields);
+        $fields = static::buildProjectionExpression($fields);
         if (!empty($fields)) {
-            $scanProperties['AttributesToGet'] = $fields;
+            $scanProperties['ProjectionExpression'] = $fields;
         }
 
-        $parsedFilter = static::buildCriteriaArray($filter, $params, $ssFilters);
-        if (!empty($parsedFilter)) {
-            $scanProperties['ScanFilter'] = $parsedFilter;
-        }
+        $this->buildFilterExpression($filter, $params, $ssFilters, $scanProperties);
 
         $limit = intval(array_get($extras, ApiOptions::LIMIT));
         if ($limit > 0) {
@@ -107,23 +106,12 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
     /**
      * @param array $record
-     * @param bool  $for_update
      *
      * @return mixed
      */
-    protected function formatAttributes($record, $for_update = false)
+    protected function formatAttributes($record)
     {
         $marshaler = new Marshaler();
-
-        if ($for_update) {
-            if (is_array($record)) {
-                foreach ($record as $key => &$value) {
-                    $value = ['Action' => 'PUT', 'Value' => $marshaler->marshalValue($value)];
-                }
-
-                return $record;
-            }
-        }
 
         return $marshaler->marshalItem($record);
     }
@@ -159,7 +147,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         return $marshaler->marshalValue($value);
     }
 
-    protected static function buildAttributesToGet($fields = null, $id_fields = null)
+    protected static function buildProjectionExpression($fields = null, $id_fields = null)
     {
         if (ApiOptions::FIELDS_ALL == $fields) {
             return null;
@@ -168,15 +156,15 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             if (empty($id_fields)) {
                 return null;
             }
-            if (!is_array($id_fields)) {
-                $id_fields = array_map('trim', explode(',', trim($id_fields, ',')));
+            if (is_array($id_fields)) {
+                $id_fields = implode(',', $id_fields);
             }
 
             return $id_fields;
         }
 
-        if (!is_array($fields)) {
-            $fields = array_map('trim', explode(',', trim($fields, ',')));
+        if (is_array($fields)) {
+            $fields = implode(',', $fields);
         }
 
         return $fields;
@@ -305,288 +293,305 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         return $keys;
     }
 
-    protected static function buildCriteriaArray($filter, $params = null, $ss_filters = null)
+    protected function buildFilterExpression($filter, array $in_params = [], $ss_filters = null, array &$scan = [])
     {
         // interpret any parameter values as lookups
-        $params = static::interpretRecordValues($params);
+        $params = static::interpretRecordValues($in_params);
+        $serverFilter = static::buildSSFilter($ss_filters);
 
-        // build filter array if necessary, add server-side filters if necessary
-        if (!is_array($filter)) {
-            Session::replaceLookups($filter);
-            $criteria = static::buildFilterArray($filter, $params);
-        } else {
-            $criteria = $filter;
-        }
-        $serverCriteria = static::buildSSFilterArray($ss_filters);
-        if (!empty($serverCriteria)) {
-            $criteria = (!empty($criteria)) ? [$criteria, $serverCriteria] : $serverCriteria;
+        if (empty($filter)) {
+            $filter = $serverFilter;
+        } elseif (is_string($filter)) {
+            if (!empty($serverFilter)) {
+                $filter = '(' . $filter . ') ' . DbLogicalOperators::AND_STR . ' (' . $serverFilter . ')';
+            }
+        } elseif (is_array($filter)) {
+            // todo parse client filter?
+            $filter = '';
+            if (!empty($serverFilter)) {
+                $filter = '(' . $filter . ') ' . DbLogicalOperators::AND_STR . ' (' . $serverFilter . ')';
+            }
         }
 
-        return $criteria;
+        Session::replaceLookups($filter);
+        $outNames = [];
+        $outParams = [];
+        if (!empty($parsed = $this->parseFilterString($filter, $outNames, $outParams, $params))) {
+            $scan['FilterExpression'] = $parsed;
+            if (!empty($outNames)) {
+                $scan['ExpressionAttributeNames'] = $outNames;
+            }
+            if (!empty($outParams)) {
+                $scan['ExpressionAttributeValues'] = $outParams;
+            }
+        }
     }
 
-    protected static function buildSSFilterArray($ss_filters)
+    protected static function buildSSFilter($ss_filters)
     {
         if (empty($ss_filters)) {
-            return null;
+            return '';
         }
 
         // build the server side criteria
         $filters = array_get($ss_filters, 'filters');
         if (empty($filters)) {
-            return null;
+            return '';
         }
 
-        $criteria = [];
-        $combiner = array_get($ss_filters, 'filter_op', 'and');
-        foreach ($filters as $filter) {
-            $name = array_get($filter, 'name');
-            $op = array_get($filter, 'operator');
-            if (empty($name) || empty($op)) {
-                // log and bail
-                throw new InternalServerErrorException('Invalid server-side filter configuration detected.');
-            }
-
-            $value = array_get($filter, 'value');
-            $value = static::interpretFilterValue($value);
-
-            $criteria[] = static::buildFilterArray("$name $op $value");
-        }
-
-        if (1 == count($criteria)) {
-            return $criteria[0];
-        }
-
+        $sql = '';
+        $combiner = array_get($ss_filters, 'filter_op', DbLogicalOperators::AND_STR);
         switch (strtoupper($combiner)) {
             case 'AND':
-                break;
             case 'OR':
-                $criteria = ['split' => $criteria];
                 break;
             default:
                 // log and bail
                 throw new InternalServerErrorException('Invalid server-side filter configuration detected.');
         }
+        foreach ($filters as $key => $filter) {
+            if (!empty($sql)) {
+                $sql .= " $combiner ";
+            }
 
-        return $criteria;
+            $name = array_get($filter, 'name');
+            $op = strtoupper(array_get($filter, 'operator'));
+            if (empty($name) || empty($op)) {
+                // log and bail
+                throw new InternalServerErrorException('Invalid server-side filter configuration detected.');
+            }
+
+            if (DbComparisonOperators::requiresNoValue($op)) {
+                $sql .= "($name $op)";
+            } else {
+                $value = array_get($filter, 'value');
+                $sql .= "($name $op $value)";
+            }
+        }
+
+        return $sql;
+    }
+
+    public static function localizeOperator($operator)
+    {
+        switch ($operator) {
+            case DbComparisonOperators::NE_STR:
+            case DbComparisonOperators::NE:
+                return DbComparisonOperators::NE_2;
+            // Value-Modifying Operators
+            case DbComparisonOperators::CONTAINS:
+            case DbComparisonOperators::STARTS_WITH:
+            case DbComparisonOperators::ENDS_WITH:
+                return DbComparisonOperators::LIKE;
+            default:
+                return parent::localizeOperator($operator);
+        }
     }
 
     /**
-     * @param string|array $filter Filter for querying records by
-     * @param null|array   $params
+     * @param string $filter
+     * @param array  $out_names
+     * @param array  $out_params
+     * @param array  $in_params
      *
-     * @throws BadRequestException
-     * @return array
+     * @return string
+     * @throws \DreamFactory\Core\Exceptions\BadRequestException
+     * @throws \Exception
      */
-    protected static function buildFilterArray($filter, $params = null)
+    protected function parseFilterString($filter, array &$out_names, array &$out_params, array $in_params = [])
     {
         if (empty($filter)) {
-            return [];
+            return null;
         }
 
-        if (is_array($filter)) {
-            return $filter; // assume they know what they are doing
-        }
-
-        $search = [' or ', ' and ', ' nor '];
-        $replace = [' || ', ' && ', ' NOR '];
-        $filter = trim(str_ireplace($search, $replace, $filter));
-
+        $filter = trim($filter);
+        // todo use smarter regex
         // handle logical operators first
-        $ops = array_map('trim', explode(' && ', $filter));
-        if (count($ops) > 1) {
-            $parts = [];
-            foreach ($ops as $op) {
-                $parts = array_merge($parts, static::buildFilterArray($op, $params));
-            }
+        $logicalOperators = DbLogicalOperators::getDefinedConstants();
+        foreach ($logicalOperators as $logicalOp) {
+            if (DbLogicalOperators::NOT_STR === $logicalOp) {
+                // NOT(a = 1)  or NOT (a = 1)format
+                if ((0 === stripos($filter, $logicalOp . ' (')) || (0 === stripos($filter, $logicalOp . '('))) {
+                    $parts = trim(substr($filter, 3));
+                    $parts = $this->parseFilterString($parts, $out_names, $out_params, $in_params);
 
-            return $parts;
-        }
+                    return static::localizeOperator($logicalOp) . $parts;
+                }
+            } else {
+                // (a = 1) AND (b = 2) format or (a = 1)AND(b = 2) format
+                $filter = str_ireplace(')' . $logicalOp . '(', ') ' . $logicalOp . ' (', $filter);
+                $paddedOp = ') ' . $logicalOp . ' (';
+                if (false !== $pos = stripos($filter, $paddedOp)) {
+                    $left = trim(substr($filter, 0, $pos)) . ')'; // add back right )
+                    $right = '(' . trim(substr($filter, $pos + strlen($paddedOp))); // adding back left (
+                    $left = $this->parseFilterString($left, $out_names, $out_params, $in_params);
+                    $right = $this->parseFilterString($right, $out_names, $out_params, $in_params);
 
-        $ops = array_map('trim', explode(' || ', $filter));
-        if (count($ops) > 1) {
-            // need to split this into multiple queries
-            throw new BadRequestException('OR logical comparison not currently supported on DynamoDb.');
-        }
-
-        $ops = array_map('trim', explode(' NOR ', $filter));
-        if (count($ops) > 1) {
-            throw new BadRequestException('NOR logical comparison not currently supported on DynamoDb.');
-        }
-
-        // handle negation operator, i.e. starts with NOT?
-        if (0 == substr_compare($filter, 'not ', 0, 4, true)) {
-            throw new BadRequestException('NOT logical comparison not currently supported on DynamoDb.');
-        }
-
-        $filter = trim($filter, '()');
-        // the rest should be comparison operators
-        $search = [
-            ' eq ',
-            ' ne ',
-            ' <> ',
-            ' gte ',
-            ' lte ',
-            ' gt ',
-            ' lt ',
-            ' in ',
-            ' between ',
-            ' begins_with ',
-            ' contains ',
-            ' not_contains ',
-            ' like '
-        ];
-        $replace = [
-            '=',
-            '!=',
-            '!=',
-            '>=',
-            '<=',
-            '>',
-            '<',
-            ' IN ',
-            ' BETWEEN ',
-            ' BEGINS_WITH ',
-            ' CONTAINS ',
-            ' NOT_CONTAINS ',
-            ' LIKE '
-        ];
-        $filter = trim(str_ireplace($search, $replace, $filter));
-
-        // Note: order matters, watch '='
-        $sqlOperators = [
-            '!=',
-            '>=',
-            '<=',
-            '=',
-            '>',
-            '<',
-            ' IN ',
-            ' BETWEEN ',
-            ' BEGINS_WITH ',
-            ' CONTAINS ',
-            ' NOT_CONTAINS ',
-            ' LIKE '
-        ];
-        $dynamoOperators = [
-            ComparisonOperator::NE,
-            ComparisonOperator::GE,
-            ComparisonOperator::LE,
-            ComparisonOperator::EQ,
-            ComparisonOperator::GT,
-            ComparisonOperator::LT,
-            ComparisonOperator::IN,
-            ComparisonOperator::BETWEEN,
-            ComparisonOperator::BEGINS_WITH,
-            ComparisonOperator::CONTAINS,
-            ComparisonOperator::NOT_CONTAINS,
-            ComparisonOperator::CONTAINS
-        ];
-
-        foreach ($sqlOperators as $key => $sqlOp) {
-            $ops = array_map('trim', explode($sqlOp, $filter));
-            if (count($ops) > 1) {
-                $val = static::determineValue($ops[1], $params);
-                $dynamoOp = $dynamoOperators[$key];
-                switch ($dynamoOp) {
-                    case ComparisonOperator::NE:
-                        if (0 == strcasecmp('null', $ops[1])) {
-                            return [
-                                $ops[0] => [
-                                    'ComparisonOperator' => ComparisonOperator::NOT_NULL
-                                ]
-                            ];
-                        }
-
-                        return [
-                            $ops[0] => [
-                                'AttributeValueList' => $val,
-                                'ComparisonOperator' => $dynamoOp
-                            ]
-                        ];
-
-                    case ComparisonOperator::EQ:
-                        if (0 == strcasecmp('null', $ops[1])) {
-                            return [
-                                $ops[0] => [
-                                    'ComparisonOperator' => ComparisonOperator::NULL
-                                ]
-                            ];
-                        }
-
-                        return [
-                            $ops[0] => [
-                                'AttributeValueList' => $val,
-                                'ComparisonOperator' => ComparisonOperator::EQ
-                            ]
-                        ];
-
-                    case ComparisonOperator::CONTAINS:
-//			WHERE name LIKE "%Joe%"	use CONTAINS "Joe"
-//			WHERE name LIKE "Joe%"	use BEGINS_WITH "Joe"
-//			WHERE name LIKE "%Joe"	not supported
-                        $val = $ops[1];
-                        $type = Type::S;
-                        if (trim($val, "'\"") === $val) {
-                            $type = Type::N;
-                        }
-
-                        $val = trim($val, "'\"");
-                        if ('%' == $val[strlen($val) - 1]) {
-                            if ('%' == $val[0]) {
-                                return [
-                                    $ops[0] => [
-                                        'AttributeValueList' => [$type => trim($val, '%')],
-                                        'ComparisonOperator' => ComparisonOperator::CONTAINS
-                                    ]
-                                ];
-                            } else {
-                                throw new BadRequestException('ENDS_WITH currently not supported in DynamoDb.');
-                            }
-                        } else {
-                            if ('%' == $val[0]) {
-                                return [
-                                    $ops[0] => [
-                                        'AttributeValueList' => [$type => trim($val, '%')],
-                                        'ComparisonOperator' => ComparisonOperator::BEGINS_WITH
-                                    ]
-                                ];
-                            } else {
-                                return [
-                                    $ops[0] => [
-                                        'AttributeValueList' => [$type => trim($val, '%')],
-                                        'ComparisonOperator' => ComparisonOperator::CONTAINS
-                                    ]
-                                ];
-                            }
-                        }
-
-                    default:
-                        return [
-                            $ops[0] => [
-                                'AttributeValueList' => $val,
-                                'ComparisonOperator' => $dynamoOp
-                            ]
-                        ];
+                    return $left . ' ' . static::localizeOperator($logicalOp) . ' ' . $right;
                 }
             }
         }
 
-        return $filter;
+        $wrap = false;
+        if ((0 === strpos($filter, '(')) && ((strlen($filter) - 1) === strrpos($filter, ')'))) {
+            // remove unnecessary wrapping ()
+            $filter = substr($filter, 1, -1);
+            $wrap = true;
+        }
+
+        // Some scenarios leave extra parens dangling
+        $pure = trim($filter, '()');
+        $pieces = explode($pure, $filter);
+        $leftParen = (!empty($pieces[0]) ? $pieces[0] : null);
+        $rightParen = (!empty($pieces[1]) ? $pieces[1] : null);
+        $filter = $pure;
+
+        // the rest should be comparison operators
+        // Note: order matters here!
+        $sqlOperators = DbComparisonOperators::getParsingOrder();
+        foreach ($sqlOperators as $sqlOp) {
+            $paddedOp = static::padOperator($sqlOp);
+            if (false !== $pos = stripos($filter, $paddedOp)) {
+                $field = trim(substr($filter, 0, $pos));
+                $negate = false;
+                if (false !== strpos($field, ' ')) {
+                    $parts = explode(' ', $field);
+                    $partsCount = count($parts);
+                    if (($partsCount > 1) &&
+                        (0 === strcasecmp($parts[$partsCount - 1], trim(DbLogicalOperators::NOT_STR)))
+                    ) {
+                        // negation on left side of operator
+                        array_pop($parts);
+                        $field = implode(' ', $parts);
+                        $negate = true;
+                    }
+                }
+                /** @type ColumnSchema $info */
+                if (null === $info = new ColumnSchema(['name' => strtolower($field)])) {
+                    // This could be SQL injection attempt or bad field
+                    throw new BadRequestException("Invalid or unparsable field in filter request: '$field'");
+                }
+
+                // make sure we haven't chopped off right side too much
+                $value = trim(substr($filter, $pos + strlen($paddedOp)));
+                if ((0 !== strpos($value, "'")) &&
+                    (0 !== $lpc = substr_count($value, '(')) &&
+                    ($lpc !== $rpc = substr_count($value, ')'))
+                ) {
+                    // add back to value from right
+                    $parenPad = str_repeat(')', $lpc - $rpc);
+                    $value .= $parenPad;
+                    $rightParen = preg_replace('/\)/', '', $rightParen, $lpc - $rpc);
+                }
+                if (DbComparisonOperators::requiresValueList($sqlOp)) {
+                    if ((0 === strpos($value, '(')) && ((strlen($value) - 1) === strrpos($value, ')'))) {
+                        // remove wrapping ()
+                        $value = substr($value, 1, -1);
+                        $parsed = [];
+                        foreach (explode(',', $value) as $each) {
+                            $parsed[] = $this->parseFilterValue(trim($each), $info, $out_params, $in_params);
+                        }
+                        $value = '(' . implode(',', $parsed) . ')';
+                    } else {
+                        throw new BadRequestException('Filter value lists must be wrapped in parentheses.');
+                    }
+                } elseif (DbComparisonOperators::requiresNoValue($sqlOp)) {
+                    switch ($sqlOp) {
+                        case DbComparisonOperators::IS_NULL:
+                            $value = null;
+                            $sqlOp = DbComparisonOperators::EQ;
+                            break;
+                        case DbComparisonOperators::IS_NOT_NULL:
+                            $value = null;
+                            $sqlOp = DbComparisonOperators::NE_2;
+                            break;
+                        case DbComparisonOperators::DOES_EXIST:
+                            $out_names['#' . $field] = $field;
+
+                            return "attribute_exists(#$field)";
+                        case DbComparisonOperators::DOES_NOT_EXIST:
+                            $out_names['#' . $field] = $field;
+
+                            return "attribute_not_exists(#$field)";
+                    }
+                } else {
+                    static::modifyValueByOperator($sqlOp, $value);
+                    switch ($sqlOp) {
+                        case DbComparisonOperators::LIKE:
+                        case DbComparisonOperators::CONTAINS:
+                        case DbComparisonOperators::STARTS_WITH:
+                        case DbComparisonOperators::ENDS_WITH:
+                            $out_names['#' . $field] = $field;
+                            if ('%' == $value[strlen($value) - 1]) {
+                                if ('%' == $value[0]) {
+                                    $value = trim($value, '%');
+                                    $value = $this->parseFilterValue($value, $info, $out_params, $in_params);
+
+                                    return "contains(#$field, $value)";
+                                } else {
+                                    $value = trim($value, '%');
+                                    $value = $this->parseFilterValue($value, $info, $out_params, $in_params);
+
+                                    return "begins_with(#$field, $value)";
+                                }
+                            } elseif ('%' == $value[0]) {
+                                throw new BadRequestException('ENDS WITH operator not supported on this service.');
+                            }
+
+                            $value = $this->parseFilterValue($value, $info, $out_params, $in_params);
+
+                            return "contains(#$field, $value)";
+                    }
+                    $value = $this->parseFilterValue($value, $info, $out_params, $in_params);
+                }
+
+                $sqlOp = static::localizeOperator($sqlOp);
+                if ($negate) {
+                    $sqlOp = DbLogicalOperators::NOT_STR . ' ' . $sqlOp;
+                }
+
+                $out_names['#' . $field] = $field;
+                $out = '#' . $field . ' ' . $sqlOp;
+                $out .= (isset($value) ? " $value" : null);
+                if ($leftParen) {
+                    $out = $leftParen . $out;
+                }
+                if ($rightParen) {
+                    $out .= $rightParen;
+                }
+
+                return ($wrap ? '(' . $out . ')' : $out);
+            }
+        }
+
+        // This could be SQL injection attempt or unsupported filter arrangement
+        throw new BadRequestException('Invalid or unparsable filter request.');
     }
 
     /**
-     * @param string $value
-     * @param array  $replacements
+     * @param mixed        $value
+     * @param ColumnSchema $info
+     * @param array        $out_params
+     * @param array        $in_params
      *
-     * @return bool|float|int|string
+     * @return int|null|string
+     * @throws BadRequestException
      */
-    private static function determineValue($value, $replacements = null)
+    protected function parseFilterValue($value, ColumnSchema $info, array &$out_params, array $in_params = [])
     {
-        // process parameter replacements
-        if (is_string($value) && !empty($value) && (':' == $value[0])) {
-            if (isset($replacements, $replacements[$value])) {
-                $value = $replacements[$value];
+        // if a named replacement parameter, un-name it because Laravel can't handle named parameters
+        if (is_array($in_params) && (0 === strpos($value, ':'))) {
+            if (array_key_exists($value, $in_params)) {
+                $value = $in_params[$value];
+            }
+        }
+
+        // remove quoting on strings if used, i.e. 1.x required them
+        if (is_string($value)) {
+            if ((0 === strcmp("'" . trim($value, "'") . "'", $value)) ||
+                (0 === strcmp('"' . trim($value, '"') . '"', $value))
+            ) {
+                $value = substr($value, 1, -1);
             }
         }
 
@@ -600,7 +605,23 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             $value = false;
         }
 
-        return [static::formatValue($value)];
+        $out_params[':' . $info->name] = static::formatValue($value);
+        $value = ':' . $info->name;
+
+        return $value;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function parseValueForSet($value, $field_info, $for_update = false)
+    {
+        if (DbSimpleTypes::TYPE_ID === $field_info->type) {
+            // may be hash string or int, don't convert to int automatically
+            return $value;
+        } else {
+            return parent::parseValueForSet($value, $field_info, $for_update);
+        }
     }
 
     /**
@@ -613,7 +634,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         $rollback = false,
         $continue = false,
         $single = false
-    ){
+    ) {
         $ssFilters = array_get($extras, 'ss_filters');
         $fields = array_get($extras, ApiOptions::FIELDS);
         $idFields = array_get($extras, 'id_fields');
@@ -633,7 +654,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     [
                         static::TABLE_INDICATOR => $this->transactionTable,
                         'Item'                  => $native,
-                        'Expected'              => [$idFields[0] => ['Exists' => false]]
+                        'ConditionExpression'   => "attribute_not_exists($idFields[0])"
                     ]
                 );
 
@@ -694,17 +715,29 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 }
 
                 $key = static::buildKey($this->tableIdsInfo, $parsed, true);
-                $native = $this->formatAttributes($parsed, true);
+                $marshaler = new Marshaler();
+                $expression = [];
+                $outNames = [];
+                $outParams = [];
+                foreach ($parsed as $name => &$value) {
+                    $outNames['#' . $name] = $name;
+                    $outParams[':' . $name] = $marshaler->marshalValue($value);
+                    $expression[] = "#$name = :$name";
+                }
+
+                $expression = (!empty($expression) ? 'SET ' . implode(', ', $expression) : null);
 
                 // simple insert request
                 $options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::ALL_NEW;
 
                 $result = $this->getConnection()->updateItem(
                     [
-                        static::TABLE_INDICATOR => $this->transactionTable,
-                        'Key'                   => $key,
-                        'AttributeUpdates'      => $native,
-                        'ReturnValues'          => $options
+                        static::TABLE_INDICATOR     => $this->transactionTable,
+                        'Key'                       => $key,
+                        'UpdateExpression'          => $expression,
+                        'ExpressionAttributeNames'  => $outNames,
+                        'ExpressionAttributeValues' => $outParams,
+                        'ReturnValues'              => $options
                     ]
                 );
 
@@ -756,9 +789,9 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     'ConsistentRead'        => true,
                 ];
 
-                $fields = static::buildAttributesToGet($fields, $idFields);
+                $fields = static::buildProjectionExpression($fields, $idFields);
                 if (!empty($fields)) {
-                    $scanProperties['AttributesToGet'] = $fields;
+                    $scanProperties['ProjectionExpression'] = $fields;
                 }
 
                 $result = $this->getConnection()->getItem($scanProperties);
@@ -847,9 +880,9 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                         'ConsistentRead' => true,
                     ];
 
-                    $attributes = static::buildAttributesToGet($fields, $idFields);
+                    $attributes = static::buildProjectionExpression($fields, $idFields);
                     if (!empty($attributes)) {
-                        $scanProperties['AttributesToGet'] = $attributes;
+                        $scanProperties['ProjectionExpression'] = $attributes;
                     }
 
                     // Get multiple items by key in a BatchGetItem request
@@ -889,9 +922,9 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     'ConsistentRead' => true,
                 ];
 
-                $fields = static::buildAttributesToGet($fields, $idFields);
+                $fields = static::buildProjectionExpression($fields, $idFields);
                 if (!empty($fields)) {
-                    $scanProperties['AttributesToGet'] = $fields;
+                    $scanProperties['ProjectionExpression'] = $fields;
                 }
 
                 // Get multiple items by key in a BatchGetItem request
