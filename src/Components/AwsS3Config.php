@@ -3,7 +3,7 @@ namespace DreamFactory\Core\Aws\Components;
 
 use DreamFactory\Core\Aws\Models\AwsConfig;
 use DreamFactory\Core\Contracts\ServiceConfigHandlerInterface;
-use DreamFactory\Core\Models\FilePublicPath;
+use DreamFactory\Core\File\Models\FilePublicPath;
 use DreamFactory\Library\Utility\ArrayUtils;
 
 class AwsS3Config implements ServiceConfigHandlerInterface

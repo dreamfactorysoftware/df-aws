@@ -32,6 +32,7 @@
     "dreamfactory/df-core":     "~0.8.0",
     "dreamfactory/df-database": "~0.2.0",
     "dreamfactory/df-email":    "~0.2.0",
+    "dreamfactory/df-file":     "~0.1.0",
     "dreamfactory/df-sqldb":    "~0.8.0",
     "aws/aws-sdk-php":          "3.*"
   },
