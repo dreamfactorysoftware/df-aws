@@ -1,11 +1,12 @@
 <?php
 namespace DreamFactory\Core\Aws;
 
-use DreamFactory\Core\Aws\Components\AwsS3Config;
 use DreamFactory\Core\Aws\Database\Connectors\RedshiftConnector;
 use DreamFactory\Core\Aws\Database\RedshiftConnection;
 use DreamFactory\Core\Aws\Database\Schema\RedshiftSchema;
 use DreamFactory\Core\Aws\Models\AwsConfig;
+use DreamFactory\Core\Aws\Models\S3Config;
+use DreamFactory\Core\Aws\Models\DynamoDbConfig;
 use DreamFactory\Core\Aws\Models\RedshiftDbConfig;
 use DreamFactory\Core\Aws\Services\DynamoDb;
 use DreamFactory\Core\Aws\Services\RedshiftDb;
@@ -33,7 +34,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                     'label'           => 'AWS S3',
                     'description'     => 'File storage service supporting the AWS S3 file system.',
                     'group'           => ServiceTypeGroups::FILE,
-                    'config_handler'  => AwsS3Config::class,
+                    'config_handler'  => S3Config::class,
                     'default_api_doc' => function ($service) {
                         return $this->buildServiceDoc($service->id, S3::getApiDocInfo($service));
                     },
@@ -48,7 +49,7 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                     'label'           => 'AWS DynamoDB',
                     'description'     => 'A database service supporting the AWS DynamoDB system.',
                     'group'           => ServiceTypeGroups::DATABASE,
-                    'config_handler'  => AwsConfig::class,
+                    'config_handler'  => DynamoDbConfig::class,
                     'default_api_doc' => function ($service) {
                         return $this->buildServiceDoc($service->id, DynamoDb::getApiDocInfo($service));
                     },

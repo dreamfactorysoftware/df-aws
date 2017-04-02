@@ -651,11 +651,8 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 $item = [
                     static::TABLE_INDICATOR => $this->transactionTable,
                     'Item'                  => $this->formatAttributes($parsed),
+                    'ConditionExpression'   => "attribute_not_exists($idFields[0])",
                 ];
-
-                if (!Scalar::boolval(array_get($extras, ApiOptions::UPSERT, false))) {
-                    $item['ConditionExpression'] = "attribute_not_exists($idFields[0])";
-                }
 
                 $this->getConnection()->putItem($item);
 
@@ -680,7 +677,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
                 $native = $this->formatAttributes($parsed);
 
-                $upsert = Scalar::boolval(array_get($extras, ApiOptions::UPSERT));
+                $upsert = $this->parent->upsertAllowed();
                 if (!$continue && !$rollback && !$upsert) {
                     return parent::addToTransaction($native, $id);
                 }
