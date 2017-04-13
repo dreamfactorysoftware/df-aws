@@ -196,7 +196,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         return $fields;
     }
 
-    protected static function checkForIds(&$record, $ids_info, $extras = null, $on_create = false, $remove = false)
+    protected function checkForIds(&$record, $ids_info, $extras = null, $on_create = false, $remove = false)
     {
         $id = null;
         if (!empty($ids_info)) {
