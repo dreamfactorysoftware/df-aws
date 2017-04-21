@@ -1,16 +1,14 @@
 <?php
 namespace DreamFactory\Core\Aws\Models;
 
-use DreamFactory\Core\Contracts\ServiceConfigHandlerInterface;
 use DreamFactory\Core\Models\BaseServiceConfigModel;
-use DreamFactory\Core\Exceptions\BadRequestException;
 
 /**
  * Class AwsConfig
  *
  * @package DreamFactory\Core\Aws\Models
  */
-class AwsConfig extends BaseServiceConfigModel implements ServiceConfigHandlerInterface
+class AwsConfig extends BaseServiceConfigModel
 {
     protected $table = 'aws_config';
 
@@ -20,24 +18,11 @@ class AwsConfig extends BaseServiceConfigModel implements ServiceConfigHandlerIn
 
     protected $fillable = ['service_id', 'region', 'key', 'secret'];
 
-    /**
-     * {@inheritdoc}
-     */
-    public static function validateConfig($config, $create = true)
-    {
-        $validator = static::makeValidator($config, [
-            'key'    => 'required',
-            'secret' => 'required',
-            'region' => 'required'
-        ], $create);
-
-        if ($validator->fails()) {
-            $messages = $validator->messages()->getMessages();
-            throw new BadRequestException('Validation failed.', null, null, $messages);
-        }
-
-        return true;
-    }
+    protected $rules = [
+        'key'    => 'required',
+        'secret' => 'required',
+        'region' => 'required'
+    ];
 
     /**
      * @param array $schema
@@ -72,5 +57,4 @@ class AwsConfig extends BaseServiceConfigModel implements ServiceConfigHandlerIn
                 break;
         }
     }
-
 }

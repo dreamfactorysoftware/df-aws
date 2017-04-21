@@ -565,29 +565,33 @@ EOD;
         return "ALTER TABLE {$this->quoteTableName($table)} DROP CONSTRAINT {$this->quoteTableName($name)} )";
     }
 
-    public function parseValueForSet($value, $field_info)
+    public function typecastToNative($value, $field_info, $allow_null = true)
     {
+        $value = parent::typecastToNative($value, $field_info, $allow_null);
+
         switch ($field_info->type) {
             case DbSimpleTypes::TYPE_BOOLEAN:
                 $value = ($value ? 'TRUE' : 'FALSE');
                 break;
         }
 
-        return parent::parseValueForSet($value, $field_info);
+        return $value;
     }
 
-    public function formatValue($value, $type)
+    protected function formatValueToPhpType($value, $type, $allow_null = true)
     {
-        switch (strtolower(strval($type))) {
-            case 'int':
-            case 'integer':
-                if ('' === $value) {
-                    // Postgresql strangely returns "" for null integers
-                    return null;
-                }
+        if (!is_null($value)) {
+            switch (strtolower(strval($type))) {
+                case 'int':
+                case 'integer':
+                    if ('' === $value) {
+                        // Postgresql strangely returns "" for null integers
+                        return null;
+                    }
+            }
         }
 
-        return parent::formatValue($value, $type);
+        return parent::formatValueToPhpType($value, $type, $allow_null);
     }
 
     /**
@@ -642,9 +646,9 @@ EOD;
         } elseif (0 === stripos($defaultValue, '"identity"')) {
             $field->autoIncrement = true;
         } elseif (preg_match('/^\'(.*)\'::/', $defaultValue, $matches)) {
-            $field->defaultValue = $this->typecast($field, str_replace("''", "'", $matches[1]));
+            parent::extractDefault($field, str_replace("''", "'", $matches[1]));
         } elseif (preg_match('/^(-?\d+(\.\d*)?)(::.*)?$/', $defaultValue, $matches)) {
-            $field->defaultValue = $this->typecast($field, $matches[1]);
+            parent::extractDefault($field, $matches[1]);
         } else {
             // could be a internal function call like setting uuids
             $field->defaultValue = $defaultValue;

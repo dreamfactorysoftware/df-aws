@@ -3,7 +3,7 @@ namespace DreamFactory\Core\Aws\Components;
 
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Utility\Session;
-use DreamFactory\Core\Components\RemoteFileSystem;
+use DreamFactory\Core\File\Components\RemoteFileSystem;
 use DreamFactory\Core\Exceptions\DfException;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use Aws\S3\S3Client;

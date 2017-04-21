@@ -3,7 +3,7 @@ namespace DreamFactory\Core\Aws\Services;
 
 use DreamFactory\Core\Aws\Components\S3FileSystem;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
-use DreamFactory\Core\Services\RemoteFileService;
+use DreamFactory\Core\File\Services\RemoteFileService;
 
 /**
  * Class S3

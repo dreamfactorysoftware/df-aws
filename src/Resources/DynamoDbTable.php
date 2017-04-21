@@ -87,13 +87,13 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
             $next = $this->unformatAttributes($result['LastEvaluatedKey']);
             $next = current($next); // todo handle more than one index here.
-            $count = $result['Count'];
+            $count = $result['ScannedCount'];
             $out = static::cleanRecords($out);
-            $needMore = (($count - $offset) > $limit);
+            $needMore = ($limit > 0) ? (($count - $offset) > $limit) : false;
             $addCount = Scalar::boolval(array_get($extras, ApiOptions::INCLUDE_COUNT));
-            if ($addCount || $needMore) {
+            if ($addCount || $needMore || $next) {
                 $out['meta']['count'] = $count;
-                if ($needMore) {
+                if ($next) {
                     $out['meta']['next'] = $next;
                 }
             }
@@ -196,7 +196,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         return $fields;
     }
 
-    protected static function checkForIds(&$record, $ids_info, $extras = null, $on_create = false, $remove = false)
+    protected function checkForIds(&$record, $ids_info, $extras = null, $on_create = false, $remove = false)
     {
         $id = null;
         if (!empty($ids_info)) {
@@ -648,15 +648,13 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     throw new BadRequestException('No valid fields were found in record.');
                 }
 
-                $native = $this->formatAttributes($parsed);
+                $item = [
+                    static::TABLE_INDICATOR => $this->transactionTable,
+                    'Item'                  => $this->formatAttributes($parsed),
+                    'ConditionExpression'   => "attribute_not_exists($idFields[0])",
+                ];
 
-                $this->getConnection()->putItem(
-                    [
-                        static::TABLE_INDICATOR => $this->transactionTable,
-                        'Item'                  => $native,
-                        'ConditionExpression'   => "attribute_not_exists($idFields[0])"
-                    ]
-                );
+                $this->getConnection()->putItem($item);
 
                 if ($rollback) {
                     $key = static::buildKey($this->tableIdsInfo, $record);
@@ -679,19 +677,23 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
                 $native = $this->formatAttributes($parsed);
 
-                if (!$continue && !$rollback) {
+                $upsert = $this->parent->upsertAllowed();
+                if (!$continue && !$rollback && !$upsert) {
                     return parent::addToTransaction($native, $id);
                 }
 
                 $options = ($rollback) ? ReturnValue::ALL_OLD : ReturnValue::NONE;
-                $result = $this->getConnection()->putItem(
-                    [
-                        static::TABLE_INDICATOR => $this->transactionTable,
-                        'Item'                  => $native,
-                        //                            'Expected'     => $expected,
-                        'ReturnValues'          => $options
-                    ]
-                );
+                $item = [
+                    static::TABLE_INDICATOR => $this->transactionTable,
+                    'Item'                  => $native,
+                    'ReturnValues'          => $options,
+                ];
+
+                if (!$upsert) {
+                    $item['ConditionExpression'] = "attribute_exists($idFields[0])";
+                }
+
+                $result = $this->getConnection()->putItem($item);
 
                 if ($rollback) {
                     $temp = $result['Attributes'];
