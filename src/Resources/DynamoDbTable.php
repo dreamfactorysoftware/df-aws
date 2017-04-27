@@ -16,8 +16,7 @@ use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Aws\Services\DynamoDb;
-use DreamFactory\Library\Utility\Enums\Verbs;
-use DreamFactory\Library\Utility\Scalar;
+use DreamFactory\Core\Enums\Verbs;
 
 class DynamoDbTable extends BaseNoSqlDbTableResource
 {
@@ -90,7 +89,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             $count = $result['ScannedCount'];
             $out = static::cleanRecords($out);
             $needMore = ($limit > 0) ? (($count - $offset) > $limit) : false;
-            $addCount = Scalar::boolval(array_get($extras, ApiOptions::INCLUDE_COUNT));
+            $addCount = array_get_bool($extras, ApiOptions::INCLUDE_COUNT);
             if ($addCount || $needMore || $next) {
                 $out['meta']['count'] = $count;
                 if ($next) {
