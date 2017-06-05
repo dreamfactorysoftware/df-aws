@@ -14,7 +14,6 @@ use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Services\BaseRestService;
 use DreamFactory\Core\Resources\BaseRestResource;
-use DreamFactory\Library\Utility\Inflector;
 
 /**
  * Class Sns
@@ -578,7 +577,7 @@ class Sns extends BaseRestService
     {
         $base = parent::getApiDocInfo($service);
         $name = strtolower($service->name);
-        $capitalized = Inflector::camelize($service->name);
+        $capitalized = camelize($service->name);
 
         $apis = [
             '/' . $name                                      => [
