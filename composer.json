@@ -29,11 +29,11 @@
     "wiki":   "https://wiki.dreamfactory.com"
   },
   "require":     {
-    "dreamfactory/df-core":     "~0.9.0",
-    "dreamfactory/df-database": "~0.3.0",
-    "dreamfactory/df-email":    "~0.3.0",
-    "dreamfactory/df-file":     "~0.1.0",
-    "dreamfactory/df-sqldb":    "~0.9.0",
+    "dreamfactory/df-core":     "~0.10.0",
+    "dreamfactory/df-database": "~0.4.0",
+    "dreamfactory/df-email":    "~0.4.0",
+    "dreamfactory/df-file":     "~0.2.0",
+    "dreamfactory/df-sqldb":    "~0.10.0",
     "aws/aws-sdk-php":          "3.*"
   },
   "autoload":    {
@@ -43,7 +43,7 @@
   },
   "extra":       {
     "branch-alias": {
-      "dev-develop": "0.9.x-dev"
+      "dev-develop": "0.10.x-dev"
     }
   }
 }
