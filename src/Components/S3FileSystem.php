@@ -414,7 +414,8 @@ class S3FileSystem extends RemoteFileSystem
     {
         $options = [
             'Bucket' => $container,
-            'Prefix' => $prefix
+            'Prefix' => $prefix,
+            'MaxKeys' => 1000
         ];
 
         if (!empty($delimiter)) {
@@ -450,7 +451,7 @@ class S3FileSystem extends RemoteFileSystem
                 }
             }
 
-            $options['Marker'] = $list->get('Marker');
+            $options['Marker'] = $list->get('NextMarker');
         } while ($list->get('IsTruncated'));
 
         $options = [
