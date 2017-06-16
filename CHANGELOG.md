@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Fixed
 - DF-1115 Fixed S3 file listing when number of files is too large
+- DF-1144 Made DELETE behavior consistent across local and all remote file services
 
 ## [0.10.0] - 2017-06-05
 ### Changed
