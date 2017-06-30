@@ -52,29 +52,29 @@ class DynamoDb extends BaseDbService
     {
         parent::__construct($settings);
 
-        $config = (array)array_get($settings, 'config');
-        //  Replace any private lookups
-        Session::replaceLookups($config, true);
         // statically assign our supported version
-        $config['version'] = '2012-08-10';
-        if (isset($config['key']))
+        $this->config['version'] = '2012-08-10';
+        if (isset($this->config['key']))
         {
-            $config['credentials']['key'] = $config['key'];
+            $this->config['credentials']['key'] = $this->config['key'];
         }
-        if (isset($config['secret']))
+        if (isset($this->config['secret']))
         {
-            $config['credentials']['secret'] = $config['secret'];
+            $this->config['credentials']['secret'] = $this->config['secret'];
         }
 
         // set up a default table schema
-        $parameters = (array)array_get($config, 'parameters');
+        $parameters = (array)array_get($this->config, 'parameters');
         Session::replaceLookups($parameters);
 //        if (null !== ($table = array_get($parameters, 'default_create_table'))) {
 //            $this->defaultCreateTable = $table;
 //        }
+    }
 
+    protected function initializeConnection()
+    {
         try {
-            $this->dbConn = new DynamoDbClient($config);
+            $this->dbConn = new DynamoDbClient($this->config);
             /** @noinspection PhpParamsInspection */
             $this->schema = new DynamoDbSchema($this->dbConn);
             $this->schema->setCache($this);
