@@ -36,13 +36,18 @@ class AwsConfig extends BaseServiceConfigModel
                 $schema['type'] = 'picklist';
                 $schema['values'] = [
                     ['label' => 'US EAST (N Virgina)', 'name' => 'us-east-1'],
+                    ['label' => 'US EAST (Ohio)', 'name' => 'us-east-2'],
                     ['label' => 'US WEST (N California)', 'name' => 'us-west-1'],
                     ['label' => 'US WEST (Oregon)', 'name' => 'us-west-2'],
+                    ['label' => 'Canada (Central)', 'name' => 'ca-central-1'],
                     ['label' => 'EU (Ireland)', 'name' => 'eu-west-1'],
+                    ['label' => 'EU (London)', 'name' => 'eu-west-2'],
                     ['label' => 'EU (Frankfurt)', 'name' => 'eu-central-1'],
+                    ['label' => 'Asia Pacific (Mumbai)', 'name' => 'ap-south-1'],
                     ['label' => 'Asia Pacific (Singapore)', 'name' => 'ap-southeast-1'],
                     ['label' => 'Asia Pacific (Sydney)', 'name' => 'ap-southeast-2'],
                     ['label' => 'Asia Pacific (Tokyo)', 'name' => 'ap-northeast-1'],
+                    ['label' => 'Asia Pacific (Seoul)', 'name' => 'ap-northeast-2'],
                     ['label' => 'South America (Sao Paulo)', 'name' => 'sa-east-1']
                 ];
                 $schema['description'] = 'Select the region to be accessed by this service connection.';
