@@ -55,7 +55,7 @@ class Sns extends BaseRestService
     /**
      * @var array
      */
-    protected $resources = [
+    protected static $resources = [
         SnsTopic::RESOURCE_NAME        => [
             'name'       => SnsTopic::RESOURCE_NAME,
             'class_name' => SnsTopic::class,
