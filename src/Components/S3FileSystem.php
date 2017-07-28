@@ -1,7 +1,11 @@
 <?php
+
 namespace DreamFactory\Core\Aws\Components;
 
+use Aws\S3\Exception\S3Exception;
+use DreamFactory\Core\Enums\HttpStatusCodes;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
+use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Utility\Session;
 use DreamFactory\Core\File\Components\RemoteFileSystem;
 use DreamFactory\Core\Exceptions\DfException;
@@ -381,13 +385,24 @@ class S3FileSystem extends RemoteFileSystem
     /**
      * @param string $container
      * @param string $name
+     * @param bool   $noCheck
      *
      * @throws DfException
      */
-    public function deleteBlob($container = '', $name = '')
+    public function deleteBlob($container = '', $name = '', $noCheck = false)
     {
         try {
             $this->checkConnection();
+
+            if (!$noCheck) {
+                $this->blobConn->getObject(
+                    [
+                        'Bucket' => $container,
+                        'Key'    => $name
+                    ]
+                );
+            }
+
             $this->blobConn->deleteObject(
                 [
                     'Bucket' => $container,
@@ -395,6 +410,11 @@ class S3FileSystem extends RemoteFileSystem
                 ]
             );
         } catch (\Exception $ex) {
+            if ($ex instanceof S3Exception) {
+                if ($ex->getStatusCode() === HttpStatusCodes::HTTP_NOT_FOUND) {
+                    throw new NotFoundException("File '$name' was not found.'");
+                }
+            }
             throw new DfException('Failed to delete blob "' . $name . '": ' . $ex->getMessage());
         }
     }
@@ -413,8 +433,9 @@ class S3FileSystem extends RemoteFileSystem
     public function listBlobs($container = '', $prefix = '', $delimiter = '')
     {
         $options = [
-            'Bucket' => $container,
-            'Prefix' => $prefix
+            'Bucket'  => $container,
+            'Prefix'  => $prefix,
+            'MaxKeys' => 1000
         ];
 
         if (!empty($delimiter)) {
@@ -450,7 +471,7 @@ class S3FileSystem extends RemoteFileSystem
                 }
             }
 
-            $options['Marker'] = $list->get('Marker');
+            $options['Marker'] = $list->get('NextMarker');
         } while ($list->get('IsTruncated'));
 
         $options = [
@@ -555,10 +576,12 @@ class S3FileSystem extends RemoteFileSystem
                 echo $data;
             }
         } catch (\Exception $ex) {
-            if ('Resource could not be accessed.' == $ex->getMessage()) {
-                $status_header = "HTTP/1.1 404 The specified file '$name' does not exist.";
+            if ($ex instanceof S3Exception) {
+                $code = $ex->getStatusCode();
+                $status_header = "HTTP/1.1 $code";
                 header($status_header);
                 header('Content-Type: text/html');
+                echo 'Failed to stream/download file. File ' . $name . ' was not found. ' . $ex->getMessage();
             } else {
                 throw new DfException('Failed to stream blob: ' . $ex->getMessage());
             }

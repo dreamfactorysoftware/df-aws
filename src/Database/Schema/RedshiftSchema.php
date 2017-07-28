@@ -2,22 +2,17 @@
 namespace DreamFactory\Core\Aws\Database\Schema;
 
 use DreamFactory\Core\Database\Schema\ColumnSchema;
-use DreamFactory\Core\Database\Components\Schema;
 use DreamFactory\Core\Database\Schema\TableSchema;
 use DreamFactory\Core\Enums\DbResourceTypes;
 use DreamFactory\Core\Enums\DbSimpleTypes;
 use DreamFactory\Core\Exceptions\BadRequestException;
+use DreamFactory\Core\SqlDb\Database\Schema\SqlSchema;
 
 /**
  * Schema is the class for retrieving metadata information from a AWS Redshift database.
  */
-class RedshiftSchema extends Schema
+class RedshiftSchema extends SqlSchema
 {
-    /**
-     * Underlying database provides field-level schema, i.e. SQL (true) vs NoSQL (false)
-     */
-    const PROVIDES_FIELD_SCHEMA = true;
-
     const DEFAULT_SCHEMA = 'public';
 
     /**
@@ -37,6 +32,8 @@ class RedshiftSchema extends Schema
     {
         return [
             DbResourceTypes::TYPE_TABLE,
+            DbResourceTypes::TYPE_TABLE_FIELD,
+            DbResourceTypes::TYPE_TABLE_RELATIONSHIP,
             DbResourceTypes::TYPE_VIEW,
         ];
     }

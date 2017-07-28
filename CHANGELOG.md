@@ -4,6 +4,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2017-07-27
+### Added
+- Adding new regions
+### Changed
+- Separating base schema from SQL schema, cleanup config usage
+### Fixed
+- DF-1115 Fixed S3 file listing when number of files is too large
+- DF-1144 Made DELETE behavior consistent across local and all remote file services
+
 ## [0.10.0] - 2017-06-05
 ### Changed
 - Cleanup - removal of php-utils dependency
@@ -80,7 +89,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## 0.1.0 - 2015-10-24
 First official release working with the new [df-core](https://github.com/dreamfactorysoftware/df-core) library.
 
-[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.10.0...HEAD
+[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.11.0...HEAD
+[0.11.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.9.0...0.10.0
 [0.9.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.8.0...0.9.0
 [0.8.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.7.0...0.8.0
