@@ -224,7 +224,7 @@ class Sns extends BaseRestService
             ((SnsEndpoint::RESOURCE_NAME == $this->relatedResource) &&
                 (SnsApplication::RESOURCE_NAME == $this->resource))
         ) {
-            $child = array_get($this->resources, $this->relatedResource);
+            $child = array_get(static::$resources, $this->relatedResource);
             if (isset($child, $child['class_name'])) {
                 $className = $child['class_name'];
 
@@ -266,7 +266,7 @@ class Sns extends BaseRestService
             $resources[] = $name . '*';
         }
 
-        $topic = new SnsTopic($this, $this->resources[SnsTopic::RESOURCE_NAME]);
+        $topic = new SnsTopic($this, static::$resources[SnsTopic::RESOURCE_NAME]);
         $result = $topic->listResources();
         foreach ($result as $name) {
             $name = SnsTopic::RESOURCE_NAME . '/' . $name;
@@ -283,7 +283,7 @@ class Sns extends BaseRestService
             $resources[] = $name . '*';
         }
 
-        $topic = new SnsSubscription($this, $this->resources[SnsSubscription::RESOURCE_NAME]);
+        $topic = new SnsSubscription($this, static::$resources[SnsSubscription::RESOURCE_NAME]);
         $result = $topic->listResources();
         foreach ($result as $name) {
             $name = SnsSubscription::RESOURCE_NAME . '/' . $name;
@@ -300,7 +300,7 @@ class Sns extends BaseRestService
             $resources[] = $name . '*';
         }
 
-        $topic = new SnsApplication($this, $this->resources[SnsApplication::RESOURCE_NAME]);
+        $topic = new SnsApplication($this, static::$resources[SnsApplication::RESOURCE_NAME]);
         $result = $topic->listResources();
         foreach ($result as $name) {
             $name = SnsApplication::RESOURCE_NAME . '/' . $name;
@@ -317,7 +317,7 @@ class Sns extends BaseRestService
             $resources[] = $name . '*';
         }
 
-        $topic = new SnsEndpoint($this, $this->resources[SnsEndpoint::RESOURCE_NAME]);
+        $topic = new SnsEndpoint($this, static::$resources[SnsEndpoint::RESOURCE_NAME]);
         $result = $topic->listResources();
         foreach ($result as $name) {
             $name = SnsEndpoint::RESOURCE_NAME . '/' . $name;
@@ -335,7 +335,7 @@ class Sns extends BaseRestService
      */
     public function getResources($only_handlers = false)
     {
-        return ($only_handlers) ? $this->resources : array_values($this->resources);
+        return ($only_handlers) ? static::$resources : array_values(static::$resources);
     }
 
     /**
