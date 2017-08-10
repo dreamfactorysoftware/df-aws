@@ -13,7 +13,6 @@ use DreamFactory\Core\Aws\Services\RedshiftDb;
 use DreamFactory\Core\Aws\Services\S3;
 use DreamFactory\Core\Aws\Services\Ses;
 use DreamFactory\Core\Aws\Services\Sns;
-use DreamFactory\Core\Components\ServiceDocBuilder;
 use DreamFactory\Core\Components\DbSchemaExtensions;
 use DreamFactory\Core\Enums\ServiceTypeGroups;
 use DreamFactory\Core\Services\ServiceManager;
@@ -22,8 +21,6 @@ use Illuminate\Database\DatabaseManager;
 
 class ServiceProvider extends \Illuminate\Support\ServiceProvider
 {
-    use ServiceDocBuilder;
-
     public function register()
     {
         // Add our service types.
@@ -35,9 +32,6 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                     'description'     => 'File storage service supporting the AWS S3 file system.',
                     'group'           => ServiceTypeGroups::FILE,
                     'config_handler'  => S3Config::class,
-                    'default_api_doc' => function ($service) {
-                        return $this->buildServiceDoc($service->id, S3::getApiDocInfo($service));
-                    },
                     'factory'         => function ($config) {
                         return new S3($config);
                     }
@@ -50,9 +44,6 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                     'description'     => 'A database service supporting the AWS DynamoDB system.',
                     'group'           => ServiceTypeGroups::DATABASE,
                     'config_handler'  => DynamoDbConfig::class,
-                    'default_api_doc' => function ($service) {
-                        return $this->buildServiceDoc($service->id, DynamoDb::getApiDocInfo($service));
-                    },
                     'factory'         => function ($config) {
                         return new DynamoDb($config);
                     }
@@ -65,9 +56,6 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                     'description'     => 'Push notification service supporting the AWS SNS system.',
                     'group'           => ServiceTypeGroups::NOTIFICATION,
                     'config_handler'  => AwsConfig::class,
-                    'default_api_doc' => function ($service) {
-                        return $this->buildServiceDoc($service->id, Sns::getApiDocInfo($service));
-                    },
                     'factory'         => function ($config) {
                         return new Sns($config);
                     }
@@ -80,9 +68,6 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                     'description'     => 'Email service supporting the AWS SES system.',
                     'group'           => ServiceTypeGroups::EMAIL,
                     'config_handler'  => AwsConfig::class,
-                    'default_api_doc' => function ($service) {
-                        return $this->buildServiceDoc($service->id, Ses::getApiDocInfo($service));
-                    },
                     'factory'         => function ($config) {
                         return new Ses($config);
                     }
@@ -95,9 +80,6 @@ class ServiceProvider extends \Illuminate\Support\ServiceProvider
                     'description'     => 'A database service supporting AWS Redshift.',
                     'group'           => ServiceTypeGroups::DATABASE,
                     'config_handler'  => RedshiftDbConfig::class,
-                    'default_api_doc' => function ($service) {
-                        return $this->buildServiceDoc($service->id, RedshiftDb::getApiDocInfo($service));
-                    },
                     'factory'         => function ($config) {
                         return new RedshiftDb($config);
                     }
