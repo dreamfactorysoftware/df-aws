@@ -77,8 +77,6 @@ class DynamoDb extends BaseDbService
             $this->dbConn = new DynamoDbClient($this->config);
             /** @noinspection PhpParamsInspection */
             $this->schema = new DynamoDbSchema($this->dbConn);
-            $this->schema->setCache($this);
-            $this->schema->setExtraStore($this);
         } catch (\Exception $ex) {
             throw new InternalServerErrorException("AWS DynamoDb Service Exception:\n{$ex->getMessage()}",
                 $ex->getCode());
