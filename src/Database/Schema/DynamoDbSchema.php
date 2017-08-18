@@ -126,7 +126,7 @@ class DynamoDbSchema extends Schema
     /**
      * {@inheritdoc}
      */
-    protected function createTable($table, $options)
+    public function createTable($table, $options)
     {
         if (empty($tableName = array_get($table, 'name'))) {
             throw new \Exception("No valid name exist in the received table schema.");
@@ -148,7 +148,7 @@ class DynamoDbSchema extends Schema
     /**
      * {@inheritdoc}
      */
-    protected function updateTable($tableSchema, $changes)
+    public function updateTable($tableSchema, $changes)
     {
         // Update the provisioned throughput capacity of the table
         $properties = array_merge(

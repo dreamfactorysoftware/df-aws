@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2017-08-17
+### Changed
+- Reworking API doc usage and generation
+- Rework schema interface for database services in order to better control caching
+- Set config-based cache prefix
+
 ## [0.11.1] - 2017-07-31
 ### Fixed
 - Correct use of static resources
@@ -93,7 +99,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## 0.1.0 - 2015-10-24
 First official release working with the new [df-core](https://github.com/dreamfactorysoftware/df-core) library.
 
-[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.11.1...HEAD
+[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.12.0...HEAD
+[0.12.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.11.1...0.12.0
 [0.11.1]: https://github.com/dreamfactorysoftware/df-aws/compare/0.11.0...0.11.1
 [0.11.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.9.0...0.10.0
