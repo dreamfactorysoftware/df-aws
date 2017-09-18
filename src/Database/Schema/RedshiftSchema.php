@@ -239,16 +239,10 @@ class RedshiftSchema extends SqlSchema
             $definition .= ' IDENTITY(1,1)';
         }
 
-        $isUniqueKey = (isset($info['is_unique'])) ? filter_var($info['is_unique'], FILTER_VALIDATE_BOOLEAN) : false;
-        $isPrimaryKey =
-            (isset($info['is_primary_key'])) ? filter_var($info['is_primary_key'], FILTER_VALIDATE_BOOLEAN) : false;
-        if ($isPrimaryKey && $isUniqueKey) {
-            throw new \Exception('Unique and Primary designations not allowed simultaneously.');
-        }
-        if ($isUniqueKey) {
-            $definition .= ' UNIQUE';
-        } elseif ($isPrimaryKey) {
+        if (isset($info['is_primary_key']) && filter_var($info['is_primary_key'], FILTER_VALIDATE_BOOLEAN)) {
             $definition .= ' PRIMARY KEY';
+        } elseif (isset($info['is_unique']) && filter_var($info['is_unique'], FILTER_VALIDATE_BOOLEAN)) {
+            $definition .= ' UNIQUE';
         }
 
         return $definition;
@@ -362,11 +356,13 @@ EOD;
   (SELECT a.attname FROM pg_attribute a WHERE a.attrelid = m.oid AND a.attnum = o.conkey[1] AND a.attisdropped = false) AS column_name,
   (SELECT nspname FROM pg_namespace WHERE oid=f.relnamespace) AS referenced_table_schema,
   f.relname AS referenced_table_name,
-  (SELECT a.attname FROM pg_attribute a WHERE a.attrelid = f.oid AND a.attnum = o.confkey[1] AND a.attisdropped = false) AS referenced_column_name
+  (SELECT a.attname FROM pg_attribute a WHERE a.attrelid = f.oid AND a.attnum = o.confkey[1] AND a.attisdropped = false) AS referenced_column_name,
+  cc.contype AS constraint_type
 FROM
   pg_constraint o LEFT JOIN pg_class c ON c.oid = o.conrelid
   LEFT JOIN pg_class f ON f.oid = o.confrelid 
   LEFT JOIN pg_class m ON m.oid = o.conrelid
+  LEFT JOIN pg_constraint cc ON cc.conrelid = o.conrelid AND (cc.conkey[1] = o.conkey[1]) AND (cc.contype IN ('p', 'u'))
 WHERE
   o.contype = 'f' AND o.conrelid IN (SELECT oid FROM pg_class c WHERE c.relkind = 'r');
 EOD;
