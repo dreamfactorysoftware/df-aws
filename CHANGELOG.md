@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.13.0] - 2017-09-18
+### Added
+- DF-1060 Support for data retrieval (GET) caching and configuration
+### Fixed
+- Cleanup primary and unique key handling
+
 ## [0.12.0] - 2017-08-17
 ### Changed
 - Reworking API doc usage and generation
