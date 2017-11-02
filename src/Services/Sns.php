@@ -582,9 +582,9 @@ class Sns extends BaseRestService
         $paths = [
             '/'                                => [
                 'post' => [
-                    'summary'     => 'publish' . $capitalized . '() - Send a message to a topic or endpoint.',
-                    'operationId' => 'publish' . $capitalized,
+                    'summary'     => 'Send a message to a topic or endpoint.',
                     'description' => 'Post data should be an array of topic publish properties.',
+                    'operationId' => 'publish' . $capitalized,
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsPublishRequest'
                     ],
@@ -595,17 +595,17 @@ class Sns extends BaseRestService
             ],
             '/topic'                           => [
                 'get'  => [
-                    'summary'     => 'get' . $capitalized . 'Topics() - Retrieve all topics available for the push service.',
-                    'operationId' => 'get' . $capitalized . 'Topics',
+                    'summary'     => 'Retrieve all topics available for the push service.',
                     'description' => 'This returns the topics as resources.',
+                    'operationId' => 'get' . $capitalized . 'Topics',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsTopicsResponse']
                     ],
                 ],
                 'post' => [
-                    'summary'     => 'create' . $capitalized . 'Topic() - Create a topic.',
-                    'operationId' => 'create' . $capitalized . 'Topic',
+                    'summary'     => 'Create a topic.',
                     'description' => 'Post data should be an array of topic attributes including \'Name\'.',
+                    'operationId' => 'create' . $capitalized . 'Topic',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsTopicRequest'
                     ],
@@ -625,17 +625,17 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'get'        => [
-                    'summary'     => 'get' . $capitalized . 'TopicAttributes() - Retrieve topic definition for the given topic.',
-                    'operationId' => 'get' . $capitalized . 'TopicAttributes',
+                    'summary'     => 'Retrieve topic definition for the given topic.',
                     'description' => 'This retrieves the topic, detailing its available properties.',
+                    'operationId' => 'get' . $capitalized . 'TopicAttributes',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsTopicAttributesResponse']
                     ],
                 ],
                 'post'       => [
-                    'summary'     => 'publish' . $capitalized . 'Topic() - Send a message to the given topic.',
-                    'operationId' => 'publish' . $capitalized . 'Topic',
+                    'summary'     => 'Send a message to the given topic.',
                     'description' => 'Post data should be an array of topic publish properties.',
+                    'operationId' => 'publish' . $capitalized . 'Topic',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsPublishTopicRequest'
                     ],
@@ -644,7 +644,8 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'put'        => [
-                    'summary'     => 'set' . $capitalized . 'TopicAttributes() - Update a given topic\'s attributes.',
+                    'summary'     => 'Update a given topic\'s attributes.',
+                    'description' => 'Post data should be an array of topic attributes including \'Name\'.',
                     'operationId' => 'set' . $capitalized . 'TopicAttributes',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsTopicAttributesRequest'
@@ -652,12 +653,11 @@ class Sns extends BaseRestService
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/Success']
                     ],
-                    'description' => 'Post data should be an array of topic attributes including \'Name\'.',
                 ],
                 'delete'     => [
-                    'summary'     => 'delete' . $capitalized . 'Topic() - Delete a given topic.',
+                    'summary'     => 'Delete a given topic.',
+                    'description' => 'Delete a given topic.',
                     'operationId' => 'delete' . $capitalized . 'Topic',
-                    'description' => '',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/Success']
                     ],
@@ -674,9 +674,9 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'get'        => [
-                    'summary'     => 'list' . $capitalized . 'SubscriptionsByTopic() - List subscriptions available for the given topic.',
-                    'operationId' => 'list' . $capitalized . 'SubscriptionsByTopic',
+                    'summary'     => 'List subscriptions available for the given topic.',
                     'description' => 'Return only the names of the subscriptions in an array.',
+                    'operationId' => 'list' . $capitalized . 'SubscriptionsByTopic',
                     'parameters'  => [
                         [
                             'name'        => 'names_only',
@@ -691,7 +691,8 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'post'       => [
-                    'summary'     => 'subscribe' . $capitalized . 'Topic() - Create a subscription for the given topic.',
+                    'summary'     => 'Create a subscription for the given topic.',
+                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
                     'operationId' => 'subscribe' . $capitalized . 'Topic',
                     'parameters'  => [
                         [
@@ -708,30 +709,27 @@ class Sns extends BaseRestService
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsSubscriptionIdentifier']
                     ],
-                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
                 ],
             ],
             '/subscription'                    => [
                 'get'  => [
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'Subscriptions() - Retrieve all subscriptions as resources.',
-                    'operationId' => 'get' . $capitalized . 'Subscriptions',
+                    'summary'     => 'Retrieve all subscriptions as resources.',
                     'description' => 'This describes the topic, detailing its available properties.',
+                    'operationId' => 'get' . $capitalized . 'Subscriptions',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsSubscriptionsResponse']
                     ],
                 ],
                 'post' => [
-                    'summary'     => 'subscribe' . $capitalized . '() - Create a subscription.',
-                    'operationId' => 'subscribe' . $capitalized,
+                    'summary'     => 'Create a subscription.',
+                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
+                    'operationId' => 'subscribeTo' . $capitalized,
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsSubscriptionRequest'
                     ],
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsSubscriptionIdentifier']
                     ],
-                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
                 ],
             ],
             '/subscription/{sub_name}'         => [
@@ -745,15 +743,16 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'get'        => [
-                    'summary'     => 'get' . $capitalized . 'SubscriptionAttributes() - Retrieve attributes for the given subscription.',
+                    'summary'     => 'Retrieve attributes for the given subscription.',
+                    'description' => 'This retrieves the subscription, detailing its available properties.',
                     'operationId' => 'get' . $capitalized . 'SubscriptionAttributes',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsSubscriptionAttributesResponse']
                     ],
-                    'description' => 'This retrieves the subscription, detailing its available properties.',
                 ],
                 'put'        => [
-                    'summary'     => 'set' . $capitalized . 'SubscriptionAttributes() - Update a given subscription.',
+                    'summary'     => 'Update a given subscription.',
+                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
                     'operationId' => 'set' . $capitalized . 'SubscriptionAttributes',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsSubscriptionAttributesRequest'
@@ -761,12 +760,11 @@ class Sns extends BaseRestService
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/Success']
                     ],
-                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
                 ],
                 'delete'     => [
-                    'summary'     => 'unsubscribe' . $capitalized . '() - Delete a given subscription.',
+                    'summary'     => 'Delete a given subscription.',
+                    'description' => 'Delete a given subscription.',
                     'operationId' => 'unsubscribe' . $capitalized,
-                    'description' => '',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/Success']
                     ],
@@ -774,15 +772,16 @@ class Sns extends BaseRestService
             ],
             '/app'                             => [
                 'get'  => [
-                    'summary'     => 'get' . $capitalized . 'Apps() - Retrieve app definition for the given app.',
+                    'summary'     => 'Retrieve app definition for the given app.',
+                    'description' => 'This describes the app, detailing its available properties.',
                     'operationId' => 'get' . $capitalized . 'Apps',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsAppsResponse']
                     ],
-                    'description' => 'This describes the app, detailing its available properties.',
                 ],
                 'post' => [
-                    'summary'     => 'create' . $capitalized . 'App() - Create a given app.',
+                    'summary'     => 'Create a given app.',
+                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
                     'operationId' => 'create' . $capitalized . 'App',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsAppRequest'
@@ -790,7 +789,6 @@ class Sns extends BaseRestService
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsAppIdentifier']
                     ],
-                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
                 ],
             ],
             '/app/{app_name}'                  => [
@@ -804,15 +802,16 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'get'        => [
-                    'summary'     => 'get' . $capitalized . 'AppAttributes() - Retrieve app definition for the given app.',
+                    'summary'     => 'Retrieve app definition for the given app.',
+                    'description' => 'This retrieves the app, detailing its available properties.',
                     'operationId' => 'get' . $capitalized . 'AppAttributes',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsAppAttributesResponse']
                     ],
-                    'description' => 'This retrieves the app, detailing its available properties.',
                 ],
                 'put'        => [
-                    'summary'     => 'set' . $capitalized . 'AppAttributes() - Update a given app.',
+                    'summary'     => 'Update a given app.',
+                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
                     'operationId' => 'set' . $capitalized . 'AppAttributes',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsAppAttributesRequest'
@@ -820,12 +819,11 @@ class Sns extends BaseRestService
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/Success']
                     ],
-                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
                 ],
                 'delete'     => [
-                    'summary'     => 'delete' . $capitalized . 'App() - Delete a given app.',
+                    'summary'     => 'Delete a given app.',
+                    'description' => 'Delete a given app.',
                     'operationId' => 'delete' . $capitalized . 'App',
-                    'description' => '',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/Success']
                     ],
@@ -842,15 +840,16 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'get'        => [
-                    'summary'     => 'get' . $capitalized . 'EndpointsByApp() - Retrieve endpoints for the given application.',
+                    'summary'     => 'Retrieve endpoints for the given application.',
+                    'description' => 'This describes the endpoints, detailing its available properties.',
                     'operationId' => 'get' . $capitalized . 'EndpointsByApp',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsEndpointsResponse']
                     ],
-                    'description' => 'This describes the endpoints, detailing its available properties.',
                 ],
                 'post'       => [
-                    'summary'     => 'create' . $capitalized . 'AppEndpoint() - Create a endpoint for a given application.',
+                    'summary'     => 'Create a endpoint for a given application.',
+                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                     'operationId' => 'create' . $capitalized . 'AppEndpoint',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/AppEndpointRequest'
@@ -858,22 +857,20 @@ class Sns extends BaseRestService
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsEndpointIdentifier']
                     ],
-                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
             ],
             '/endpoint'                        => [
                 'get'  => [
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'Endpoints() - Retrieve endpoint definition for the given endpoint.',
-                    'operationId' => 'get' . $capitalized . 'Endpoints',
+                    'summary'     => 'Retrieve endpoint definition for the given endpoint.',
                     'description' => 'This describes the endpoint, detailing its available properties.',
+                    'operationId' => 'get' . $capitalized . 'Endpoints',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsEndpointsResponse']
                     ],
                 ],
                 'post' => [
-                    'summary'     => 'create' . $capitalized . 'Endpoint() - Create a given endpoint.',
+                    'summary'     => 'Create a given endpoint.',
+                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                     'operationId' => 'create' . $capitalized . 'Endpoint',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsEndpointRequest'
@@ -881,7 +878,6 @@ class Sns extends BaseRestService
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsEndpointIdentifier']
                     ],
-                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
             ],
             '/endpoint/{endpoint_name}'        => [
@@ -895,17 +891,17 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'get'        => [
-                    'summary'     => 'get' . $capitalized . 'EndpointAttributes() - Retrieve endpoint definition for the given endpoint.',
+                    'summary'     => 'Retrieve endpoint definition for the given endpoint.',
+                    'description' => 'This retrieves the endpoint, detailing its available properties.',
                     'operationId' => 'get' . $capitalized . 'EndpointAttributes',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/SnsEndpointAttributesResponse']
                     ],
-                    'description' => 'This retrieves the endpoint, detailing its available properties.',
                 ],
                 'post'       => [
-                    'summary'     => 'publish' . $capitalized . 'Endpoint() - Send a message to the given endpoint.',
-                    'operationId' => 'publish' . $capitalized . 'Endpoint',
+                    'summary'     => 'Send a message to the given endpoint.',
                     'description' => 'Post data should be an array of endpoint publish properties.',
+                    'operationId' => 'publish' . $capitalized . 'Endpoint',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsPublishEndpointRequest'
                     ],
@@ -914,7 +910,8 @@ class Sns extends BaseRestService
                     ],
                 ],
                 'put'        => [
-                    'summary'     => 'set' . $capitalized . 'EndpointAttributes() - Update a given endpoint.',
+                    'summary'     => 'Update a given endpoint.',
+                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                     'operationId' => 'set' . $capitalized . 'EndpointAttributes',
                     'requestBody' => [
                         '$ref' => '#/components/requestBodies/SnsEndpointAttributesRequest'
@@ -922,12 +919,11 @@ class Sns extends BaseRestService
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/Success']
                     ],
-                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
                 'delete'     => [
-                    'summary'     => 'delete' . $capitalized . 'Endpoint() - Delete a given endpoint.',
+                    'summary'     => 'Delete a given endpoint.',
+                    'description' => 'Delete a given endpoint.',
                     'operationId' => 'delete' . $capitalized . 'Endpoint',
-                    'description' => '',
                     'responses'   => [
                         '200' => ['$ref' => '#/components/responses/Success']
                     ],
