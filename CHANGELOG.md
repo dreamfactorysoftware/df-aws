@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.14.0] - 2017-11-03
+- Upgrade Swagger to OpenAPI 3.0 specification
+
 ## [0.13.0] - 2017-09-18
 ### Added
 - DF-1060 Support for data retrieval (GET) caching and configuration
@@ -105,7 +108,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## 0.1.0 - 2015-10-24
 First official release working with the new [df-core](https://github.com/dreamfactorysoftware/df-core) library.
 
-[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.13.0...HEAD
+[Unreleased]: https://github.com/dreamfactorysoftware/df-aws/compare/0.14.0...HEAD
+[0.14.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.13.0...0.14.0
 [0.13.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.12.0...0.13.0
 [0.12.0]: https://github.com/dreamfactorysoftware/df-aws/compare/0.11.1...0.12.0
 [0.11.1]: https://github.com/dreamfactorysoftware/df-aws/compare/0.11.0...0.11.1
