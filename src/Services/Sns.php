@@ -1,4 +1,5 @@
 <?php
+
 namespace DreamFactory\Core\Aws\Services;
 
 use Aws\Iam\IamClient;
@@ -41,8 +42,8 @@ class Sns extends BaseRestService
      * List types when requesting resources
      */
     const FORMAT_SIMPLE = 'simple';
-    const FORMAT_ARN    = 'arn';
-    const FORMAT_FULL   = 'full';
+    const FORMAT_ARN = 'arn';
+    const FORMAT_FULL = 'full';
 
     //*************************************************************************
     //	Members
@@ -573,768 +574,368 @@ class Sns extends BaseRestService
     /**
      * {@inheritdoc}
      */
-    public static function getApiDocInfo($service)
+    protected function getApiDocPaths()
     {
-        $base = parent::getApiDocInfo($service);
-        $name = strtolower($service->name);
-        $capitalized = camelize($service->name);
+        $base = parent::getApiDocPaths();
+        $capitalized = camelize($this->name);
 
-        $apis = [
-            '/' . $name                                      => [
+        $paths = [
+            '/'                                => [
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'publish' . $capitalized . '() - Send a message to a topic or endpoint.',
+                    'summary'     => 'Send a message to a topic or endpoint.',
+                    'description' => 'Post data should be an array of topic publish properties.',
                     'operationId' => 'publish' . $capitalized,
-                    'description' => 'Post data should be an array of topic publish properties.',
-                    'parameters'  => [
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of topic message parameters.',
-                            'schema'      => ['$ref' => '#/definitions/PublishRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsPublishRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Publish Response',
-                            'schema'      => ['$ref' => '#/definitions/PublishResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsPublishResponse']
                     ],
                 ],
             ],
-            '/' . $name . '/topic'                           => [
+            '/topic'                           => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'Topics() - Retrieve all topics available for the push service.',
-                    'operationId' => 'get' . $capitalized . 'Topics',
+                    'summary'     => 'Retrieve all topics available for the push service.',
                     'description' => 'This returns the topics as resources.',
+                    'operationId' => 'get' . $capitalized . 'Topics',
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Topics Response',
-                            'schema'      => ['$ref' => '#/definitions/GetTopicsResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsTopicsResponse']
                     ],
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'create' . $capitalized . 'Topic() - Create a topic.',
+                    'summary'     => 'Create a topic.',
+                    'description' => 'Post data should be an array of topic attributes including \'Name\'.',
                     'operationId' => 'create' . $capitalized . 'Topic',
-                    'description' => 'Post data should be an array of topic attributes including \'Name\'.',
-                    'parameters'  => [
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of topic attributes.',
-                            'schema'      => ['$ref' => '#/definitions/TopicRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsTopicRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Topic Identifier',
-                            'schema'      => ['$ref' => '#/definitions/TopicIdentifier']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsTopicIdentifier']
                     ],
                 ],
             ],
-            '/' . $name . '/topic/{topic_name}'              => [
-                'get'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'TopicAttributes() - Retrieve topic definition for the given topic.',
-                    'operationId' => 'get' . $capitalized . 'TopicAttributes',
+            '/topic/{topic_name}'              => [
+                'parameters' => [
+                    [
+                        'name'        => 'topic_name',
+                        'description' => 'Full ARN or simplified name of the topic to perform operations on.',
+                        'schema'      => ['type' => 'string'],
+                        'in'          => 'path',
+                        'required'    => true,
+                    ],
+                ],
+                'get'        => [
+                    'summary'     => 'Retrieve topic definition for the given topic.',
                     'description' => 'This retrieves the topic, detailing its available properties.',
-                    'parameters'  => [
-                        [
-                            'name'        => 'topic_name',
-                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
-                    ],
+                    'operationId' => 'get' . $capitalized . 'TopicAttributes',
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Topic Response',
-                            'schema'      => ['$ref' => '#/definitions/TopicAttributesResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsTopicAttributesResponse']
                     ],
                 ],
-                'post'   => [
-                    'tags'        => [$name],
-                    'summary'     => 'publish' . $capitalized . 'Topic() - Send a message to the given topic.',
-                    'operationId' => 'publish' . $capitalized . 'Topic',
+                'post'       => [
+                    'summary'     => 'Send a message to the given topic.',
                     'description' => 'Post data should be an array of topic publish properties.',
-                    'parameters'  => [
-                        [
-                            'name'        => 'topic_name',
-                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of topic message parameters.',
-                            'schema'      => ['$ref' => '#/definitions/PublishTopicRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
+                    'operationId' => 'publish' . $capitalized . 'Topic',
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsPublishTopicRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Topic Publish Response',
-                            'schema'      => ['$ref' => '#/definitions/PublishResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsPublishResponse']
                     ],
                 ],
-                'put'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'set' .
-                        $capitalized .
-                        'TopicAttributes() - Update a given topic\'s attributes.',
-                    'operationId' => 'set' . $capitalized . 'TopicAttributes',
-                    'parameters'  => [
-                        [
-                            'name'        => 'topic_name',
-                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of topic attributes.',
-                            'schema'      => ['$ref' => '#/definitions/TopicAttributesRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
-                    ],
-                    'responses'   => [
-                        '200'     => [
-                            'description' => 'Success',
-                            'schema'      => ['$ref' => '#/definitions/Success']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
-                    ],
+                'put'        => [
+                    'summary'     => 'Update a given topic\'s attributes.',
                     'description' => 'Post data should be an array of topic attributes including \'Name\'.',
-                ],
-                'delete' => [
-                    'tags'        => [$name],
-                    'summary'     => 'delete' . $capitalized . 'Topic() - Delete a given topic.',
-                    'operationId' => 'delete' . $capitalized . 'Topic',
-                    'description' => '',
-                    'parameters'  => [
-                        [
-                            'name'        => 'topic_name',
-                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
+                    'operationId' => 'set' . $capitalized . 'TopicAttributes',
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsTopicAttributesRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Success',
-                            'schema'      => ['$ref' => '#/definitions/Success']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/Success']
+                    ],
+                ],
+                'delete'     => [
+                    'summary'     => 'Delete a given topic.',
+                    'description' => 'Delete a given topic.',
+                    'operationId' => 'delete' . $capitalized . 'Topic',
+                    'responses'   => [
+                        '200' => ['$ref' => '#/components/responses/Success']
                     ],
                 ],
             ],
-            '/' . $name . '/topic/{topic_name}/subscription' => [
-                'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'list' .
-                        $capitalized .
-                        'SubscriptionsByTopic() - List subscriptions available for the given topic.',
-                    'operationId' => 'list' . $capitalized . 'SubscriptionsByTopic',
+            '/topic/{topic_name}/subscription' => [
+                'parameters' => [
+                    [
+                        'name'        => 'topic_name',
+                        'description' => 'Full ARN or simplified name of the topic to perform operations on.',
+                        'schema'      => ['type' => 'string'],
+                        'in'          => 'path',
+                        'required'    => true,
+                    ],
+                ],
+                'get'        => [
+                    'summary'     => 'List subscriptions available for the given topic.',
                     'description' => 'Return only the names of the subscriptions in an array.',
+                    'operationId' => 'list' . $capitalized . 'SubscriptionsByTopic',
                     'parameters'  => [
-                        [
-                            'name'        => 'topic_name',
-                            'description' => 'Full ARN or simplified name of the topic to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
                         [
                             'name'        => 'names_only',
                             'description' => 'Return only the names of the subscriptions in an array.',
-                            'type'        => 'boolean',
+                            'schema'      => ['type' => 'boolean', 'default' => true],
                             'in'          => 'query',
                             'required'    => true,
-                            'default'     => true,
                         ],
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Component List',
-                            'schema'      => ['$ref' => '#/definitions/ComponentList']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsComponentList']
                     ],
                 ],
-                'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'subscribe' .
-                        $capitalized .
-                        'Topic() - Create a subscription for the given topic.',
+                'post'       => [
+                    'summary'     => 'Create a subscription for the given topic.',
+                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
                     'operationId' => 'subscribe' . $capitalized . 'Topic',
                     'parameters'  => [
                         [
                             'name'        => 'topic_name',
                             'description' => 'Full ARN or simplified name of the topic to perform operations on.',
-                            'type'        => 'string',
+                            'schema'      => ['type' => 'string'],
                             'in'          => 'path',
                             'required'    => true,
                         ],
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of subscription attributes.',
-                            'schema'      => ['$ref' => '#/definitions/SubscriptionTopicRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
+                    ],
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsSubscriptionTopicRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Subscription Identifier',
-                            'schema'      => ['$ref' => '#/definitions/SubscriptionIdentifier']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsSubscriptionIdentifier']
                     ],
-                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
                 ],
             ],
-            '/' . $name . '/subscription'                    => [
+            '/subscription'                    => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'Subscriptions() - Retrieve all subscriptions as resources.',
-                    'operationId' => 'get' . $capitalized . 'Subscriptions',
+                    'summary'     => 'Retrieve all subscriptions as resources.',
                     'description' => 'This describes the topic, detailing its available properties.',
+                    'operationId' => 'get' . $capitalized . 'Subscriptions',
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Subscriptions',
-                            'schema'      => ['$ref' => '#/definitions/GetSubscriptionsResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsSubscriptionsResponse']
                     ],
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'subscribe' . $capitalized . '() - Create a subscription.',
-                    'operationId' => 'subscribe' . $capitalized,
-                    'parameters'  => [
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of subscription attributes.',
-                            'schema'      => ['$ref' => '#/definitions/SubscriptionRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
+                    'summary'     => 'Create a subscription.',
+                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
+                    'operationId' => 'subscribeTo' . $capitalized,
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsSubscriptionRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Subscription Identifier',
-                            'schema'      => ['$ref' => '#/definitions/SubscriptionIdentifier']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsSubscriptionIdentifier']
                     ],
-                    'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
                 ],
             ],
-            '/' . $name . '/subscription/{sub_name}'         => [
-                'get'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'SubscriptionAttributes() - Retrieve attributes for the given subscription.',
-                    'operationId' => 'get' . $capitalized . 'SubscriptionAttributes',
-                    'parameters'  => [
-                        [
-                            'name'        => 'sub_name',
-                            'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
+            '/subscription/{sub_name}'         => [
+                'parameters' => [
+                    [
+                        'name'        => 'sub_name',
+                        'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
+                        'schema'      => ['type' => 'string'],
+                        'in'          => 'path',
+                        'required'    => true,
                     ],
-                    'responses'   => [
-                        '200'     => [
-                            'description' => 'Subscription Attributes',
-                            'schema'      => ['$ref' => '#/definitions/SubscriptionAttributesResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
-                    ],
+                ],
+                'get'        => [
+                    'summary'     => 'Retrieve attributes for the given subscription.',
                     'description' => 'This retrieves the subscription, detailing its available properties.',
-                ],
-                'put'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'set' .
-                        $capitalized .
-                        'SubscriptionAttributes() - Update a given subscription.',
-                    'operationId' => 'set' . $capitalized . 'SubscriptionAttributes',
-                    'parameters'  => [
-                        [
-                            'name'        => 'sub_name',
-                            'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of subscription attributes.',
-                            'in'          => 'body',
-                            'schema'      => ['$ref' => '#/definitions/SubscriptionAttributesRequest'],
-                            'required'    => true,
-                        ],
-                    ],
+                    'operationId' => 'get' . $capitalized . 'SubscriptionAttributes',
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Success',
-                            'schema'      => ['$ref' => '#/definitions/Success']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsSubscriptionAttributesResponse']
                     ],
+                ],
+                'put'        => [
+                    'summary'     => 'Update a given subscription.',
                     'description' => 'Post data should be an array of subscription attributes including \'Name\'.',
-                ],
-                'delete' => [
-                    'tags'        => [$name],
-                    'summary'     => 'unsubscribe' . $capitalized . '() - Delete a given subscription.',
-                    'operationId' => 'unsubscribe' . $capitalized,
-                    'description' => '',
-                    'parameters'  => [
-                        [
-                            'name'        => 'sub_name',
-                            'description' => 'Full ARN or simplified name of the subscription to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
+                    'operationId' => 'set' . $capitalized . 'SubscriptionAttributes',
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsSubscriptionAttributesRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Success',
-                            'schema'      => ['$ref' => '#/definitions/Success']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/Success']
+                    ],
+                ],
+                'delete'     => [
+                    'summary'     => 'Delete a given subscription.',
+                    'description' => 'Delete a given subscription.',
+                    'operationId' => 'unsubscribe' . $capitalized,
+                    'responses'   => [
+                        '200' => ['$ref' => '#/components/responses/Success']
                     ],
                 ],
             ],
-            '/' . $name . '/app'                             => [
+            '/app'                             => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get' . $capitalized . 'Apps() - Retrieve app definition for the given app.',
+                    'summary'     => 'Retrieve app definition for the given app.',
+                    'description' => 'This describes the app, detailing its available properties.',
                     'operationId' => 'get' . $capitalized . 'Apps',
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Apps Response',
-                            'schema'      => ['$ref' => '#/definitions/GetAppsResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsAppsResponse']
                     ],
-                    'description' => 'This describes the app, detailing its available properties.',
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'create' . $capitalized . 'App() - Create a given app.',
+                    'summary'     => 'Create a given app.',
+                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
                     'operationId' => 'create' . $capitalized . 'App',
-                    'parameters'  => [
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of app attributes.',
-                            'schema'      => ['$ref' => '#/definitions/AppRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsAppRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'App Identifier',
-                            'schema'      => ['$ref' => '#/definitions/AppIdentifier']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsAppIdentifier']
                     ],
-                    'description' => 'Post data should be an array of app attributes including \'Name\'.',
                 ],
             ],
-            '/' . $name . '/app/{app_name}'                  => [
-                'get'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'AppAttributes() - Retrieve app definition for the given app.',
-                    'operationId' => 'get' . $capitalized . 'AppAttributes',
-                    'parameters'  => [
-                        [
-                            'name'        => 'app_name',
-                            'description' => 'Full ARN or simplified name of the app to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
+            '/app/{app_name}'                  => [
+                'parameters' => [
+                    [
+                        'name'        => 'app_name',
+                        'description' => 'Full ARN or simplified name of the app to perform operations on.',
+                        'schema'      => ['type' => 'string'],
+                        'in'          => 'path',
+                        'required'    => true,
                     ],
-                    'responses'   => [
-                        '200'     => [
-                            'description' => 'App Attributes',
-                            'schema'      => ['$ref' => '#/definitions/AppAttributesResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
-                    ],
+                ],
+                'get'        => [
+                    'summary'     => 'Retrieve app definition for the given app.',
                     'description' => 'This retrieves the app, detailing its available properties.',
-                ],
-                'put'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'set' . $capitalized . 'AppAttributes() - Update a given app.',
-                    'operationId' => 'set' . $capitalized . 'AppAttributes',
-                    'parameters'  => [
-                        [
-                            'name'        => 'app_name',
-                            'description' => 'Full ARN or simplified name of the app to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of app attributes.',
-                            'schema'      => ['$ref' => '#/definitions/AppAttributesRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
-                    ],
+                    'operationId' => 'get' . $capitalized . 'AppAttributes',
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Success',
-                            'schema'      => ['$ref' => '#/definitions/Success']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsAppAttributesResponse']
                     ],
+                ],
+                'put'        => [
+                    'summary'     => 'Update a given app.',
                     'description' => 'Post data should be an array of app attributes including \'Name\'.',
+                    'operationId' => 'set' . $capitalized . 'AppAttributes',
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsAppAttributesRequest'
+                    ],
+                    'responses'   => [
+                        '200' => ['$ref' => '#/components/responses/Success']
+                    ],
                 ],
-                'delete' => [
-                    'tags'        => [$name],
-                    'summary'     => 'delete' . $capitalized . 'App() - Delete a given app.',
+                'delete'     => [
+                    'summary'     => 'Delete a given app.',
+                    'description' => 'Delete a given app.',
                     'operationId' => 'delete' . $capitalized . 'App',
-                    'description' => '',
-                    'parameters'  => [
-                        [
-                            'name'        => 'app_name',
-                            'description' => 'Full ARN or simplified name of the app to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
-                    ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Success',
-                            'schema'      => ['$ref' => '#/definitions/Success']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/Success']
                     ],
                 ],
             ],
-            '/' . $name . '/app/{app_name}/endpoint'         => [
-                'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'EndpointsByApp() - Retrieve endpoints for the given application.',
-                    'operationId' => 'get' . $capitalized . 'EndpointsByApp',
-                    'parameters'  => [
-                        [
-                            'name'        => 'app_name',
-                            'description' => 'Name of the application to get endpoints on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
+            '/app/{app_name}/endpoint'         => [
+                'parameters' => [
+                    [
+                        'name'        => 'app_name',
+                        'description' => 'Name of the application to get endpoints on.',
+                        'schema'      => ['type' => 'string'],
+                        'in'          => 'path',
+                        'required'    => true,
                     ],
-                    'responses'   => [
-                        '200'     => [
-                            'description' => 'Endpoints Response',
-                            'schema'      => ['$ref' => '#/definitions/GetEndpointsResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
-                    ],
+                ],
+                'get'        => [
+                    'summary'     => 'Retrieve endpoints for the given application.',
                     'description' => 'This describes the endpoints, detailing its available properties.',
+                    'operationId' => 'get' . $capitalized . 'EndpointsByApp',
+                    'responses'   => [
+                        '200' => ['$ref' => '#/components/responses/SnsEndpointsResponse']
+                    ],
                 ],
-                'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'create' .
-                        $capitalized .
-                        'AppEndpoint() - Create a endpoint for a given application.',
+                'post'       => [
+                    'summary'     => 'Create a endpoint for a given application.',
+                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                     'operationId' => 'create' . $capitalized . 'AppEndpoint',
-                    'parameters'  => [
-                        [
-                            'name'        => 'app_name',
-                            'description' => 'Name of the application to create endpoints on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of endpoint attributes.',
-                            'schema'      => ['$ref' => '#/definitions/AppEndpointRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/AppEndpointRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Endpoint Identifier',
-                            'schema'      => ['$ref' => '#/definitions/EndpointIdentifier']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsEndpointIdentifier']
                     ],
-                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
             ],
-            '/' . $name . '/endpoint'                        => [
+            '/endpoint'                        => [
                 'get'  => [
-                    'tags'        => [$name],
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'Endpoints() - Retrieve endpoint definition for the given endpoint.',
-                    'operationId' => 'get' . $capitalized . 'Endpoints',
+                    'summary'     => 'Retrieve endpoint definition for the given endpoint.',
                     'description' => 'This describes the endpoint, detailing its available properties.',
+                    'operationId' => 'get' . $capitalized . 'Endpoints',
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Endpoints Response',
-                            'schema'      => ['$ref' => '#/definitions/GetEndpointsResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsEndpointsResponse']
                     ],
                 ],
                 'post' => [
-                    'tags'        => [$name],
-                    'summary'     => 'create' . $capitalized . 'Endpoint() - Create a given endpoint.',
+                    'summary'     => 'Create a given endpoint.',
+                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                     'operationId' => 'create' . $capitalized . 'Endpoint',
-                    'parameters'  => [
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of endpoint attributes.',
-                            'schema'      => ['$ref' => '#/definitions/EndpointRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsEndpointRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Endpoint Identifier',
-                            'schema'      => ['$ref' => '#/definitions/EndpointIdentifier']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsEndpointIdentifier']
                     ],
-                    'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                 ],
             ],
-            '/' . $name . '/endpoint/{endpoint_name}'        => [
-                'get'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'get' .
-                        $capitalized .
-                        'EndpointAttributes() - Retrieve endpoint definition for the given endpoint.',
-                    'operationId' => 'get' . $capitalized . 'EndpointAttributes',
-                    'parameters'  => [
-                        [
-                            'name'        => 'endpoint_name',
-                            'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
+            '/endpoint/{endpoint_name}'        => [
+                'parameters' => [
+                    [
+                        'name'        => 'endpoint_name',
+                        'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
+                        'schema'      => ['type' => 'string'],
+                        'in'          => 'path',
+                        'required'    => true,
                     ],
-                    'responses'   => [
-                        '200'     => [
-                            'description' => 'Endpoint Attributes',
-                            'schema'      => ['$ref' => '#/definitions/EndpointAttributesResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
-                    ],
+                ],
+                'get'        => [
+                    'summary'     => 'Retrieve endpoint definition for the given endpoint.',
                     'description' => 'This retrieves the endpoint, detailing its available properties.',
+                    'operationId' => 'get' . $capitalized . 'EndpointAttributes',
+                    'responses'   => [
+                        '200' => ['$ref' => '#/components/responses/SnsEndpointAttributesResponse']
+                    ],
                 ],
-                'post'   => [
-                    'tags'        => [$name],
-                    'summary'     => 'publish' .
-                        $capitalized .
-                        'Endpoint() - Send a message to the given endpoint.',
-                    'operationId' => 'publish' . $capitalized . 'Endpoint',
+                'post'       => [
+                    'summary'     => 'Send a message to the given endpoint.',
                     'description' => 'Post data should be an array of endpoint publish properties.',
-                    'parameters'  => [
-                        [
-                            'name'        => 'endpoint_name',
-                            'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of topic message parameters.',
-                            'schema'      => ['$ref' => '#/definitions/PublishEndpointRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
+                    'operationId' => 'publish' . $capitalized . 'Endpoint',
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsPublishEndpointRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Publish Response',
-                            'schema'      => ['$ref' => '#/definitions/PublishResponse']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/SnsPublishResponse']
                     ],
                 ],
-                'put'    => [
-                    'tags'        => [$name],
-                    'summary'     => 'set' . $capitalized . 'EndpointAttributes() - Update a given endpoint.',
-                    'operationId' => 'set' . $capitalized . 'EndpointAttributes',
-                    'parameters'  => [
-                        [
-                            'name'        => 'endpoint_name',
-                            'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
-                        [
-                            'name'        => 'body',
-                            'description' => 'Array of endpoint attributes.',
-                            'schema'      => ['$ref' => '#/definitions/EndpointAttributesRequest'],
-                            'in'          => 'body',
-                            'required'    => true,
-                        ],
-                    ],
-                    'responses'   => [
-                        '200'     => [
-                            'description' => 'Success',
-                            'schema'      => ['$ref' => '#/definitions/Success']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
-                    ],
+                'put'        => [
+                    'summary'     => 'Update a given endpoint.',
                     'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
-                ],
-                'delete' => [
-                    'tags'        => [$name],
-                    'summary'     => 'delete' . $capitalized . 'Endpoint() - Delete a given endpoint.',
-                    'operationId' => 'delete' . $capitalized . 'Endpoint',
-                    'description' => '',
-                    'parameters'  => [
-                        [
-                            'name'        => 'endpoint_name',
-                            'description' => 'Full ARN or simplified name of the endpoint to perform operations on.',
-                            'type'        => 'string',
-                            'in'          => 'path',
-                            'required'    => true,
-                        ],
+                    'operationId' => 'set' . $capitalized . 'EndpointAttributes',
+                    'requestBody' => [
+                        '$ref' => '#/components/requestBodies/SnsEndpointAttributesRequest'
                     ],
                     'responses'   => [
-                        '200'     => [
-                            'description' => 'Success',
-                            'schema'      => ['$ref' => '#/definitions/Success']
-                        ],
-                        'default' => [
-                            'description' => 'Error',
-                            'schema'      => ['$ref' => '#/definitions/Error']
-                        ]
+                        '200' => ['$ref' => '#/components/responses/Success']
+                    ],
+                ],
+                'delete'     => [
+                    'summary'     => 'Delete a given endpoint.',
+                    'description' => 'Delete a given endpoint.',
+                    'operationId' => 'delete' . $capitalized . 'Endpoint',
+                    'responses'   => [
+                        '200' => ['$ref' => '#/components/responses/Success']
                     ],
                 ],
             ],
         ];
 
+        return array_merge($base, $paths);
+    }
+
+    protected function getApiDocSchemas()
+    {
         $commonAppAttributes = [
             'PlatformCredential'   => [
                 'type'        => 'string',
@@ -1378,19 +979,19 @@ class Sns extends BaseRestService
         ];
 
         $models = [
-            'GetTopicsResponse'              => [
+            'SnsTopicsResponse'                 => [
                 'type'       => 'object',
                 'properties' => [
                     'resource' => [
                         'type'        => 'array',
                         'description' => 'An array of identifying attributes for a topic, use either in requests.',
                         'items'       => [
-                            '$ref' => '#/definitions/TopicIdentifier',
+                            '$ref' => '#/components/schemas/SnsTopicIdentifier',
                         ],
                     ],
                 ],
             ],
-            'TopicRequest'                   => [
+            'SnsTopicRequest'                   => [
                 'type'       => 'object',
                 'properties' => [
                     'Name' => [
@@ -1400,7 +1001,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'TopicIdentifier'                => [
+            'SnsTopicIdentifier'                => [
                 'type'       => 'object',
                 'properties' => [
                     'Topic'    => [
@@ -1413,7 +1014,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'TopicAttributesResponse'        => [
+            'SnsTopicAttributesResponse'        => [
                 'type'       => 'object',
                 'properties' => [
                     'Topic'                   => [
@@ -1458,7 +1059,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'TopicAttributesRequest'         => [
+            'SnsTopicAttributesRequest'         => [
                 'type'       => 'object',
                 'properties' => [
                     'AttributeName'  => [
@@ -1474,19 +1075,19 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'GetSubscriptionsResponse'       => [
+            'SnsSubscriptionsResponse'          => [
                 'type'       => 'object',
                 'properties' => [
                     'resource' => [
                         'type'        => 'array',
                         'description' => 'An array of identifying attributes for a subscription, use either in requests.',
                         'items'       => [
-                            '$ref' => '#/definitions/SubscriptionIdentifier',
+                            '$ref' => '#/components/schemas/SnsSubscriptionIdentifier',
                         ],
                     ],
                 ],
             ],
-            'SubscriptionRequest'            => [
+            'SnsSubscriptionRequest'            => [
                 'type'       => 'object',
                 'properties' => [
                     'Topic'    => [
@@ -1506,7 +1107,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SubscriptionTopicRequest'       => [
+            'SnsSubscriptionTopicRequest'       => [
                 'type'       => 'object',
                 'properties' => [
                     'Protocol' => [
@@ -1521,7 +1122,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SubscriptionIdentifier'         => [
+            'SnsSubscriptionIdentifier'         => [
                 'type'       => 'object',
                 'properties' => [
                     'Subscription'    => [
@@ -1534,7 +1135,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SubscriptionAttributesResponse' => [
+            'SnsSubscriptionAttributesResponse' => [
                 'type'       => 'object',
                 'properties' => [
                     'Subscription'                 => [
@@ -1567,7 +1168,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SubscriptionAttributesRequest'  => [
+            'SnsSubscriptionAttributesRequest'  => [
                 'type'       => 'object',
                 'properties' => [
                     'AttributeName'  => [
@@ -1583,23 +1184,23 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'GetAppResponse'                 => [
+            'SnsAppResponse'                    => [
                 'type'       => 'object',
                 'properties' => [
                     'resource' => [
                         'type'        => 'array',
                         'description' => 'An array of identifying attributes for a app, use either in requests.',
                         'items'       => [
-                            '$ref' => '#/definitions/AppIdentifier',
+                            '$ref' => '#/components/schemas/SnsAppIdentifier',
                         ],
                     ],
                 ],
             ],
-            'AppAttributes'                  => [
+            'SnsAppAttributes'                  => [
                 'type'       => 'object',
                 'properties' => $commonAppAttributes,
             ],
-            'AppRequest'                     => [
+            'SnsAppRequest'                     => [
                 'type'       => 'object',
                 'properties' => [
                     'Name'       => [
@@ -1614,12 +1215,12 @@ class Sns extends BaseRestService
                         'required'    => true,
                     ],
                     'Attributes' => [
-                        'type'        => 'AppAttributes',
+                        'type'        => 'SnsAppAttributes',
                         'description' => 'An array of key-value pairs containing platform-specified application attributes.',
                     ],
                 ],
             ],
-            'AppIdentifier'                  => [
+            'SnsAppIdentifier'                  => [
                 'type'       => 'object',
                 'properties' => [
                     'Application'            => [
@@ -1632,7 +1233,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'AppAttributesResponse'          => [
+            'SnsAppAttributesResponse'          => [
                 'type'       => 'object',
                 'properties' => [
                     'Application'            => [
@@ -1661,29 +1262,29 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'AppAttributesRequest'           => [
+            'SnsAppAttributesRequest'           => [
                 'type'       => 'object',
                 'properties' => [
                     'Attributes' => [
-                        'type'        => 'AppAttributes',
+                        'type'        => 'SnsAppAttributes',
                         'description' => 'Mutable attributes on the endpoint.',
                         'required'    => true,
                     ],
                 ],
             ],
-            'GetEndpointsResponse'           => [
+            'SnsEndpointsResponse'              => [
                 'type'       => 'object',
                 'properties' => [
                     'resource' => [
                         'type'        => 'array',
                         'description' => 'An array of identifying attributes for a topic, use either in requests.',
                         'items'       => [
-                            '$ref' => '#/definitions/EndpointIdentifier',
+                            '$ref' => '#/components/schemas/SnsEndpointIdentifier',
                         ],
                     ],
                 ],
             ],
-            'AppEndpointRequest'             => [
+            'SnsAppEndpointRequest'             => [
                 'type'       => 'object',
                 'properties' => [
                     'Token'          => [
@@ -1699,12 +1300,12 @@ class Sns extends BaseRestService
                         'type'        => 'array',
                         'description' => 'An array of key-value pairs containing endpoint attributes.',
                         'items'       => [
-                            '$ref' => '#/definitions/MessageAttribute',
+                            '$ref' => '#/components/schemas/SnsMessageAttribute',
                         ],
                     ],
                 ],
             ],
-            'EndpointRequest'                => [
+            'SnsEndpointRequest'                => [
                 'type'       => 'object',
                 'properties' => [
                     'Application'    => [
@@ -1725,12 +1326,12 @@ class Sns extends BaseRestService
                         'type'        => 'array',
                         'description' => 'An array of key-value pairs containing endpoint attributes.',
                         'items'       => [
-                            '$ref' => '#/definitions/MessageAttribute',
+                            '$ref' => '#/components/schemas/SnsMessageAttribute',
                         ],
                     ],
                 ],
             ],
-            'EndpointIdentifier'             => [
+            'SnsEndpointIdentifier'             => [
                 'type'       => 'object',
                 'properties' => [
                     'Endpoint'    => [
@@ -1743,7 +1344,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'EndpointAttributesResponse'     => [
+            'SnsEndpointAttributesResponse'     => [
                 'type'       => 'object',
                 'properties' => [
                     'Endpoint'       => [
@@ -1768,21 +1369,21 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'EndpointAttributes'             => [
+            'SnsEndpointAttributes'             => [
                 'type'       => 'object',
                 'properties' => $commonEndpointAttributes,
             ],
-            'EndpointAttributesRequest'      => [
+            'SnsEndpointAttributesRequest'      => [
                 'type'       => 'object',
                 'properties' => [
                     'Attributes' => [
-                        'type'        => 'EndpointAttributes',
+                        'type'        => 'SnsEndpointAttributes',
                         'description' => 'Mutable attributes on the endpoint.',
                         'required'    => true,
                     ],
                 ],
             ],
-            'TopicMessage'                   => [
+            'SnsTopicMessage'                   => [
                 'type'       => 'object',
                 'properties' => [
                     'default' => [
@@ -1836,7 +1437,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'MessageAttributeData'           => [
+            'SnsMessageAttributeData'           => [
                 'type'       => 'object',
                 'properties' => [
                     'DataType'    => [
@@ -1854,16 +1455,16 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'MessageAttribute'               => [
+            'SnsMessageAttribute'               => [
                 'type'       => 'object',
                 'properties' => [
                     '_user_defined_name_' => [
-                        'type'        => 'MessageAttributeData',
+                        'type'        => 'SnsMessageAttributeData',
                         'description' => 'The name of the message attribute as defined by the user or specified platform.',
                     ],
                 ],
             ],
-            'SimplePublishRequest'           => [
+            'SnsSimplePublishRequest'           => [
                 'type'       => 'object',
                 'properties' => [
                     'Topic'             => [
@@ -1883,12 +1484,12 @@ class Sns extends BaseRestService
                         'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
                     ],
                     'MessageAttributes' => [
-                        'type'        => 'MessageAttribute',
+                        'type'        => 'SnsMessageAttribute',
                         'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
                     ],
                 ],
             ],
-            'PublishRequest'                 => [
+            'SnsPublishRequest'                 => [
                 'type'       => 'object',
                 'properties' => [
                     'Topic'             => [
@@ -1900,7 +1501,7 @@ class Sns extends BaseRestService
                         'description' => 'The simple name or ARN of the endpoint you want to publish to. Required if topic not given.',
                     ],
                     'Message'           => [
-                        'type'        => 'TopicMessage',
+                        'type'        => 'SnsTopicMessage',
                         'description' => 'The message you want to send to the topic. The \'default\' field is required.',
                         'required'    => true,
                     ],
@@ -1914,12 +1515,12 @@ class Sns extends BaseRestService
                         'default'     => 'json',
                     ],
                     'MessageAttributes' => [
-                        'type'        => 'MessageAttribute',
+                        'type'        => 'SnsMessageAttribute',
                         'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
                     ],
                 ],
             ],
-            'SimplePublishTopicRequest'      => [
+            'SnsSimplePublishTopicRequest'      => [
                 'type'       => 'object',
                 'properties' => [
                     'Message'           => [
@@ -1931,16 +1532,16 @@ class Sns extends BaseRestService
                         'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
                     ],
                     'MessageAttributes' => [
-                        'type'        => 'MessageAttribute',
+                        'type'        => 'SnsMessageAttribute',
                         'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
                     ],
                 ],
             ],
-            'PublishTopicRequest'            => [
+            'SnsPublishTopicRequest'            => [
                 'type'       => 'object',
                 'properties' => [
                     'Message'           => [
-                        'type'        => 'TopicMessage',
+                        'type'        => 'SnsTopicMessage',
                         'description' => 'The message you want to send to the topic. The \'default\' field is required.',
                         'required'    => true,
                     ],
@@ -1954,12 +1555,12 @@ class Sns extends BaseRestService
                         'default'     => 'json',
                     ],
                     'MessageAttributes' => [
-                        'type'        => 'MessageAttribute',
+                        'type'        => 'SnsMessageAttribute',
                         'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
                     ],
                 ],
             ],
-            'SimplePublishEndpointRequest'   => [
+            'SnsSimplePublishEndpointRequest'   => [
                 'type'       => 'object',
                 'properties' => [
                     'Message'           => [
@@ -1971,16 +1572,16 @@ class Sns extends BaseRestService
                         'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
                     ],
                     'MessageAttributes' => [
-                        'type'        => 'MessageAttribute',
+                        'type'        => 'SnsMessageAttribute',
                         'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
                     ],
                 ],
             ],
-            'PublishEndpointRequest'         => [
+            'SnsPublishEndpointRequest'         => [
                 'type'       => 'object',
                 'properties' => [
                     'Message'           => [
-                        'type'        => 'TopicMessage',
+                        'type'        => 'SnsTopicMessage',
                         'description' => 'The message you want to send to the topic. The \'default\' field is required.',
                         'required'    => true,
                     ],
@@ -1994,12 +1595,12 @@ class Sns extends BaseRestService
                         'default'     => 'json',
                     ],
                     'MessageAttributes' => [
-                        'type'        => 'MessageAttribute',
+                        'type'        => 'SnsMessageAttribute',
                         'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
                     ],
                 ],
             ],
-            'PublishResponse'                => [
+            'SnsPublishResponse'                => [
                 'type'       => 'object',
                 'properties' => [
                     'MessageId' => [
@@ -2010,9 +1611,6 @@ class Sns extends BaseRestService
             ],
         ];
 
-        $base['paths'] = array_merge($base['paths'], $apis);
-        $base['definitions'] = array_merge($base['definitions'], $models);
-
-        return $base;
+        return $models;
     }
 }

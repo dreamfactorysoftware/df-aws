@@ -277,23 +277,6 @@ class RedshiftSchema extends SqlSchema
     }
 
     /**
-     * Enables or disables integrity check.
-     *
-     * @param boolean $check  whether to turn on or off the integrity check.
-     * @param string  $schema the schema of the tables. Defaults to empty string, meaning the current or default schema.
-     *
-     */
-    public function checkIntegrity($check = true, $schema = '')
-    {
-        $enable = $check ? 'ENABLE' : 'DISABLE';
-        $tableNames = $this->getTableNames($schema);
-        $db = $this->connection;
-        foreach ($tableNames as $table) {
-            $db->statement("ALTER TABLE {$table->quotedName} $enable TRIGGER ALL");
-        }
-    }
-
-    /**
      * @inheritdoc
      */
     protected function findColumns(TableSchema $table)
@@ -377,10 +360,6 @@ SELECT nspname FROM pg_namespace WHERE nspname NOT IN ('information_schema','pg_
 MYSQL;
         $rows = $this->selectColumn($sql);
 
-        if (false === array_search(static::DEFAULT_SCHEMA, $rows)) {
-            $rows[] = static::DEFAULT_SCHEMA;
-        }
-
         return $rows;
     }
 
@@ -397,9 +376,6 @@ EOD;
             $sql .= " AND table_schema = '$schema'";
         }
 
-        $defaultSchema = $this->getNamingSchema();
-        $addSchema = (!empty($schema) && ($defaultSchema !== $schema));
-
         $rows = $this->connection->select($sql);
 
         $names = [];
@@ -408,7 +384,7 @@ EOD;
             $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
             $resourceName = isset($row['table_name']) ? $row['table_name'] : '';
             $internalName = $schemaName . '.' . $resourceName;
-            $name = ($addSchema) ? $internalName : $resourceName;
+            $name = $resourceName;
             $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($resourceName);
             $settings = compact('schemaName', 'resourceName', 'name', 'internalName','quotedName');
             $names[strtolower($name)] = new TableSchema($settings);
@@ -430,9 +406,6 @@ EOD;
             $sql .= " AND table_schema = '$schema'";
         }
 
-        $defaultSchema = $this->getNamingSchema();
-        $addSchema = (!empty($schema) && ($defaultSchema !== $schema));
-
         $rows = $this->connection->select($sql);
 
         $names = [];
@@ -441,7 +414,7 @@ EOD;
             $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
             $resourceName = isset($row['table_name']) ? $row['table_name'] : '';
             $internalName = $schemaName . '.' . $resourceName;
-            $name = ($addSchema) ? $internalName : $resourceName;
+            $name = $resourceName;
             $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($resourceName);
             $settings = compact('schemaName', 'resourceName', 'name', 'internalName','quotedName');
             $settings['isView'] = true;
