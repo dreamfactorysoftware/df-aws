@@ -35,8 +35,8 @@ class FileServiceS3Test extends \DreamFactory\Core\Testing\FileServiceTestCase
      * Testing POST
      ************************************************/
 
-    public function testPOSTContainerWithCheckExist()
-    {
+//    public function testPOSTContainerWithCheckExist()
+//    {
 //        $payload = '{"name":"' . static::FOLDER_2 . '"}';
 //
 //        $rs = $this->makeRequest(Verbs::POST, null, [], $payload);
@@ -49,7 +49,7 @@ class FileServiceS3Test extends \DreamFactory\Core\Testing\FileServiceTestCase
         //$rs = $this->_call(Verbs::POST, $this->prefix."?check_exist=true", $payload);
         //$this->assertResponseStatus(400);
         //$this->assertContains("Container 'beta15lam' already exists.", $rs->getContent());
-    }
+//    }
 
     /************************************************
      * Testing GET
