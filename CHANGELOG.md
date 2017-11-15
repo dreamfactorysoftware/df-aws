@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - DF-1224 Added ability to set different default limits (max_records_returned) per service
+- DF-927 Added support for Amazon IAM authentication
 
 ## [0.14.0] - 2017-11-03
 - Upgrade Swagger to OpenAPI 3.0 specification
