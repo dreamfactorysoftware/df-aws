@@ -42,11 +42,8 @@ class SnsApplication extends BaseSnsResource
     /**
      * {@inheritdoc}
      */
-    public function getResources($only_handlers = false)
+    public function getResources()
     {
-        if ($only_handlers) {
-            return [];
-        }
 //        $refresh = $this->request->queryBool('refresh');
 
         $out = [];
