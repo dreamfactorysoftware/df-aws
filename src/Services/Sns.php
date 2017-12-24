@@ -42,8 +42,8 @@ class Sns extends BaseRestService
      * List types when requesting resources
      */
     const FORMAT_SIMPLE = 'simple';
-    const FORMAT_ARN = 'arn';
-    const FORMAT_FULL = 'full';
+    const FORMAT_ARN    = 'arn';
+    const FORMAT_FULL   = 'full';
 
     //*************************************************************************
     //	Members
@@ -679,7 +679,7 @@ class Sns extends BaseRestService
                         ],
                     ],
                     'responses'   => [
-                        '200' => ['$ref' => '#/components/responses/SnsComponentList']
+                        '200' => ['$ref' => '#/components/responses/SnsSubscriptionsResponse']
                     ],
                 ],
                 'post'       => [
@@ -699,7 +699,7 @@ class Sns extends BaseRestService
                         '$ref' => '#/components/requestBodies/SnsSubscriptionTopicRequest'
                     ],
                     'responses'   => [
-                        '200' => ['$ref' => '#/components/responses/SnsSubscriptionIdentifier']
+                        '200' => ['$ref' => '#/components/responses/SnsSubscriptionsResponse']
                     ],
                 ],
             ],
@@ -720,7 +720,7 @@ class Sns extends BaseRestService
                         '$ref' => '#/components/requestBodies/SnsSubscriptionRequest'
                     ],
                     'responses'   => [
-                        '200' => ['$ref' => '#/components/responses/SnsSubscriptionIdentifier']
+                        '200' => ['$ref' => '#/components/responses/SnsSubscriptionsResponse']
                     ],
                 ],
             ],
@@ -768,7 +768,7 @@ class Sns extends BaseRestService
                     'description' => 'This describes the app, detailing its available properties.',
                     'operationId' => 'get' . $capitalized . 'Apps',
                     'responses'   => [
-                        '200' => ['$ref' => '#/components/responses/SnsAppsResponse']
+                        '200' => ['$ref' => '#/components/responses/SnsApplicationsResponse']
                     ],
                 ],
                 'post' => [
@@ -779,7 +779,7 @@ class Sns extends BaseRestService
                         '$ref' => '#/components/requestBodies/SnsAppRequest'
                     ],
                     'responses'   => [
-                        '200' => ['$ref' => '#/components/responses/SnsAppIdentifier']
+                        '200' => ['$ref' => '#/components/responses/SnsApplicationsResponse']
                     ],
                 ],
             ],
@@ -844,10 +844,10 @@ class Sns extends BaseRestService
                     'description' => 'Post data should be an array of endpoint attributes including \'Name\'.',
                     'operationId' => 'create' . $capitalized . 'AppEndpoint',
                     'requestBody' => [
-                        '$ref' => '#/components/requestBodies/AppEndpointRequest'
+                        '$ref' => '#/components/requestBodies/SnsAppEndpointRequest'
                     ],
                     'responses'   => [
-                        '200' => ['$ref' => '#/components/responses/SnsEndpointIdentifier']
+                        '200' => ['$ref' => '#/components/responses/SnsEndpointsResponse']
                     ],
                 ],
             ],
@@ -868,7 +868,7 @@ class Sns extends BaseRestService
                         '$ref' => '#/components/requestBodies/SnsEndpointRequest'
                     ],
                     'responses'   => [
-                        '200' => ['$ref' => '#/components/responses/SnsEndpointIdentifier']
+                        '200' => ['$ref' => '#/components/responses/SnsEndpointsResponse']
                     ],
                 ],
             ],
@@ -926,6 +926,749 @@ class Sns extends BaseRestService
         return array_merge($base, $paths);
     }
 
+    protected function getApiDocRequests()
+    {
+        $requestBodies = [
+            'SnsPublishRequest'                      => [
+                'description' => 'Publish Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsPublishRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsPublishRequestObject']
+                    ],
+                ],
+            ],
+            'SnsPublishRequestObject'                => [
+                'type'       => 'object',
+                'required'   => ['Message'],
+                'properties' => [
+                    'Topic'             => [
+                        'type'        => 'string',
+                        'description' => 'The simple name or ARN of the topic you want to publish to. Required if endpoint not given.',
+                    ],
+                    'Endpoint'          => [
+                        'type'        => 'string',
+                        'description' => 'The simple name or ARN of the endpoint you want to publish to. Required if topic not given.',
+                    ],
+                    'Message'           => ['$ref' => '#/components/schemas/SnsTopicMessage'],
+                    'Subject'           => [
+                        'type'        => 'string',
+                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
+                    ],
+                    'MessageStructure'  => [
+                        'type'        => 'string',
+                        'description' => 'Set MessageStructure to "json".',
+                        'default'     => 'json',
+                    ],
+                    'MessageAttributes' => ['$ref' => '#/components/schemas/SnsMessageAttribute'],
+                ],
+            ],
+            'SnsTopicRequest'                        => [
+                'description' => 'Topic Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsTopicRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsTopicRequestObject']
+                    ],
+                ],
+            ],
+            'SnsTopicRequestObject'                  => [
+                'type'       => 'object',
+                'properties' => [
+                    'Name' => [
+                        'type'        => 'string',
+                        'description' => 'The name of the topic you want to create.',
+                        'required'    => true,
+                    ],
+                ],
+            ],
+            'SnsSimplePublishRequest'                => [
+                'description' => 'Simple Publish Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSimplePublishRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSimplePublishRequestObject']
+                    ],
+                ],
+            ],
+            'SnsSimplePublishRequestObject'          => [
+                'type'       => 'object',
+                'properties' => [
+                    'Topic'             => [
+                        'type'        => 'string',
+                        'description' => 'The simple name or ARN of the topic you want to publish to. Required if endpoint not given.',
+                    ],
+                    'Endpoint'          => [
+                        'type'        => 'string',
+                        'description' => 'The simple name or ARN of the endpoint you want to publish to. Required if topic not given.',
+                    ],
+                    'Message'           => [
+                        'type'        => 'string',
+                        'description' => 'The message you want to send to the topic, sends the same message to all transport protocols. ',
+                    ],
+                    'Subject'           => [
+                        'type'        => 'string',
+                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
+                    ],
+                    'MessageAttributes' => ['$ref' => '#/components/schemas/SnsMessageAttribute'],
+                ],
+            ],
+            'SnsSimplePublishTopicRequest'           => [
+                'description' => 'Simple Publish Topic Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSimplePublishTopicRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSimplePublishTopicRequestObject']
+                    ],
+                ],
+            ],
+            'SnsSimplePublishTopicRequestObject'     => [
+                'type'       => 'object',
+                'properties' => [
+                    'Message'           => [
+                        'type'        => 'string',
+                        'description' => 'The message you want to send to the topic, sends the same message to all transport protocols.',
+                    ],
+                    'Subject'           => [
+                        'type'        => 'string',
+                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
+                    ],
+                    'MessageAttributes' => ['$ref' => '#/components/schemas/SnsMessageAttribute'],
+                ],
+            ],
+            'SnsPublishTopicRequest'                 => [
+                'description' => 'Publish Topic Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsPublishTopicRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsPublishTopicRequestObject']
+                    ],
+                ],
+            ],
+            'SnsPublishTopicRequestObject'           => [
+                'type'       => 'object',
+                'required'   => ['Message'],
+                'properties' => [
+                    'Message'           => ['$ref' => '#/components/schemas/SnsTopicMessage'],
+                    'Subject'           => [
+                        'type'        => 'string',
+                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
+                    ],
+                    'MessageStructure'  => [
+                        'type'        => 'string',
+                        'description' => 'Set MessageStructure to "json".',
+                        'default'     => 'json',
+                    ],
+                    'MessageAttributes' => ['$ref' => '#/components/schemas/SnsMessageAttribute'],
+                ],
+            ],
+            'SnsSimplePublishEndpointRequest'        => [
+                'description' => 'Simple Publish Endpoint Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSimplePublishEndpointRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSimplePublishEndpointRequestObject']
+                    ],
+                ],
+            ],
+            'SnsSimplePublishEndpointRequestObject'  => [
+                'type'       => 'object',
+                'properties' => [
+                    'Message'           => [
+                        'type'        => 'string',
+                        'description' => 'The message you want to send to the topic, sends the same message to all transport protocols.',
+                    ],
+                    'Subject'           => [
+                        'type'        => 'string',
+                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
+                    ],
+                    'MessageAttributes' => ['$ref' => '#/components/schemas/SnsMessageAttribute'],
+                ],
+            ],
+            'SnsPublishEndpointRequest'              => [
+                'description' => 'Publish Endpoint Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsPublishEndpointRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsPublishEndpointRequestObject']
+                    ],
+                ],
+            ],
+            'SnsPublishEndpointRequestObject'        => [
+                'type'       => 'object',
+                'required'   => ['Message'],
+                'properties' => [
+                    'Message'           => ['$ref' => '#/components/schemas/SnsTopicMessage'],
+                    'Subject'           => [
+                        'type'        => 'string',
+                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
+                    ],
+                    'MessageStructure'  => [
+                        'type'        => 'string',
+                        'description' => 'Set MessageStructure to "json".',
+                        'default'     => 'json',
+                    ],
+                    'MessageAttributes' => ['$ref' => '#/components/schemas/SnsMessageAttribute'],
+                ],
+            ],
+            'SnsTopicAttributesRequest'              => [
+                'description' => 'Topic Attributes Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsTopicAttributesRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsTopicAttributesRequestObject']
+                    ],
+                ],
+            ],
+            'SnsTopicAttributesRequestObject'        => [
+                'type'       => 'object',
+                'properties' => [
+                    'AttributeName'  => [
+                        'type'        => 'string',
+                        'description' => 'The name of the attribute you want to set.',
+                        'enum'        => ['Policy', 'DisplayName', 'DeliveryPolicy'],
+                        'default'     => 'DisplayName',
+                        'required'    => true,
+                    ],
+                    'AttributeValue' => [
+                        'type'        => 'string',
+                        'description' => 'The value of the attribute you want to set.',
+                    ],
+                ],
+            ],
+            'SnsSubscriptionRequest'                 => [
+                'description' => 'Subscription Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSubscriptionRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSubscriptionRequestObject']
+                    ],
+                ],
+            ],
+            'SnsSubscriptionRequestObject'           => [
+                'type'       => 'object',
+                'properties' => [
+                    'Topic'    => [
+                        'type'        => 'string',
+                        'description' => 'The topic\'s simplified name or Amazon Resource Name.',
+                        'required'    => true,
+                    ],
+                    'Protocol' => [
+                        'type'        => 'string',
+                        'description' => 'The protocol you want to use.',
+                        'enum'        => ['http', 'https', 'email', 'email-json', 'sms', 'sqs', 'application'],
+                        'required'    => true,
+                    ],
+                    'Endpoint' => [
+                        'type'        => 'string',
+                        'description' => 'The endpoint that you want to receive notifications, formats vary by protocol.',
+                    ],
+                ],
+            ],
+            'SnsSubscriptionTopicRequest'            => [
+                'description' => 'Subscription Topic Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSubscriptionTopicRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSubscriptionTopicRequestObject']
+                    ],
+                ],
+            ],
+            'SnsSubscriptionTopicRequestObject'      => [
+                'type'       => 'object',
+                'properties' => [
+                    'Protocol' => [
+                        'type'        => 'string',
+                        'description' => 'The protocol you want to use.',
+                        'enum'        => ['http', 'https', 'email', 'email-json', 'sms', 'sqs', 'application'],
+                        'required'    => true,
+                    ],
+                    'Endpoint' => [
+                        'type'        => 'string',
+                        'description' => 'The endpoint that you want to receive notifications, formats vary by protocol.',
+                    ],
+                ],
+            ],
+            'SnsSubscriptionAttributesRequest'       => [
+                'description' => 'Subscription Attributes Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSubscriptionAttributesRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsSubscriptionAttributesRequestObject']
+                    ],
+                ],
+            ],
+            'SnsSubscriptionAttributesRequestObject' => [
+                'type'       => 'object',
+                'properties' => [
+                    'AttributeName'  => [
+                        'type'        => 'string',
+                        'description' => 'The name of the attribute you want to set.',
+                        'enum'        => ['DeliveryPolicy', 'RawMessageDelivery'],
+                        'default'     => 'DeliveryPolicy',
+                        'required'    => true,
+                    ],
+                    'AttributeValue' => [
+                        'type'        => 'string',
+                        'description' => 'The value of the attribute you want to set.',
+                    ],
+                ],
+            ],
+            'SnsAppRequest'                          => [
+                'description' => 'App Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsAppRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsAppRequestObject']
+                    ],
+                ],
+            ],
+            'SnsAppRequestObject'                    => [
+                'type'       => 'object',
+                'properties' => [
+                    'Name'       => [
+                        'type'        => 'string',
+                        'description' => 'Desired platform application name.',
+                        'required'    => true,
+                    ],
+                    'Platform'   => [
+                        'type'        => 'string',
+                        'description' => 'One of the following supported platforms.',
+                        'enum'        => ['ADM', 'APNS', 'APNS_SANDBOX', 'GCM'],
+                        'required'    => true,
+                    ],
+                    'Attributes' => ['$ref' => '#/components/schemas/SnsAppAttributes'],
+                ],
+            ],
+            'SnsAppAttributesRequest'                => [
+                'description' => 'App Attributes Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsAppAttributesRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsAppAttributesRequestObject']
+                    ],
+                ],
+            ],
+            'SnsAppAttributesRequestObject'          => [
+                'type'       => 'object',
+                'properties' => [
+                    'Attributes' => ['$ref' => '#/components/schemas/SnsAppAttributes'],
+                ],
+            ],
+            'SnsAppEndpointRequest'                  => [
+                'description' => 'App Endpoint Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsAppEndpointRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsAppEndpointRequestObject']
+                    ],
+                ],
+            ],
+            'SnsAppEndpointRequestObject'            => [
+                'type'       => 'object',
+                'properties' => [
+                    'Token'          => [
+                        'type'        => 'string',
+                        'description' => 'Unique identifier created by the notification service for an app on a device.',
+                        'required'    => true,
+                    ],
+                    'CustomUserData' => [
+                        'type'        => 'string',
+                        'description' => 'Arbitrary user data to associate with the endpoint.',
+                    ],
+                    'Attributes'     => [
+                        'type'        => 'array',
+                        'description' => 'An array of key-value pairs containing endpoint attributes.',
+                        'items'       => [
+                            '$ref' => '#/components/schemas/SnsMessageAttribute',
+                        ],
+                    ],
+                ],
+            ],
+            'SnsEndpointRequest'                     => [
+                'description' => 'Endpoint Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsEndpointRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsEndpointRequestObject']
+                    ],
+                ],
+            ],
+            'SnsEndpointRequestObject'               => [
+                'type'       => 'object',
+                'properties' => [
+                    'Application'    => [
+                        'type'        => 'string',
+                        'description' => 'The application\'s simplified name or Amazon Resource Name.',
+                        "required"    => true,
+                    ],
+                    'Token'          => [
+                        'type'        => 'string',
+                        'description' => 'Unique identifier created by the notification service for an app on a device.',
+                        'required'    => true,
+                    ],
+                    'CustomUserData' => [
+                        'type'        => 'string',
+                        'description' => 'Arbitrary user data to associate with the endpoint.',
+                    ],
+                    'Attributes'     => [
+                        'type'        => 'array',
+                        'description' => 'An array of key-value pairs containing endpoint attributes.',
+                        'items'       => [
+                            '$ref' => '#/components/schemas/SnsMessageAttribute',
+                        ],
+                    ],
+                ],
+            ],
+            'SnsEndpointAttributesRequest'           => [
+                'description' => 'Endpoint Attributes Request',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsEndpointAttributesRequestObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/requestBodies/SnsEndpointAttributesRequestObject']
+                    ],
+                ],
+            ],
+            'SnsEndpointAttributesRequestObject'     => [
+                'type'       => 'object',
+                'required'   => ['Attributes'],
+                'properties' => [
+                    'Attributes' => ['$ref' => '#/components/schemas/SnsEndpointAttributes'],
+                ],
+            ]
+        ];
+
+        return $requestBodies;
+    }
+
+    protected function getApiDocResponses()
+    {
+        $responses = [
+            'SnsTopicsResponse'                       => [
+                'description' => 'Topics Response',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/responses/SnsTopicsResponseObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/responses/SnsTopicsResponseObject']
+                    ],
+                ],
+            ],
+            'SnsTopicsResponseObject'                 => [
+                'type'       => 'object',
+                'properties' => [
+                    'resource' => [
+                        'type'        => 'array',
+                        'description' => 'An array of identifying attributes for a topic, use either in requests.',
+                        'items'       => [
+                            '$ref' => '#/components/schemas/SnsTopicIdentifier',
+                        ],
+                    ],
+                ],
+            ],
+            'SnsTopicAttributesResponse'              => [
+                'description' => 'Topic Attributes Response',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/responses/SnsTopicAttributesResponseObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/responses/SnsTopicAttributesResponseObject']
+                    ],
+                ],
+            ],
+            'SnsTopicAttributesResponseObject'        => [
+                'type'       => 'object',
+                'properties' => [
+                    'Topic'                   => [
+                        'type'        => 'string',
+                        'description' => 'The topic\'s simplified name.',
+                    ],
+                    'TopicArn'                => [
+                        'type'        => 'string',
+                        'description' => 'The topic\'s Amazon Resource Name.',
+                    ],
+                    'Owner'                   => [
+                        'type'        => 'string',
+                        'description' => 'The AWS account ID of the topic\'s owner.',
+                    ],
+                    'Policy'                  => [
+                        'type'        => 'string',
+                        'description' => 'The JSON serialization of the topic\'s access control policy.',
+                    ],
+                    'DisplayName'             => [
+                        'type'        => 'string',
+                        'description' => 'The human-readable name used in the "From" field for notifications to email and email-json endpoints.',
+                    ],
+                    'SubscriptionsPending'    => [
+                        'type'        => 'string',
+                        'description' => 'The number of subscriptions pending confirmation on this topic.',
+                    ],
+                    'SubscriptionsConfirmed'  => [
+                        'type'        => 'string',
+                        'description' => 'The number of confirmed subscriptions on this topic.',
+                    ],
+                    'SubscriptionsDeleted'    => [
+                        'type'        => 'string',
+                        'description' => 'The number of deleted subscriptions on this topic.',
+                    ],
+                    'DeliveryPolicy'          => [
+                        'type'        => 'string',
+                        'description' => 'The JSON serialization of the topic\'s delivery policy.',
+                    ],
+                    'EffectiveDeliveryPolicy' => [
+                        'type'        => 'string',
+                        'description' => 'The JSON serialization of the effective delivery policy that takes into account system defaults.',
+                    ],
+                ],
+            ],
+            'SnsSubscriptionsResponse'                => [
+                'description' => 'Subscriptions Response',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/responses/SnsSubscriptionsResponseObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/responses/SnsSubscriptionsResponseObject']
+                    ],
+                ],
+            ],
+            'SnsSubscriptionsResponseObject'          => [
+                'type'       => 'object',
+                'properties' => [
+                    'resource' => [
+                        'type'        => 'array',
+                        'description' => 'An array of identifying attributes for a subscription, use either in requests.',
+                        'items'       => [
+                            '$ref' => '#/components/schemas/SnsSubscriptionIdentifier',
+                        ],
+                    ],
+                ],
+            ],
+            'SnsSubscriptionAttributesResponse'       => [
+                'description' => 'Subscriptions Attributes Response',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/responses/SnsSubscriptionAttributesResponseObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/responses/SnsSubscriptionAttributesResponseObject']
+                    ],
+                ],
+            ],
+            'SnsSubscriptionAttributesResponseObject' => [
+                'type'       => 'object',
+                'properties' => [
+                    'Subscription'                 => [
+                        'type'        => 'string',
+                        'description' => 'The subscription\'s simplified name.',
+                    ],
+                    'SubscriptionArn'              => [
+                        'type'        => 'string',
+                        'description' => 'The subscription\'s Amazon Resource Name.',
+                    ],
+                    'TopicArn'                     => [
+                        'type'        => 'string',
+                        'description' => 'The topic\'s Amazon Resource Name.',
+                    ],
+                    'Owner'                        => [
+                        'type'        => 'string',
+                        'description' => 'The AWS account ID of the topic\'s owner.',
+                    ],
+                    'ConfirmationWasAuthenticated' => [
+                        'type'        => 'boolean',
+                        'description' => 'True if the subscription confirmation request was authenticated.',
+                    ],
+                    'DeliveryPolicy'               => [
+                        'type'        => 'string',
+                        'description' => 'The JSON serialization of the topic\'s delivery policy.',
+                    ],
+                    'EffectiveDeliveryPolicy'      => [
+                        'type'        => 'string',
+                        'description' => 'The JSON serialization of the effective delivery policy that takes into account system defaults.',
+                    ],
+                ],
+            ],
+            'SnsApplicationsResponse'                 => [
+                'description' => 'Applications Response',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/responses/SnsApplicationsResponseObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/responses/SnsApplicationsResponseObject']
+                    ],
+                ],
+            ],
+            'SnsApplicationsResponseObject'           => [
+                'type'       => 'object',
+                'properties' => [
+                    'resource' => [
+                        'type'        => 'array',
+                        'description' => 'An array of identifying attributes for a app, use either in requests.',
+                        'items'       => [
+                            '$ref' => '#/components/schemas/SnsAppIdentifier',
+                        ],
+                    ],
+                ],
+            ],
+            'SnsAppAttributesResponse'                => [
+                'description' => 'Application Attributes Response',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/responses/SnsAppAttributesResponseObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/responses/SnsAppAttributesResponseObject']
+                    ],
+                ],
+            ],
+            'SnsAppAttributesResponseObject'          => [
+                'type'       => 'object',
+                'properties' => [
+                    'Application'            => [
+                        'type'        => 'string',
+                        'description' => 'The app\'s simplified name.',
+                    ],
+                    'PlatformApplicationArn' => [
+                        'type'        => 'string',
+                        'description' => 'The app\'s Amazon Resource Name.',
+                    ],
+                    'EventEndpointCreated'   => [
+                        'type'        => 'string',
+                        'description' => 'Topic ARN to which EndpointCreated event notifications should be sent.',
+                    ],
+                    'EventEndpointUpdated'   => [
+                        'type'        => 'string',
+                        'description' => 'Topic ARN to which EndpointUpdated event notifications should be sent.',
+                    ],
+                    'EventEndpointDeleted'   => [
+                        'type'        => 'string',
+                        'description' => 'Topic ARN to which EndpointDeleted event notifications should be sent.',
+                    ],
+                    'EventDeliveryFailure'   => [
+                        'type'        => 'string',
+                        'description' => 'Topic ARN to which DeliveryFailure event notifications should be sent upon Direct Publish delivery failure (permanent) to one of the application\'s endpoints.',
+                    ],
+                ],
+            ],
+            'SnsEndpointsResponse'                    => [
+                'description' => 'Endpoints Response',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/responses/SnsEndpointsResponseObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/responses/SnsEndpointsResponseObject']
+                    ],
+                ],
+            ],
+            'SnsEndpointsResponseObject'              => [
+                'type'       => 'object',
+                'properties' => [
+                    'resource' => [
+                        'type'        => 'array',
+                        'description' => 'An array of identifying attributes for a topic, use either in requests.',
+                        'items'       => [
+                            '$ref' => '#/components/schemas/SnsEndpointIdentifier',
+                        ],
+                    ],
+                ],
+            ],
+            'SnsEndpointAttributesResponse'           => [
+                'description' => 'Endpoints Response',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/responses/SnsEndpointAttributesResponseObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/responses/SnsEndpointAttributesResponseObject']
+                    ],
+                ],
+            ],
+            'SnsEndpointAttributesResponseObject'     => [
+                'type'       => 'object',
+                'properties' => [
+                    'Endpoint'       => [
+                        'type'        => 'string',
+                        'description' => 'The endpoint\'s simplified name.',
+                    ],
+                    'EndpointArn'    => [
+                        'type'        => 'string',
+                        'description' => 'The endpoint\'s Amazon Resource Name.',
+                    ],
+                    'CustomUserData' => [
+                        'type'        => 'string',
+                        'description' => 'Arbitrary user data to associate with the endpoint.',
+                    ],
+                    'Enabled'        => [
+                        'type'        => 'boolean',
+                        'description' => 'The flag that enables/disables delivery to the endpoint.',
+                    ],
+                    'Token'          => [
+                        'type'        => 'string',
+                        'description' => 'The device token, also referred to as a registration id, for an app and mobile device.',
+                    ],
+                ],
+            ],
+            'SnsPublishResponse'                      => [
+                'description' => 'Publish Response',
+                'content'     => [
+                    'application/json' => [
+                        'schema' => ['$ref' => '#/components/responses/SnsPublishResponseObject']
+                    ],
+                    'application/xml'  => [
+                        'schema' => ['$ref' => '#/components/responses/SnsPublishResponseObject']
+                    ],
+                ],
+            ],
+            'SnsPublishResponseObject'                => [
+                'type'       => 'object',
+                'properties' => [
+                    'MessageId' => [
+                        'type'        => 'string',
+                        'description' => 'Unique identifier assigned to the published message.',
+                    ],
+                ],
+            ]
+        ];
+
+        return $responses;
+    }
+
     protected function getApiDocSchemas()
     {
         $commonAppAttributes = [
@@ -971,29 +1714,7 @@ class Sns extends BaseRestService
         ];
 
         $models = [
-            'SnsTopicsResponse'                 => [
-                'type'       => 'object',
-                'properties' => [
-                    'resource' => [
-                        'type'        => 'array',
-                        'description' => 'An array of identifying attributes for a topic, use either in requests.',
-                        'items'       => [
-                            '$ref' => '#/components/schemas/SnsTopicIdentifier',
-                        ],
-                    ],
-                ],
-            ],
-            'SnsTopicRequest'                   => [
-                'type'       => 'object',
-                'properties' => [
-                    'Name' => [
-                        'type'        => 'string',
-                        'description' => 'The name of the topic you want to create.',
-                        'required'    => true,
-                    ],
-                ],
-            ],
-            'SnsTopicIdentifier'                => [
+            'SnsTopicIdentifier'        => [
                 'type'       => 'object',
                 'properties' => [
                     'Topic'    => [
@@ -1006,115 +1727,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SnsTopicAttributesResponse'        => [
-                'type'       => 'object',
-                'properties' => [
-                    'Topic'                   => [
-                        'type'        => 'string',
-                        'description' => 'The topic\'s simplified name.',
-                    ],
-                    'TopicArn'                => [
-                        'type'        => 'string',
-                        'description' => 'The topic\'s Amazon Resource Name.',
-                    ],
-                    'Owner'                   => [
-                        'type'        => 'string',
-                        'description' => 'The AWS account ID of the topic\'s owner.',
-                    ],
-                    'Policy'                  => [
-                        'type'        => 'string',
-                        'description' => 'The JSON serialization of the topic\'s access control policy.',
-                    ],
-                    'DisplayName'             => [
-                        'type'        => 'string',
-                        'description' => 'The human-readable name used in the "From" field for notifications to email and email-json endpoints.',
-                    ],
-                    'SubscriptionsPending'    => [
-                        'type'        => 'string',
-                        'description' => 'The number of subscriptions pending confirmation on this topic.',
-                    ],
-                    'SubscriptionsConfirmed'  => [
-                        'type'        => 'string',
-                        'description' => 'The number of confirmed subscriptions on this topic.',
-                    ],
-                    'SubscriptionsDeleted'    => [
-                        'type'        => 'string',
-                        'description' => 'The number of deleted subscriptions on this topic.',
-                    ],
-                    'DeliveryPolicy'          => [
-                        'type'        => 'string',
-                        'description' => 'The JSON serialization of the topic\'s delivery policy.',
-                    ],
-                    'EffectiveDeliveryPolicy' => [
-                        'type'        => 'string',
-                        'description' => 'The JSON serialization of the effective delivery policy that takes into account system defaults.',
-                    ],
-                ],
-            ],
-            'SnsTopicAttributesRequest'         => [
-                'type'       => 'object',
-                'properties' => [
-                    'AttributeName'  => [
-                        'type'        => 'string',
-                        'description' => 'The name of the attribute you want to set.',
-                        'enum'        => ['Policy', 'DisplayName', 'DeliveryPolicy'],
-                        'default'     => 'DisplayName',
-                        'required'    => true,
-                    ],
-                    'AttributeValue' => [
-                        'type'        => 'string',
-                        'description' => 'The value of the attribute you want to set.',
-                    ],
-                ],
-            ],
-            'SnsSubscriptionsResponse'          => [
-                'type'       => 'object',
-                'properties' => [
-                    'resource' => [
-                        'type'        => 'array',
-                        'description' => 'An array of identifying attributes for a subscription, use either in requests.',
-                        'items'       => [
-                            '$ref' => '#/components/schemas/SnsSubscriptionIdentifier',
-                        ],
-                    ],
-                ],
-            ],
-            'SnsSubscriptionRequest'            => [
-                'type'       => 'object',
-                'properties' => [
-                    'Topic'    => [
-                        'type'        => 'string',
-                        'description' => 'The topic\'s simplified name or Amazon Resource Name.',
-                        'required'    => true,
-                    ],
-                    'Protocol' => [
-                        'type'        => 'string',
-                        'description' => 'The protocol you want to use.',
-                        'enum'        => ['http', 'https', 'email', 'email-json', 'sms', 'sqs', 'application'],
-                        'required'    => true,
-                    ],
-                    'Endpoint' => [
-                        'type'        => 'string',
-                        'description' => 'The endpoint that you want to receive notifications, formats vary by protocol.',
-                    ],
-                ],
-            ],
-            'SnsSubscriptionTopicRequest'       => [
-                'type'       => 'object',
-                'properties' => [
-                    'Protocol' => [
-                        'type'        => 'string',
-                        'description' => 'The protocol you want to use.',
-                        'enum'        => ['http', 'https', 'email', 'email-json', 'sms', 'sqs', 'application'],
-                        'required'    => true,
-                    ],
-                    'Endpoint' => [
-                        'type'        => 'string',
-                        'description' => 'The endpoint that you want to receive notifications, formats vary by protocol.',
-                    ],
-                ],
-            ],
-            'SnsSubscriptionIdentifier'         => [
+            'SnsSubscriptionIdentifier' => [
                 'type'       => 'object',
                 'properties' => [
                     'Subscription'    => [
@@ -1127,92 +1740,12 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SnsSubscriptionAttributesResponse' => [
-                'type'       => 'object',
-                'properties' => [
-                    'Subscription'                 => [
-                        'type'        => 'string',
-                        'description' => 'The subscription\'s simplified name.',
-                    ],
-                    'SubscriptionArn'              => [
-                        'type'        => 'string',
-                        'description' => 'The subscription\'s Amazon Resource Name.',
-                    ],
-                    'TopicArn'                     => [
-                        'type'        => 'string',
-                        'description' => 'The topic\'s Amazon Resource Name.',
-                    ],
-                    'Owner'                        => [
-                        'type'        => 'string',
-                        'description' => 'The AWS account ID of the topic\'s owner.',
-                    ],
-                    'ConfirmationWasAuthenticated' => [
-                        'type'        => 'boolean',
-                        'description' => 'True if the subscription confirmation request was authenticated.',
-                    ],
-                    'DeliveryPolicy'               => [
-                        'type'        => 'string',
-                        'description' => 'The JSON serialization of the topic\'s delivery policy.',
-                    ],
-                    'EffectiveDeliveryPolicy'      => [
-                        'type'        => 'string',
-                        'description' => 'The JSON serialization of the effective delivery policy that takes into account system defaults.',
-                    ],
-                ],
+            'SnsAppAttributes'          => [
+                'type'        => 'object',
+                'description' => 'An array of key-value pairs containing platform-specified application attributes.',
+                'properties'  => $commonAppAttributes,
             ],
-            'SnsSubscriptionAttributesRequest'  => [
-                'type'       => 'object',
-                'properties' => [
-                    'AttributeName'  => [
-                        'type'        => 'string',
-                        'description' => 'The name of the attribute you want to set.',
-                        'enum'        => ['DeliveryPolicy', 'RawMessageDelivery'],
-                        'default'     => 'DeliveryPolicy',
-                        'required'    => true,
-                    ],
-                    'AttributeValue' => [
-                        'type'        => 'string',
-                        'description' => 'The value of the attribute you want to set.',
-                    ],
-                ],
-            ],
-            'SnsAppResponse'                    => [
-                'type'       => 'object',
-                'properties' => [
-                    'resource' => [
-                        'type'        => 'array',
-                        'description' => 'An array of identifying attributes for a app, use either in requests.',
-                        'items'       => [
-                            '$ref' => '#/components/schemas/SnsAppIdentifier',
-                        ],
-                    ],
-                ],
-            ],
-            'SnsAppAttributes'                  => [
-                'type'       => 'object',
-                'properties' => $commonAppAttributes,
-            ],
-            'SnsAppRequest'                     => [
-                'type'       => 'object',
-                'properties' => [
-                    'Name'       => [
-                        'type'        => 'string',
-                        'description' => 'Desired platform application name.',
-                        'required'    => true,
-                    ],
-                    'Platform'   => [
-                        'type'        => 'string',
-                        'description' => 'One of the following supported platforms.',
-                        'enum'        => ['ADM', 'APNS', 'APNS_SANDBOX', 'GCM'],
-                        'required'    => true,
-                    ],
-                    'Attributes' => [
-                        'type'        => 'SnsAppAttributes',
-                        'description' => 'An array of key-value pairs containing platform-specified application attributes.',
-                    ],
-                ],
-            ],
-            'SnsAppIdentifier'                  => [
+            'SnsAppIdentifier'          => [
                 'type'       => 'object',
                 'properties' => [
                     'Application'            => [
@@ -1225,105 +1758,7 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SnsAppAttributesResponse'          => [
-                'type'       => 'object',
-                'properties' => [
-                    'Application'            => [
-                        'type'        => 'string',
-                        'description' => 'The app\'s simplified name.',
-                    ],
-                    'PlatformApplicationArn' => [
-                        'type'        => 'string',
-                        'description' => 'The app\'s Amazon Resource Name.',
-                    ],
-                    'EventEndpointCreated'   => [
-                        'type'        => 'string',
-                        'description' => 'Topic ARN to which EndpointCreated event notifications should be sent.',
-                    ],
-                    'EventEndpointUpdated'   => [
-                        'type'        => 'string',
-                        'description' => 'Topic ARN to which EndpointUpdated event notifications should be sent.',
-                    ],
-                    'EventEndpointDeleted'   => [
-                        'type'        => 'string',
-                        'description' => 'Topic ARN to which EndpointDeleted event notifications should be sent.',
-                    ],
-                    'EventDeliveryFailure'   => [
-                        'type'        => 'string',
-                        'description' => 'Topic ARN to which DeliveryFailure event notifications should be sent upon Direct Publish delivery failure (permanent) to one of the application\'s endpoints.',
-                    ],
-                ],
-            ],
-            'SnsAppAttributesRequest'           => [
-                'type'       => 'object',
-                'properties' => [
-                    'Attributes' => [
-                        'type'        => 'SnsAppAttributes',
-                        'description' => 'Mutable attributes on the endpoint.',
-                        'required'    => true,
-                    ],
-                ],
-            ],
-            'SnsEndpointsResponse'              => [
-                'type'       => 'object',
-                'properties' => [
-                    'resource' => [
-                        'type'        => 'array',
-                        'description' => 'An array of identifying attributes for a topic, use either in requests.',
-                        'items'       => [
-                            '$ref' => '#/components/schemas/SnsEndpointIdentifier',
-                        ],
-                    ],
-                ],
-            ],
-            'SnsAppEndpointRequest'             => [
-                'type'       => 'object',
-                'properties' => [
-                    'Token'          => [
-                        'type'        => 'string',
-                        'description' => 'Unique identifier created by the notification service for an app on a device.',
-                        'required'    => true,
-                    ],
-                    'CustomUserData' => [
-                        'type'        => 'string',
-                        'description' => 'Arbitrary user data to associate with the endpoint.',
-                    ],
-                    'Attributes'     => [
-                        'type'        => 'array',
-                        'description' => 'An array of key-value pairs containing endpoint attributes.',
-                        'items'       => [
-                            '$ref' => '#/components/schemas/SnsMessageAttribute',
-                        ],
-                    ],
-                ],
-            ],
-            'SnsEndpointRequest'                => [
-                'type'       => 'object',
-                'properties' => [
-                    'Application'    => [
-                        'type'        => 'string',
-                        'description' => 'The application\'s simplified name or Amazon Resource Name.',
-                        "required"    => true,
-                    ],
-                    'Token'          => [
-                        'type'        => 'string',
-                        'description' => 'Unique identifier created by the notification service for an app on a device.',
-                        'required'    => true,
-                    ],
-                    'CustomUserData' => [
-                        'type'        => 'string',
-                        'description' => 'Arbitrary user data to associate with the endpoint.',
-                    ],
-                    'Attributes'     => [
-                        'type'        => 'array',
-                        'description' => 'An array of key-value pairs containing endpoint attributes.',
-                        'items'       => [
-                            '$ref' => '#/components/schemas/SnsMessageAttribute',
-                        ],
-                    ],
-                ],
-            ],
-            'SnsEndpointIdentifier'             => [
+            'SnsEndpointIdentifier'     => [
                 'type'       => 'object',
                 'properties' => [
                     'Endpoint'    => [
@@ -1336,48 +1771,15 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SnsEndpointAttributesResponse'     => [
-                'type'       => 'object',
-                'properties' => [
-                    'Endpoint'       => [
-                        'type'        => 'string',
-                        'description' => 'The endpoint\'s simplified name.',
-                    ],
-                    'EndpointArn'    => [
-                        'type'        => 'string',
-                        'description' => 'The endpoint\'s Amazon Resource Name.',
-                    ],
-                    'CustomUserData' => [
-                        'type'        => 'string',
-                        'description' => 'Arbitrary user data to associate with the endpoint.',
-                    ],
-                    'Enabled'        => [
-                        'type'        => 'boolean',
-                        'description' => 'The flag that enables/disables delivery to the endpoint.',
-                    ],
-                    'Token'          => [
-                        'type'        => 'string',
-                        'description' => 'The device token, also referred to as a registration id, for an app and mobile device.',
-                    ],
-                ],
+            'SnsEndpointAttributes'     => [
+                'type'        => 'object',
+                'description' => 'Mutable attributes on the endpoint.',
+                'properties'  => $commonEndpointAttributes,
             ],
-            'SnsEndpointAttributes'             => [
-                'type'       => 'object',
-                'properties' => $commonEndpointAttributes,
-            ],
-            'SnsEndpointAttributesRequest'      => [
-                'type'       => 'object',
-                'properties' => [
-                    'Attributes' => [
-                        'type'        => 'SnsEndpointAttributes',
-                        'description' => 'Mutable attributes on the endpoint.',
-                        'required'    => true,
-                    ],
-                ],
-            ],
-            'SnsTopicMessage'                   => [
-                'type'       => 'object',
-                'properties' => [
+            'SnsTopicMessage'           => [
+                'type'        => 'object',
+                'description' => 'The message you want to send to the topic. The \'default\' field is required.',
+                'properties'  => [
                     'default' => [
                         'type'        => 'string',
                         'description' => 'This is sent when the message type is not specified below.',
@@ -1429,9 +1831,10 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SnsMessageAttributeData'           => [
-                'type'       => 'object',
-                'properties' => [
+            'SnsMessageAttributeData'   => [
+                'type'        => 'object',
+                'description' => 'The name of the message attribute as defined by the user or specified platform.',
+                'properties'  => [
                     'DataType'    => [
                         'type'        => 'string',
                         'description' => 'Amazon SNS supports the following logical data types: String, Number, and Binary.',
@@ -1447,158 +1850,11 @@ class Sns extends BaseRestService
                     ],
                 ],
             ],
-            'SnsMessageAttribute'               => [
-                'type'       => 'object',
-                'properties' => [
-                    '_user_defined_name_' => [
-                        'type'        => 'SnsMessageAttributeData',
-                        'description' => 'The name of the message attribute as defined by the user or specified platform.',
-                    ],
-                ],
-            ],
-            'SnsSimplePublishRequest'           => [
-                'type'       => 'object',
-                'properties' => [
-                    'Topic'             => [
-                        'type'        => 'string',
-                        'description' => 'The simple name or ARN of the topic you want to publish to. Required if endpoint not given.',
-                    ],
-                    'Endpoint'          => [
-                        'type'        => 'string',
-                        'description' => 'The simple name or ARN of the endpoint you want to publish to. Required if topic not given.',
-                    ],
-                    'Message'           => [
-                        'type'        => 'string',
-                        'description' => 'The message you want to send to the topic, sends the same message to all transport protocols. ',
-                    ],
-                    'Subject'           => [
-                        'type'        => 'string',
-                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
-                    ],
-                    'MessageAttributes' => [
-                        'type'        => 'SnsMessageAttribute',
-                        'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
-                    ],
-                ],
-            ],
-            'SnsPublishRequest'                 => [
-                'type'       => 'object',
-                'properties' => [
-                    'Topic'             => [
-                        'type'        => 'string',
-                        'description' => 'The simple name or ARN of the topic you want to publish to. Required if endpoint not given.',
-                    ],
-                    'Endpoint'          => [
-                        'type'        => 'string',
-                        'description' => 'The simple name or ARN of the endpoint you want to publish to. Required if topic not given.',
-                    ],
-                    'Message'           => [
-                        'type'        => 'SnsTopicMessage',
-                        'description' => 'The message you want to send to the topic. The \'default\' field is required.',
-                        'required'    => true,
-                    ],
-                    'Subject'           => [
-                        'type'        => 'string',
-                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
-                    ],
-                    'MessageStructure'  => [
-                        'type'        => 'string',
-                        'description' => 'Set MessageStructure to "json".',
-                        'default'     => 'json',
-                    ],
-                    'MessageAttributes' => [
-                        'type'        => 'SnsMessageAttribute',
-                        'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
-                    ],
-                ],
-            ],
-            'SnsSimplePublishTopicRequest'      => [
-                'type'       => 'object',
-                'properties' => [
-                    'Message'           => [
-                        'type'        => 'string',
-                        'description' => 'The message you want to send to the topic, sends the same message to all transport protocols.',
-                    ],
-                    'Subject'           => [
-                        'type'        => 'string',
-                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
-                    ],
-                    'MessageAttributes' => [
-                        'type'        => 'SnsMessageAttribute',
-                        'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
-                    ],
-                ],
-            ],
-            'SnsPublishTopicRequest'            => [
-                'type'       => 'object',
-                'properties' => [
-                    'Message'           => [
-                        'type'        => 'SnsTopicMessage',
-                        'description' => 'The message you want to send to the topic. The \'default\' field is required.',
-                        'required'    => true,
-                    ],
-                    'Subject'           => [
-                        'type'        => 'string',
-                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
-                    ],
-                    'MessageStructure'  => [
-                        'type'        => 'string',
-                        'description' => 'Set MessageStructure to "json".',
-                        'default'     => 'json',
-                    ],
-                    'MessageAttributes' => [
-                        'type'        => 'SnsMessageAttribute',
-                        'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
-                    ],
-                ],
-            ],
-            'SnsSimplePublishEndpointRequest'   => [
-                'type'       => 'object',
-                'properties' => [
-                    'Message'           => [
-                        'type'        => 'string',
-                        'description' => 'The message you want to send to the topic, sends the same message to all transport protocols.',
-                    ],
-                    'Subject'           => [
-                        'type'        => 'string',
-                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
-                    ],
-                    'MessageAttributes' => [
-                        'type'        => 'SnsMessageAttribute',
-                        'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
-                    ],
-                ],
-            ],
-            'SnsPublishEndpointRequest'         => [
-                'type'       => 'object',
-                'properties' => [
-                    'Message'           => [
-                        'type'        => 'SnsTopicMessage',
-                        'description' => 'The message you want to send to the topic. The \'default\' field is required.',
-                        'required'    => true,
-                    ],
-                    'Subject'           => [
-                        'type'        => 'string',
-                        'description' => 'Optional parameter to be used as the "Subject" line when the message is delivered to email endpoints.',
-                    ],
-                    'MessageStructure'  => [
-                        'type'        => 'string',
-                        'description' => 'Set MessageStructure to "json".',
-                        'default'     => 'json',
-                    ],
-                    'MessageAttributes' => [
-                        'type'        => 'SnsMessageAttribute',
-                        'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
-                    ],
-                ],
-            ],
-            'SnsPublishResponse'                => [
-                'type'       => 'object',
-                'properties' => [
-                    'MessageId' => [
-                        'type'        => 'string',
-                        'description' => 'Unique identifier assigned to the published message.',
-                    ],
+            'SnsMessageAttribute'       => [
+                'type'        => 'object',
+                'description' => 'An associative array of string-data pairs containing user-specified message attributes.',
+                'properties'  => [
+                    '_user_defined_name_' => ['$ref' => '#/components/schemas/SnsMessageAttributeData'],
                 ],
             ],
         ];
