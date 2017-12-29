@@ -5,7 +5,6 @@ namespace DreamFactory\Core\Aws\Services;
 use Aws\DynamoDb\DynamoDbClient;
 use DreamFactory\Core\Aws\Database\Schema\DynamoDbSchema;
 use DreamFactory\Core\Aws\Resources\DynamoDbTable;
-use DreamFactory\Core\Database\Resources\DbSchemaResource;
 use DreamFactory\Core\Database\Services\BaseDbService;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 
@@ -16,30 +15,6 @@ use DreamFactory\Core\Exceptions\InternalServerErrorException;
  */
 class DynamoDb extends BaseDbService
 {
-    //*************************************************************************
-    //	Members
-    //*************************************************************************
-
-    /**
-     * @var array
-     */
-    protected static $resources = [
-        DbSchemaResource::RESOURCE_NAME => [
-            'name'       => DbSchemaResource::RESOURCE_NAME,
-            'class_name' => DbSchemaResource::class,
-            'label'      => 'Schema',
-        ],
-        DynamoDbTable::RESOURCE_NAME    => [
-            'name'       => DynamoDbTable::RESOURCE_NAME,
-            'class_name' => DynamoDbTable::class,
-            'label'      => 'Table',
-        ],
-    ];
-
-    //*************************************************************************
-    //	Methods
-    //*************************************************************************
-
     /**
      * Create a new DynamoDb
      *
@@ -69,6 +44,19 @@ class DynamoDb extends BaseDbService
 
         $this->setConfigBasedCachePrefix(array_get($this->config, 'credentials.key') .
             array_get($this->config, 'region') . ':');
+    }
+
+    public function getResourceHandlers()
+    {
+        $handlers = parent::getResourceHandlers();
+
+        $handlers[DynamoDbTable::RESOURCE_NAME] = [
+            'name'       => DynamoDbTable::RESOURCE_NAME,
+            'class_name' => DynamoDbTable::class,
+            'label'      => 'Table',
+        ];
+
+        return $handlers;
     }
 
     protected function initializeConnection()

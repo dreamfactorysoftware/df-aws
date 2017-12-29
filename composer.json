@@ -23,16 +23,16 @@
     }
   ],
   "support":     {
-    "email":  "support@dreamfactory.com",
+    "email":  "dspsupport@dreamfactory.com",
     "source": "https://github.com/dreamfactorysoftware/df-aws",
     "issues": "https://github.com/dreamfactorysoftware/df-aws/issues",
     "wiki":   "https://wiki.dreamfactory.com"
   },
   "require":     {
-    "dreamfactory/df-database": "~0.8.0",
-    "dreamfactory/df-email":    "~0.7.0",
-    "dreamfactory/df-file":     "~0.5.0",
-    "dreamfactory/df-sqldb":    "~0.14.0",
+    "dreamfactory/df-database": "~0.9.0",
+    "dreamfactory/df-email":    "~0.8.0",
+    "dreamfactory/df-file":     "~0.6.0",
+    "dreamfactory/df-sqldb":    "~0.15.0",
     "aws/aws-sdk-php":          "3.*"
   },
   "autoload":    {
@@ -42,7 +42,12 @@
   },
   "extra":       {
     "branch-alias": {
-      "dev-develop": "0.14.x-dev"
+      "dev-develop": "0.15.x-dev"
+    },
+    "laravel": {
+      "providers": [
+        "DreamFactory\\Core\\Aws\\ServiceProvider"
+      ]
     }
   }
 }

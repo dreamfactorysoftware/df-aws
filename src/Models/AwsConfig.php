@@ -1,4 +1,5 @@
 <?php
+
 namespace DreamFactory\Core\Aws\Models;
 
 use DreamFactory\Core\Models\BaseServiceConfigModel;
@@ -19,8 +20,6 @@ class AwsConfig extends BaseServiceConfigModel
     protected $fillable = ['service_id', 'region', 'key', 'secret'];
 
     protected $rules = [
-        'key'    => 'required',
-        'secret' => 'required',
         'region' => 'required'
     ];
 
@@ -54,11 +53,21 @@ class AwsConfig extends BaseServiceConfigModel
                 break;
             case 'key':
                 $schema['label'] = 'Access Key ID';
-                $schema['description'] = 'An AWS account root or IAM access key.';
+                $schema['description'] = 'An AWS account root or IAM access key. ' .
+                    'If you do not explicitly provide credentials here and no environment variable ' .
+                    '(AWS_ACCESS_KEY_ID) credentials are available, DreamFactory attempts to retrieve ' .
+                    'instance profile credentials from an Amazon EC2 instance metadata server. ' .
+                    'These credentials are available only when running DreamFactory on Amazon EC2 ' .
+                    'instances that have been configured with an IAM role.';
                 break;
             case 'secret':
                 $schema['label'] = 'Secret Access Key';
-                $schema['description'] = 'An AWS account root or IAM secret key.';
+                $schema['description'] = 'An AWS account root or IAM secret key. ' .
+                    'If you do not explicitly provide credentials here and no environment variable ' .
+                    '(AWS_SECRET_ACCESS_KEY) credentials are available, DreamFactory attempts to retrieve ' .
+                    'instance profile credentials from an Amazon EC2 instance metadata server. ' .
+                    'These credentials are available only when running DreamFactory on Amazon EC2 ' .
+                    'instances that have been configured with an IAM role.';
                 break;
         }
     }

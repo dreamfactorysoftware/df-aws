@@ -21,10 +21,10 @@ class FileServiceS3Test extends \DreamFactory\Core\Testing\FileServiceTestCase
                     "is_active"   => true,
                     "type"        => "aws_s3",
                     "config"      => [
-                        'key'       => env('AWS_S3_KEY'),
-                        'secret'    => env('AWS_S3_SECRET'),
-                        'region'    => env('AWS_S3_REGION'),
-                        'container' => env('AWS_S3_CONTAINER')
+                        'key'       => env('AWS_KEY'),
+                        'secret'    => env('AWS_SECRET'),
+                        'region'    => env('AWS_REGION'),
+                        'container' => env('AWS_CONTAINER')
                     ]
                 ]
             );
@@ -35,8 +35,8 @@ class FileServiceS3Test extends \DreamFactory\Core\Testing\FileServiceTestCase
      * Testing POST
      ************************************************/
 
-    public function testPOSTContainerWithCheckExist()
-    {
+//    public function testPOSTContainerWithCheckExist()
+//    {
 //        $payload = '{"name":"' . static::FOLDER_2 . '"}';
 //
 //        $rs = $this->makeRequest(Verbs::POST, null, [], $payload);
@@ -49,7 +49,7 @@ class FileServiceS3Test extends \DreamFactory\Core\Testing\FileServiceTestCase
         //$rs = $this->_call(Verbs::POST, $this->prefix."?check_exist=true", $payload);
         //$this->assertResponseStatus(400);
         //$this->assertContains("Container 'beta15lam' already exists.", $rs->getContent());
-    }
+//    }
 
     /************************************************
      * Testing GET
@@ -67,7 +67,7 @@ class FileServiceS3Test extends \DreamFactory\Core\Testing\FileServiceTestCase
         $rs = $this->makeRequest(
             Verbs::POST,
             static::FOLDER_1 . '/f2/',
-            ['url' => 'http://' . static::LOCAL_HOST . '/testfiles.zip', 'extract' => 'true', 'clean' => 'true']
+            ['url' => $this->getBaseUrl() . '/testfiles.zip', 'extract' => 'true', 'clean' => 'true']
         );
         $content = json_encode($rs->getContent(), JSON_UNESCAPED_SLASHES);
 

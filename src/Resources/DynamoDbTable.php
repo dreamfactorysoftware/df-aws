@@ -65,6 +65,10 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         $this->buildFilterExpression($filter, $params, $ssFilters, $scanProperties);
 
         $limit = intval(array_get($extras, ApiOptions::LIMIT));
+        $maxAllowed = $this->getMaxRecordsReturnedLimit();
+        if($limit < 1 || $limit > $maxAllowed){
+            $limit = $maxAllowed;
+        }
         if ($limit > 0) {
             $scanProperties['Limit'] = $limit;
             $scanProperties['Count'] = true;

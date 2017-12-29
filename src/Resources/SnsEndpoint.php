@@ -111,12 +111,8 @@ class SnsEndpoint extends BaseSnsResource
     }
 
     /** {@inheritdoc} */
-    public function getResources($only_handlers = false)
+    public function getResources()
     {
-        if ($only_handlers) {
-            return [];
-        }
-
         if(!empty($this->parentResource)) {
             return $this->getEndpointsAsArray($this->parentResource);
         } else {
