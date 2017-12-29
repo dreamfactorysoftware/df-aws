@@ -21,10 +21,10 @@ class FileServiceS3Test extends \DreamFactory\Core\Testing\FileServiceTestCase
                     "is_active"   => true,
                     "type"        => "aws_s3",
                     "config"      => [
-                        'key'       => env('AWS_S3_KEY'),
-                        'secret'    => env('AWS_S3_SECRET'),
-                        'region'    => env('AWS_S3_REGION'),
-                        'container' => env('AWS_S3_CONTAINER')
+                        'key'       => env('AWS_KEY'),
+                        'secret'    => env('AWS_SECRET'),
+                        'region'    => env('AWS_REGION'),
+                        'container' => env('AWS_CONTAINER')
                     ]
                 ]
             );
