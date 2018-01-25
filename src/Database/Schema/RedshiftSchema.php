@@ -16,11 +16,9 @@ class RedshiftSchema extends SqlSchema
     const DEFAULT_SCHEMA = 'public';
 
     /**
-     * @param boolean $refresh if we need to refresh schema cache.
-     *
-     * @return string default schema.
+     * @inheritdoc
      */
-    public function getDefaultSchema($refresh = false)
+    public function getDefaultSchema()
     {
         return static::DEFAULT_SCHEMA;
     }
@@ -33,6 +31,7 @@ class RedshiftSchema extends SqlSchema
         return [
             DbResourceTypes::TYPE_TABLE,
             DbResourceTypes::TYPE_TABLE_FIELD,
+            DbResourceTypes::TYPE_TABLE_CONSTRAINT,
             DbResourceTypes::TYPE_TABLE_RELATIONSHIP,
             DbResourceTypes::TYPE_VIEW,
         ];
@@ -279,7 +278,7 @@ class RedshiftSchema extends SqlSchema
     /**
      * @inheritdoc
      */
-    protected function findColumns(TableSchema $table)
+    protected function loadTableColumns(TableSchema $table)
     {
         $sql = <<<EOD
 SELECT a.attname AS "name", LOWER(format_type(a.atttypid, a.atttypmod)) AS db_type, a.attnotnull, a.atthasdef,
@@ -300,39 +299,40 @@ WHERE a.attnum > 0 AND NOT a.attisdropped
 ORDER BY a.attnum
 EOD;
 
-        return $this->connection->select($sql, [':table' => $table->resourceName, ':schema' => $table->schemaName]);
-    }
+        $columns = $this->connection->select($sql, [':table' => $table->resourceName, ':schema' => $table->schemaName]);
+        foreach ($columns as $column) {
+            $column = array_change_key_case((array)$column, CASE_LOWER);
+            $c = new ColumnSchema(array_except($column, ['atthasdef', 'default', 'attnotnull']));
+            $c->quotedName = $this->quoteColumnName($c->name);
+            $c->allowNull = !boolval($column['attnotnull']);
+            $this->extractLimit($c, $c->dbType);
+            $c->fixedLength = $this->extractFixedLength($c->dbType);
+            $c->supportsMultibyte = $this->extractMultiByteSupport($c->dbType);
+            $this->extractType($c, $c->dbType);
+            if ($column['atthasdef']) {
+                $this->extractDefault($c, $column['default']);
+            }
 
-    /**
-     * Creates a table column.
-     *
-     * @param array $column column metadata
-     *
-     * @return ColumnSchema normalized column metadata
-     */
-    protected function createColumn($column)
-    {
-        $c = new ColumnSchema(array_except($column, ['atthasdef', 'default', 'attnotnull']));
-        $c->quotedName = $this->quoteColumnName($c->name);
-        $c->allowNull = !boolval($column['attnotnull']);
-        $this->extractLimit($c, $c->dbType);
-        $c->fixedLength = $this->extractFixedLength($c->dbType);
-        $c->supportsMultibyte = $this->extractMultiByteSupport($c->dbType);
-        $this->extractType($c, $c->dbType);
-        if ($column['atthasdef']) {
-            $this->extractDefault($c, $column['default']);
+            if ($c->isPrimaryKey) {
+                if ($c->autoIncrement) {
+                    $table->sequenceName = array_get($column, 'sequence', $c->name);
+                    if ((DbSimpleTypes::TYPE_INTEGER === $c->type)) {
+                        $c->type = DbSimpleTypes::TYPE_ID;
+                    }
+                }
+                $table->addPrimaryKey($c->name);
+            }
+            $table->addColumn($c);
         }
-
-        return $c;
     }
 
     /**
      * @inheritdoc
      */
-    protected function findTableReferences()
+    protected function getTableConstraints($schema = '')
     {
         $sql = <<<EOD
-        SELECT
+SELECT
   o.conname AS constraint_name,
   (SELECT nspname FROM pg_namespace WHERE oid=m.relnamespace) AS table_schema,
   m.relname AS table_name,
@@ -353,7 +353,7 @@ EOD;
         return $this->connection->select($sql);
     }
 
-    protected function findSchemaNames()
+    public function getSchemas()
     {
         $sql = <<<MYSQL
 SELECT nspname FROM pg_namespace WHERE nspname NOT IN ('information_schema','pg_catalog','pg_internal')
@@ -366,7 +366,7 @@ MYSQL;
     /**
      * @inheritdoc
      */
-    protected function findTableNames($schema = '')
+    protected function getTableNames($schema = '')
     {
         $sql = <<<EOD
 SELECT table_name, table_schema, table_type FROM information_schema.tables WHERE table_type = 'BASE TABLE'
@@ -396,7 +396,7 @@ EOD;
     /**
      * @inheritdoc
      */
-    protected function findViewNames($schema = '')
+    protected function getViewNames($schema = '')
     {
         $sql = <<<EOD
 SELECT table_name, table_schema, table_type FROM information_schema.tables WHERE table_type = 'VIEW'

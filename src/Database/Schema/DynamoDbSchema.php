@@ -1,4 +1,5 @@
 <?php
+
 namespace DreamFactory\Core\Aws\Database\Schema;
 
 use Aws\DynamoDb\DynamoDbClient;
@@ -6,6 +7,7 @@ use Aws\DynamoDb\Exception\DynamoDbException;
 use DreamFactory\Core\Aws\Enums\KeyType;
 use DreamFactory\Core\Aws\Enums\Type;
 use DreamFactory\Core\Database\Components\Schema;
+use DreamFactory\Core\Database\Schema\ColumnSchema;
 use DreamFactory\Core\Database\Schema\TableSchema;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Exceptions\BadRequestException;
@@ -48,7 +50,7 @@ class DynamoDbSchema extends Schema
         ]
     ];
 
-    protected function findTableNames($schema = '')
+    protected function getTableNames($schema = '')
     {
         $tables = [];
         $options = ['Limit' => 100]; // arbitrary limit
@@ -88,7 +90,7 @@ class DynamoDbSchema extends Schema
     /**
      * {@inheritdoc}
      */
-    protected function findColumns(TableSchema $table)
+    protected function loadTableColumns(TableSchema $table)
     {
         try {
             $result = $this->connection->describeTable([static::TABLE_INDICATOR => $table->name]);
@@ -97,21 +99,22 @@ class DynamoDbSchema extends Schema
             $table->native = $result['Table'];
             $attributes = $result['Table']['AttributeDefinitions'];
             $keys = $result['Table']['KeySchema'];
-            $columns = [];
             foreach ($attributes as $attribute) {
                 $dbType = array_get($attribute, 'AttributeType', 'S');
                 $type = static::extractSimpleType(static::awsTypeToType($dbType));
                 $name = array_get($attribute, 'AttributeName');
-                $pk = false;
+                $column = ['name' => $name, 'type' => $type, 'db_type' => $dbType];
+                $c = new ColumnSchema($column);
+                $c->quotedName = $this->quoteColumnName($c->name);
                 foreach ($keys as $key) {
                     if ($name === array_get($key, 'AttributeName')) {
-                        $pk = true;
+                        $c->isPrimaryKey = true;
+                        $table->addPrimaryKey($c->name);
                     }
                 }
-                $columns[] = ['name' => $name, 'type' => $type, 'db_type' => $dbType, 'is_primary_key' => $pk];
-            }
 
-            return $columns;
+                $table->addColumn($c);
+            }
         } catch (DynamoDbException $ex) {
             switch ($ex->getAwsErrorCode()) {
                 case 'ResourceNotFoundException':
