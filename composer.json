@@ -30,7 +30,7 @@
   },
   "require":     {
     "dreamfactory/df-database": "~0.9.1",
-    "dreamfactory/df-email":    "~0.8.1",
+    "dreamfactory/df-email":    "~0.8.2",
     "dreamfactory/df-file":     "~0.6.0",
     "dreamfactory/df-sqldb":    "~0.15.1",
     "aws/aws-sdk-php":          "3.*"
