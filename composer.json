@@ -31,7 +31,7 @@
   "minimum-stability": "dev",
   "prefer-stable":     true,
   "require":     {
-    "dreamfactory/df-database": "~0.9.5",
+    "dreamfactory/df-database": "~0.9.6",
     "dreamfactory/df-email":    "~0.8.4",
     "dreamfactory/df-file":     "~0.6.4",
     "dreamfactory/df-sqldb":    "~0.16.0",
