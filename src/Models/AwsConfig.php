@@ -17,7 +17,7 @@ class AwsConfig extends BaseServiceConfigModel
 
     protected $protected = ['secret'];
 
-    protected $fillable = ['service_id', 'region', 'key', 'secret'];
+    protected $fillable = ['service_id', 'region', 'key', 'secret', 'proxy'];
 
     protected $rules = [
         'region' => 'required'
@@ -68,6 +68,13 @@ class AwsConfig extends BaseServiceConfigModel
                     'instance profile credentials from an Amazon EC2 instance metadata server. ' .
                     'These credentials are available only when running DreamFactory on Amazon EC2 ' .
                     'instances that have been configured with an IAM role.';
+                break;
+            case 'proxy':
+                $schema['label'] = 'Proxy';
+                $schema['description'] = 'You can connect to an AWS service through a proxy by using the ' .
+                    'proxy option. Provide a string value to connect to a proxy for all types of URIs. ' .
+                    'The proxy string value can contain a scheme, user name, and password. For example, ' .
+                    '"http://username:password@192.168.16.1:10".';
                 break;
         }
     }
