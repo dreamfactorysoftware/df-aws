@@ -59,6 +59,9 @@ class S3FileSystem extends RemoteFileSystem
         if (isset($config['secret'])) {
             $config['credentials']['secret'] = $config['secret'];
         }
+        if (isset($config['proxy'])) {
+            $config['http'] = ['proxy' => $config['proxy']];
+        }
 
         try {
             $this->blobConn = new S3Client($config);
