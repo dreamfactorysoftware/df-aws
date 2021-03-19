@@ -34,14 +34,17 @@ class AwsConfig extends BaseServiceConfigModel
             case 'region':
                 $schema['type'] = 'picklist';
                 $schema['values'] = [
-                    ['label' => 'US EAST (N Virgina)', 'name' => 'us-east-1'],
+                    ['label' => 'US EAST (N Virginia)', 'name' => 'us-east-1'],
                     ['label' => 'US EAST (Ohio)', 'name' => 'us-east-2'],
                     ['label' => 'US WEST (N California)', 'name' => 'us-west-1'],
                     ['label' => 'US WEST (Oregon)', 'name' => 'us-west-2'],
                     ['label' => 'Canada (Central)', 'name' => 'ca-central-1'],
+                    ['label' => 'EU (Frankfurt)', 'name' => 'eu-central-1'],
                     ['label' => 'EU (Ireland)', 'name' => 'eu-west-1'],
                     ['label' => 'EU (London)', 'name' => 'eu-west-2'],
-                    ['label' => 'EU (Frankfurt)', 'name' => 'eu-central-1'],
+                    ['label' => 'EU (Paris)', 'name' => 'eu-west-3'],
+                    ['label' => 'EU (Stockholm)', 'name' => 'eu-north-1'],
+                    ['label' => 'Middle East (Bahrain)', 'name' => 'me-south-1'],
                     ['label' => 'Asia Pacific (Mumbai)', 'name' => 'ap-south-1'],
                     ['label' => 'Asia Pacific (Singapore)', 'name' => 'ap-southeast-1'],
                     ['label' => 'Asia Pacific (Sydney)', 'name' => 'ap-southeast-2'],
