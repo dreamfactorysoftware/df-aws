@@ -53,6 +53,7 @@ class AwsConfig extends BaseServiceConfigModel
                     ['label' => 'South America (Sao Paulo)', 'name' => 'sa-east-1']
                 ];
                 $schema['description'] = 'Select the region to be accessed by this service connection.';
+                $schema['display'] = 'true';
                 break;
             case 'key':
                 $schema['label'] = 'Access Key ID';
@@ -62,6 +63,7 @@ class AwsConfig extends BaseServiceConfigModel
                     'instance profile credentials from an Amazon EC2 instance metadata server. ' .
                     'These credentials are available only when running DreamFactory on Amazon EC2 ' .
                     'instances that have been configured with an IAM role.';
+                    $schema['display'] = 'true';
                 break;
             case 'secret':
                 $schema['label'] = 'Secret Access Key';
@@ -71,6 +73,7 @@ class AwsConfig extends BaseServiceConfigModel
                     'instance profile credentials from an Amazon EC2 instance metadata server. ' .
                     'These credentials are available only when running DreamFactory on Amazon EC2 ' .
                     'instances that have been configured with an IAM role.';
+                    $schema['display'] = 'true';
                 break;
             case 'proxy':
                 $schema['label'] = 'Proxy';
