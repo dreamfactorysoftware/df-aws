@@ -443,6 +443,9 @@ class S3FileSystem extends RemoteFileSystem
 
         if (!empty($delimiter)) {
             $options['Delimiter'] = $delimiter;
+        } else {
+            // We only want to see the root files / folders otherwise the S3 call will take forever.
+            $options['Delimiter'] = '/';
         }
 
         //	No max-keys specified. Get everything.
@@ -450,7 +453,7 @@ class S3FileSystem extends RemoteFileSystem
 
         do {
             /** @var \Aws\Result $list */
-            $list = $this->blobConn->listObjects($options);
+            $list = $this->blobConn->listObjectsV2($options);
 
             $objects = $list->get('Contents');
 
@@ -474,7 +477,7 @@ class S3FileSystem extends RemoteFileSystem
                 }
             }
 
-            $options['Marker'] = $list->get('NextMarker');
+            $options['ContinuationToken'] = $list->get('NextContinuationToken');
         } while ($list->get('IsTruncated'));
 
         $options = [
