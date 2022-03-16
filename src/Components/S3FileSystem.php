@@ -242,6 +242,22 @@ class S3FileSystem extends RemoteFileSystem
         try {
             $this->checkConnection();
 
+            // If the name ends in a / we know DF is looking for a "folder". S3 does not really have the concept
+            // of folders per se so we need to check for the prefix.
+            if (substr($name, -1) === '/') {
+                $options = array(
+                    "Bucket" => $container,
+                    "Prefix" => $name,
+                    // We only need to get one to prove the folder exists
+                    "MaxKeys" => 1
+                );
+
+                $list = $this->blobConn->listObjectsV2($options);
+                // if there is a "Contents" Array within our list, we know that there is a folder of that name
+                return $list['Contents'] ? true : false;
+            }
+
+            // Just search for the file itself.
             return $this->blobConn->doesObjectExist($container, $name);
         } catch (\Exception $ex) {
             return false;
