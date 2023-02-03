@@ -7,6 +7,8 @@ use DreamFactory\Core\Enums\DbResourceTypes;
 use DreamFactory\Core\Enums\DbSimpleTypes;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\SqlDb\Database\Schema\SqlSchema;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 /**
  * Schema is the class for retrieving metadata information from a AWS Redshift database.
@@ -40,7 +42,7 @@ class RedshiftSchema extends SqlSchema
     protected function translateSimpleColumnTypes(array &$info)
     {
         // override this in each schema class
-        $type = (isset($info['type'])) ? $info['type'] : null;
+        $type = $info['type'] ?? null;
         switch ($type) {
             // some types need massaging, some need other required properties
             case 'pk':
@@ -65,7 +67,7 @@ class RedshiftSchema extends SqlSchema
             case DbSimpleTypes::TYPE_TIMESTAMP_ON_CREATE:
             case DbSimpleTypes::TYPE_TIMESTAMP_ON_UPDATE:
                 $info['type'] = 'timestamp';
-                $default = (isset($info['default'])) ? $info['default'] : null;
+                $default = $info['default'] ?? null;
                 if (!isset($default)) {
                     $default = 'CURRENT_TIMESTAMP';
                     // ON UPDATE CURRENT_TIMESTAMP not supported by PostgreSQL, use triggers
@@ -119,11 +121,11 @@ class RedshiftSchema extends SqlSchema
     protected function validateColumnSettings(array &$info)
     {
         // override this in each schema class
-        $type = (isset($info['type'])) ? $info['type'] : null;
+        $type = $info['type'] ?? null;
         switch ($type) {
             // some types need massaging, some need other required properties
             case 'boolean':
-                $default = (isset($info['default'])) ? $info['default'] : null;
+                $default = $info['default'] ?? null;
                 if (isset($default)) {
                     // convert to bit 0 or 1, where necessary
                     $info['default'] = (filter_var($default, FILTER_VALIDATE_BOOLEAN)) ? 'TRUE' : 'FALSE';
@@ -135,17 +137,13 @@ class RedshiftSchema extends SqlSchema
             case 'int':
             case 'bigint':
                 if (!isset($info['type_extras'])) {
-                    $length =
-                        (isset($info['length']))
-                            ? $info['length']
-                            : ((isset($info['precision'])) ? $info['precision']
-                            : null);
+                    $length = $info['length'] ?? $info['precision'] ?? null;
                     if (!empty($length)) {
                         $info['type_extras'] = "($length)"; // sets the viewable length
                     }
                 }
 
-                $default = (isset($info['default'])) ? $info['default'] : null;
+                $default = $info['default'] ?? null;
                 if (isset($default) && is_numeric($default)) {
                     $info['default'] = intval($default);
                 }
@@ -156,22 +154,14 @@ class RedshiftSchema extends SqlSchema
             case 'real':
             case 'double precision':
                 if (!isset($info['type_extras'])) {
-                    $length =
-                        (isset($info['length']))
-                            ? $info['length']
-                            : ((isset($info['precision'])) ? $info['precision']
-                            : null);
+                    $length = $info['length'] ?? $info['precision'] ?? null;
                     if (!empty($length)) {
-                        $scale =
-                            (isset($info['decimals']))
-                                ? $info['decimals']
-                                : ((isset($info['scale'])) ? $info['scale']
-                                : null);
+                        $scale = $info['decimals'] ?? $info['scale'] ?? null;
                         $info['type_extras'] = (!empty($scale)) ? "($length,$scale)" : "($length)";
                     }
                 }
 
-                $default = (isset($info['default'])) ? $info['default'] : null;
+                $default = $info['default'] ?? null;
                 if (isset($default) && is_numeric($default)) {
                     $info['default'] = floatval($default);
                 }
@@ -179,7 +169,7 @@ class RedshiftSchema extends SqlSchema
 
             case 'char':
             case 'national char':
-                $length = (isset($info['length'])) ? $info['length'] : ((isset($info['size'])) ? $info['size'] : null);
+                $length = $info['length'] ?? $info['size'] ?? null;
                 if (isset($length)) {
                     $info['type_extras'] = "($length)";
                 }
@@ -187,7 +177,7 @@ class RedshiftSchema extends SqlSchema
 
             case 'varchar':
             case 'national varchar':
-                $length = (isset($info['length'])) ? $info['length'] : ((isset($info['size'])) ? $info['size'] : null);
+                $length = $info['length'] ?? $info['size'] ?? null;
                 if (isset($length)) {
                     $info['type_extras'] = "($length)";
                 } else // requires a max length
@@ -198,7 +188,7 @@ class RedshiftSchema extends SqlSchema
 
             case 'time':
             case 'timestamp':
-                $length = (isset($info['length'])) ? $info['length'] : ((isset($info['size'])) ? $info['size'] : null);
+                $length = $info['length'] ?? $info['size'] ?? null;
                 if (isset($length)) {
                     $info['type_extras'] = "($length)";
                 }
@@ -214,15 +204,15 @@ class RedshiftSchema extends SqlSchema
      */
     protected function buildColumnDefinition(array $info)
     {
-        $type = (isset($info['type'])) ? $info['type'] : null;
-        $typeExtras = (isset($info['type_extras'])) ? $info['type_extras'] : null;
+        $type = $info['type'] ?? null;
+        $typeExtras = $info['type_extras'] ?? null;
 
         $definition = $type . $typeExtras;
 
         $allowNull = (isset($info['allow_null'])) ? filter_var($info['allow_null'], FILTER_VALIDATE_BOOLEAN) : false;
         $definition .= ($allowNull) ? ' NULL' : ' NOT NULL';
 
-        $default = (isset($info['default'])) ? $info['default'] : null;
+        $default = $info['default'] ?? null;
         if (isset($default)) {
             $quoteDefault =
                 (isset($info['quote_default'])) ? filter_var($info['quote_default'], FILTER_VALIDATE_BOOLEAN) : false;
@@ -264,7 +254,7 @@ class RedshiftSchema extends SqlSchema
             return;
         }
         $sequence = '"' . $table->sequenceName . '"';
-        if (strpos($sequence, '.') !== false) {
+        if (Str::contains($sequence, '.')) {
             $sequence = str_replace('.', '"."', $sequence);
         }
         if ($value !== null) {
@@ -302,7 +292,8 @@ EOD;
         $columns = $this->connection->select($sql, [':table' => $table->resourceName, ':schema' => $table->schemaName]);
         foreach ($columns as $column) {
             $column = array_change_key_case((array)$column, CASE_LOWER);
-            $c = new ColumnSchema(array_except($column, ['atthasdef', 'default', 'attnotnull']));
+            $c = new ColumnSchema(Arr::except($column, ['atthasdef', 'default', 'attnotnull']));
+
             $c->quotedName = $this->quoteColumnName($c->name);
             $c->allowNull = !boolval($column['attnotnull']);
             $this->extractLimit($c, $c->dbType);
@@ -315,7 +306,7 @@ EOD;
 
             if ($c->isPrimaryKey) {
                 if ($c->autoIncrement) {
-                    $table->sequenceName = array_get($column, 'sequence', $c->name);
+                    $table->sequenceName = Arr::get($column, 'sequence', $c->name);
                     if ((DbSimpleTypes::TYPE_INTEGER === $c->type)) {
                         $c->type = DbSimpleTypes::TYPE_ID;
                     }
@@ -381,8 +372,8 @@ EOD;
         $names = [];
         foreach ($rows as $row) {
             $row = (array)$row;
-            $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
-            $resourceName = isset($row['table_name']) ? $row['table_name'] : '';
+            $schemaName = $row['table_schema'] ?? '';
+            $resourceName = $row['table_name'] ?? '';
             $internalName = $schemaName . '.' . $resourceName;
             $name = $resourceName;
             $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($resourceName);
@@ -411,8 +402,8 @@ EOD;
         $names = [];
         foreach ($rows as $row) {
             $row = (array)$row;
-            $schemaName = isset($row['table_schema']) ? $row['table_schema'] : '';
-            $resourceName = isset($row['table_name']) ? $row['table_name'] : '';
+            $schemaName = $row['table_schema'] ?? '';
+            $resourceName = $row['table_name'] ?? '';
             $internalName = $schemaName . '.' . $resourceName;
             $name = $resourceName;
             $quotedName = $this->quoteTableName($schemaName) . '.' . $this->quoteTableName($resourceName);
@@ -496,7 +487,7 @@ EOD;
             $columns = preg_split('/\s*,\s*/', $columns, -1, PREG_SPLIT_NO_EMPTY);
         }
         foreach ($columns as $col) {
-            if (strpos($col, '(') !== false) {
+            if (Str::contains($col, '(')) {
                 $cols[] = $col;
             } else {
                 $cols[] = $this->quoteColumnName($col);
@@ -566,7 +557,7 @@ EOD;
     public function extractType(ColumnSchema $column, $dbType)
     {
         parent::extractType($column, $dbType);
-        if (strpos($dbType, '[') !== false || strpos($dbType, 'char') !== false || strpos($dbType, 'text') !== false) {
+        if (Str::contains($dbType, '[') || Str::contains($dbType, 'char') || Str::contains($dbType, 'text')) {
             $column->type = DbSimpleTypes::TYPE_STRING;
         } elseif (preg_match('/(real|float|double)/', $dbType)) {
             $column->type = DbSimpleTypes::TYPE_DOUBLE;

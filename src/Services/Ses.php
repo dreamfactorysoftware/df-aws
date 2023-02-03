@@ -14,9 +14,9 @@ class Ses extends BaseService
      */
     protected function setTransport($config)
     {
-        $key = array_get($config, 'key');
-        $secret = array_get($config, 'secret');
-        $region = array_get($config, 'region', 'us-east-1');
+        $key = Arr::get($config, 'key');
+        $secret = Arr::get($config, 'secret');
+        $region = Arr::get($config, 'region', 'us-east-1');
 
         $this->transport = static::getTransport($key, $secret, $region);
     }

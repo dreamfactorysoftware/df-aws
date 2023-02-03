@@ -11,6 +11,7 @@ use DreamFactory\Core\Database\Schema\ColumnSchema;
 use DreamFactory\Core\Database\Schema\TableSchema;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Exceptions\BadRequestException;
+use Illuminate\Support\Arr;
 
 class DynamoDbSchema extends Schema
 {
@@ -100,14 +101,14 @@ class DynamoDbSchema extends Schema
             $attributes = $result['Table']['AttributeDefinitions'];
             $keys = $result['Table']['KeySchema'];
             foreach ($attributes as $attribute) {
-                $dbType = array_get($attribute, 'AttributeType', 'S');
+                $dbType = Arr::get($attribute, 'AttributeType', 'S');
                 $type = static::extractSimpleType(static::awsTypeToType($dbType));
-                $name = array_get($attribute, 'AttributeName');
+                $name = Arr::get($attribute, 'AttributeName');
                 $column = ['name' => $name, 'type' => $type, 'db_type' => $dbType];
                 $c = new ColumnSchema($column);
                 $c->quotedName = $this->quoteColumnName($c->name);
                 foreach ($keys as $key) {
-                    if ($name === array_get($key, 'AttributeName')) {
+                    if ($name === Arr::get($key, 'AttributeName')) {
                         $c->isPrimaryKey = true;
                         $table->addPrimaryKey($c->name);
                     }
@@ -131,14 +132,14 @@ class DynamoDbSchema extends Schema
      */
     public function createTable($table, $options)
     {
-        if (empty($tableName = array_get($table, 'name'))) {
+        if (empty($tableName = Arr::get($table, 'name'))) {
             throw new \Exception("No valid name exist in the received table schema.");
         }
 
         $properties = array_merge(
             [static::TABLE_INDICATOR => $tableName],
             $this->defaultCreateTable,
-            (array)array_get($table, 'native')
+            (array)Arr::get($table, 'native')
         );
         $result = $this->connection->createTable($properties);
 
@@ -156,7 +157,7 @@ class DynamoDbSchema extends Schema
         // Update the provisioned throughput capacity of the table
         $properties = array_merge(
             [static::TABLE_INDICATOR => $tableSchema->quotedName],
-            (array)array_get($changes, 'native')
+            (array)Arr::get($changes, 'native')
         );
         $result = $this->connection->updateTable($properties);
 

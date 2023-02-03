@@ -17,6 +17,8 @@ use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Aws\Services\DynamoDb;
 use DreamFactory\Core\Enums\Verbs;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class DynamoDbTable extends BaseNoSqlDbTableResource
 {
@@ -52,8 +54,8 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
      */
     public function retrieveRecordsByFilter($table, $filter = null, $params = [], $extras = [])
     {
-        $fields = array_get($extras, ApiOptions::FIELDS);
-        $ssFilters = array_get($extras, 'ss_filters');
+        $fields = Arr::get($extras, ApiOptions::FIELDS);
+        $ssFilters = Arr::get($extras, 'ss_filters');
 
         $scanProperties = [static::TABLE_INDICATOR => $table];
 
@@ -64,7 +66,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
         $this->buildFilterExpression($filter, $params, $ssFilters, $scanProperties);
 
-        $limit = intval(array_get($extras, ApiOptions::LIMIT));
+        $limit = intval(Arr::get($extras, ApiOptions::LIMIT));
         $maxAllowed = $this->getMaxRecordsReturnedLimit();
         if($limit < 1 || $limit > $maxAllowed){
             $limit = $maxAllowed;
@@ -73,7 +75,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             $scanProperties['Limit'] = $limit;
             $scanProperties['Count'] = true;
         }
-        $offset = intval(array_get($extras, ApiOptions::OFFSET));
+        $offset = intval(Arr::get($extras, ApiOptions::OFFSET));
         if ($offset > 0) {
             $scanProperties['ExclusiveStartKey'] = $offset;
             $scanProperties['Count'] = true;
@@ -178,16 +180,16 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         $requested_fields = [];
         $result = $this->getConnection()->describeTable([static::TABLE_INDICATOR => $table]);
         $result = $result['Table'];
-        $keys = array_get($result, 'KeySchema', []);
-        $definitions = array_get($result, 'AttributeDefinitions', []);
+        $keys = Arr::get($result, 'KeySchema', []);
+        $definitions = Arr::get($result, 'AttributeDefinitions', []);
         $fields = [];
         foreach ($keys as $key) {
-            $name = array_get($key, 'AttributeName');
-            $keyType = array_get($key, 'KeyType');
+            $name = Arr::get($key, 'AttributeName');
+            $keyType = Arr::get($key, 'KeyType');
             $type = null;
             foreach ($definitions as $type) {
-                if (0 == strcmp($name, array_get($type, 'AttributeName'))) {
-                    $type = array_get($type, 'AttributeType');
+                if (0 == strcmp($name, Arr::get($type, 'AttributeName'))) {
+                    $type = Arr::get($type, 'AttributeType');
                 }
             }
 
@@ -206,7 +208,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             if (1 == count($ids_info)) {
                 $info = $ids_info[0];
                 if (is_array($record)) {
-                    $value = array_get($record, $info->name);
+                    $value = Arr::get($record, $info->name);
                     if ($remove) {
                         unset($record[$info->name]);
                     }
@@ -225,7 +227,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     $id = $value;
                 } else {
                     // could be passed in as a parameter affecting all records
-                    $param = array_get($extras, $info->name);
+                    $param = Arr::get($extras, $info->name);
                     if ($on_create && $info->getRequired() && empty($param)) {
                         return false;
                     }
@@ -234,7 +236,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 $id = [];
                 foreach ($ids_info as $info) {
                     if (is_array($record)) {
-                        $value = array_get($record, $info->name);
+                        $value = Arr::get($record, $info->name);
                         if ($remove) {
                             unset($record[$info->name]);
                         }
@@ -253,7 +255,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                         $id[$info->name] = $value;
                     } else {
                         // could be passed in as a parameter affecting all records
-                        $param = array_get($extras, $info->name);
+                        $param = Arr::get($extras, $info->name);
                         if ($on_create && $info->getRequired() && empty($param)) {
                             return false;
                         }
@@ -275,7 +277,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
     {
         $keys = [];
         foreach ($ids_info as $info) {
-            $value = array_get($record, $info->name, null);
+            $value = Arr::get($record, $info->name, null);
             if ($remove) {
                 unset($record[$info->name]);
             }
@@ -337,13 +339,13 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         }
 
         // build the server side criteria
-        $filters = array_get($ss_filters, 'filters');
+        $filters = Arr::get($ss_filters, 'filters');
         if (empty($filters)) {
             return '';
         }
 
         $sql = '';
-        $combiner = array_get($ss_filters, 'filter_op', DbLogicalOperators::AND_STR);
+        $combiner = Arr::get($ss_filters, 'filter_op', DbLogicalOperators::AND_STR);
         switch (strtoupper($combiner)) {
             case 'AND':
             case 'OR':
@@ -357,8 +359,8 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 $sql .= " $combiner ";
             }
 
-            $name = array_get($filter, 'name');
-            $op = strtoupper(array_get($filter, 'operator'));
+            $name = Arr::get($filter, 'name');
+            $op = strtoupper(Arr::get($filter, 'operator'));
             if (empty($name) || empty($op)) {
                 // log and bail
                 throw new InternalServerErrorException('Invalid server-side filter configuration detected.');
@@ -367,7 +369,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             if (DbComparisonOperators::requiresNoValue($op)) {
                 $sql .= "($name $op)";
             } else {
-                $value = array_get($filter, 'value');
+                $value = Arr::get($filter, 'value');
                 $sql .= "($name $op $value)";
             }
         }
@@ -436,7 +438,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         }
 
         $wrap = false;
-        if ((0 === strpos($filter, '(')) && ((strlen($filter) - 1) === strrpos($filter, ')'))) {
+        if ((str_starts_with($filter, '(')) && ((strlen($filter) - 1) === strrpos($filter, ')'))) {
             // remove unnecessary wrapping ()
             $filter = substr($filter, 1, -1);
             $wrap = true;
@@ -457,7 +459,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             if (false !== $pos = stripos($filter, $paddedOp)) {
                 $field = trim(substr($filter, 0, $pos));
                 $negate = false;
-                if (false !== strpos($field, ' ')) {
+                if (Str::contains($field, ' ')) {
                     $parts = explode(' ', $field);
                     $partsCount = count($parts);
                     if (($partsCount > 1) &&
@@ -477,7 +479,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
 
                 // make sure we haven't chopped off right side too much
                 $value = trim(substr($filter, $pos + strlen($paddedOp)));
-                if ((0 !== strpos($value, "'")) &&
+                if ((!str_starts_with($value, "'")) &&
                     (0 !== $lpc = substr_count($value, '(')) &&
                     ($lpc !== $rpc = substr_count($value, ')'))
                 ) {
@@ -487,7 +489,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     $rightParen = preg_replace('/\)/', '', $rightParen, $lpc - $rpc);
                 }
                 if (DbComparisonOperators::requiresValueList($sqlOp)) {
-                    if ((0 === strpos($value, '(')) && ((strlen($value) - 1) === strrpos($value, ')'))) {
+                    if ((str_starts_with($value, '(')) && ((strlen($value) - 1) === strrpos($value, ')'))) {
                         // remove wrapping ()
                         $value = substr($value, 1, -1);
                         $parsed = [];
@@ -583,7 +585,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
     protected function parseFilterValue($value, ColumnSchema $info, array &$out_params, array $in_params = [])
     {
         // if a named replacement parameter, un-name it because Laravel can't handle named parameters
-        if (is_array($in_params) && (0 === strpos($value, ':'))) {
+        if (is_array($in_params) && (str_starts_with($value, ':'))) {
             if (array_key_exists($value, $in_params)) {
                 $value = $in_params[$value];
             }
@@ -638,10 +640,10 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
         $continue = false,
         $single = false
     ) {
-        $ssFilters = array_get($extras, 'ss_filters');
-        $fields = array_get($extras, ApiOptions::FIELDS);
-        $idFields = array_get($extras, 'id_fields');
-        $updates = array_get($extras, 'updates');
+        $ssFilters = Arr::get($extras, 'ss_filters');
+        $fields = Arr::get($extras, ApiOptions::FIELDS);
+        $idFields = Arr::get($extras, 'id_fields');
+        $updates = Arr::get($extras, 'updates');
 
         $out = [];
         switch ($this->getAction()) {
@@ -751,7 +753,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     $this->addToRollback($temp);
 
                     // merge old record with new changes
-                    $new = array_merge($this->unformatAttributes($temp), $updates);
+                    $new = array_merge($this->unformatAttributes($temp), $updates ?: []);
                     $out = static::cleanRecord($new, $fields, $idFields);
                 } else {
                     $temp = $this->unformatAttributes($temp);
@@ -802,7 +804,7 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 $result = $this->getConnection()->getItem($scanProperties);
                 $result = $result['Item'];
                 if (empty($result)) {
-                    throw new NotFoundException('Record not found.');
+                    throw new NotFoundException("Record with identifier '$id' not found.");
                 }
 
                 // Grab value from the result object like an array
@@ -824,10 +826,10 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             return null;
         }
 
-//        $ssFilters = array_get( $extras, 'ss_filters' );
-        $fields = array_get($extras, ApiOptions::FIELDS);
-        $requireMore = array_get($extras, 'require_more');
-        $idFields = array_get($extras, 'id_fields');
+//        $ssFilters = Arr::get( $extras, 'ss_filters' );
+        $fields = Arr::get($extras, ApiOptions::FIELDS);
+        $requireMore = Arr::get($extras, 'require_more');
+        $idFields = Arr::get($extras, 'id_fields');
 
         $out = [];
         switch ($this->getAction()) {

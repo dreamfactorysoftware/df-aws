@@ -7,6 +7,7 @@ use DreamFactory\Core\Aws\Database\Schema\DynamoDbSchema;
 use DreamFactory\Core\Aws\Resources\DynamoDbTable;
 use DreamFactory\Core\Database\Services\BaseDbService;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
+use Illuminate\Support\Arr;
 
 /**
  * DynamoDb
@@ -37,13 +38,13 @@ class DynamoDb extends BaseDbService
         }
 
         // set up a default table schema
-//        $parameters = (array)array_get($this->config, 'parameters');
-//        if (null !== ($table = array_get($parameters, 'default_create_table'))) {
+//        $parameters = (array)Arr::get($this->config, 'parameters');
+//        if (null !== ($table = Arr::get($parameters, 'default_create_table'))) {
 //            $this->defaultCreateTable = $table;
 //        }
 
-        $this->setConfigBasedCachePrefix(array_get($this->config, 'credentials.key') .
-            array_get($this->config, 'region') . ':');
+        $this->setConfigBasedCachePrefix(Arr::get($this->config, 'credentials.key') .
+            Arr::get($this->config, 'region') . ':');
     }
 
     public function getResourceHandlers()

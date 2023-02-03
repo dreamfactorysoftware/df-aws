@@ -31,10 +31,11 @@
   "minimum-stability": "dev",
   "prefer-stable":     true,
   "require":     {
-    "dreamfactory/df-database": "~0.12",
+    "php":                      "^8.0",
+    "dreamfactory/df-database": "~1.0",
     "dreamfactory/df-email":    "~0.10",
-    "dreamfactory/df-file":     "~0.7",
-    "dreamfactory/df-sqldb":    "~0.17",
+    "dreamfactory/df-file":     "~0.8",
+    "dreamfactory/df-sqldb":    "~1.0",
     "aws/aws-sdk-php":          "3.*"
   },
   "autoload":    {
