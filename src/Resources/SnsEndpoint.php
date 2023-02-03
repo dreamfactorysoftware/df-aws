@@ -6,6 +6,7 @@ use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Contracts\ServiceResponseInterface;
+use Illuminate\Support\Arr;
 
 /**
  * Class SnsEndpoint
@@ -93,17 +94,17 @@ class SnsEndpoint extends BaseSnsResource
     {
         parent::setResourceMembers($resourcePath);
 
-        $this->resource = array_get($this->resourceArray, 0);
+        $this->resource = Arr::get($this->resourceArray, 0);
 
         $pos = 1;
-        $more = array_get($this->resourceArray, $pos);
+        $more = Arr::get($this->resourceArray, $pos);
 
         if (!empty($more)) {
             //  This will be the full resource path
             do {
                 $this->resource .= '/' . $more;
                 $pos++;
-                $more = array_get($this->resourceArray, $pos);
+                $more = Arr::get($this->resourceArray, $pos);
             } while (!empty($more));
         }
 
@@ -154,7 +155,7 @@ class SnsEndpoint extends BaseSnsResource
                 } while ($token);
 
                 foreach ($out as $app) {
-                    $applications[] = array_get($app, 'PlatformApplicationArn');
+                    $applications[] = Arr::get($app, 'PlatformApplicationArn');
                 }
             } catch (\Exception $ex) {
                 if (null !== $newEx = Sns::translateException($ex)) {
@@ -174,15 +175,15 @@ class SnsEndpoint extends BaseSnsResource
                 switch ($fields) {
                     case false:
                     case Sns::FORMAT_SIMPLE:
-                        $resources[] = $this->service->stripArnPrefix(array_get($end, 'EndpointArn'));
+                        $resources[] = $this->service->stripArnPrefix(Arr::get($end, 'EndpointArn'));
                         break;
                     case Sns::FORMAT_ARN:
-                        $resources[] = array_get($end, 'EndpointArn');
+                        $resources[] = Arr::get($end, 'EndpointArn');
                         break;
                     case true:
                     case Sns::FORMAT_FULL:
                     default:
-                        $end['Endpoint'] = $this->service->stripArnPrefix(array_get($end, 'EndpointArn'));
+                        $end['Endpoint'] = $this->service->stripArnPrefix(Arr::get($end, 'EndpointArn'));
                         $resources[] = $end;
                         break;
                 }
@@ -268,7 +269,7 @@ class SnsEndpoint extends BaseSnsResource
 
         try {
             if (null !== $result = $this->service->getConnection()->getEndpointAttributes($request)) {
-                $attributes = array_get($result->toArray(), 'Attributes');
+                $attributes = Arr::get($result->toArray(), 'Attributes');
 
                 return [
                     'Endpoint'    => $this->service->stripArnPrefix($resource),
@@ -298,12 +299,12 @@ class SnsEndpoint extends BaseSnsResource
     public function createEndpoint($request)
     {
         if (is_array($request)) {
-            $name = array_get($request, 'Application', array_get($request, 'PlatformApplicationArn'));
+            $name = Arr::get($request, 'Application', Arr::get($request, 'PlatformApplicationArn'));
             if (empty($name)) {
                 throw new BadRequestException("Create endpoint request contains no 'Application' field.");
             }
             $request['PlatformApplicationArn'] = $this->service->addArnPrefix($name);
-            $name = array_get($request, 'Token');
+            $name = Arr::get($request, 'Token');
             if (empty($name)) {
                 throw new BadRequestException("Create endpoint request contains no 'Token' field.");
             }
@@ -313,7 +314,7 @@ class SnsEndpoint extends BaseSnsResource
 
         try {
             if (null !== $result = $this->service->getConnection()->createPlatformEndpoint($request)) {
-                $arn = array_get($result->toArray(), 'EndpointArn', '');
+                $arn = Arr::get($result->toArray(), 'EndpointArn', '');
 
                 return ['Endpoint' => $this->service->stripArnPrefix($arn), 'EndpointArn' => $arn];
             }
@@ -341,7 +342,7 @@ class SnsEndpoint extends BaseSnsResource
     public function updateEndpoint($request)
     {
         if (is_array($request)) {
-            $name = array_get($request, 'Endpoint', array_get($request, 'EndpointArn'));
+            $name = Arr::get($request, 'Endpoint', Arr::get($request, 'EndpointArn'));
             if (empty($name)) {
                 throw new BadRequestException("Update endpoint request contains no 'Endpoint' field.");
             }
@@ -378,7 +379,7 @@ class SnsEndpoint extends BaseSnsResource
     {
         $data = [];
         if (is_array($request)) {
-            $name = array_get($request, 'Endpoint', array_get($request, 'EndpointArn'));
+            $name = Arr::get($request, 'Endpoint', Arr::get($request, 'EndpointArn'));
             if (empty($name)) {
                 throw new BadRequestException("Delete endpoint request contains no 'Endpoint' field.");
             }

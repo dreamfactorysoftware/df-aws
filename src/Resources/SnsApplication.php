@@ -6,6 +6,7 @@ use DreamFactory\Core\Exceptions\BadRequestException;
 use DreamFactory\Core\Exceptions\InternalServerErrorException;
 use DreamFactory\Core\Exceptions\NotFoundException;
 use DreamFactory\Core\Contracts\ServiceResponseInterface;
+use Illuminate\Support\Arr;
 
 /**
  * Class SnsApplication
@@ -85,17 +86,17 @@ class SnsApplication extends BaseSnsResource
     {
         parent::setResourceMembers($resourcePath);
 
-        $this->resource = array_get($this->resourceArray, 0);
+        $this->resource = Arr::get($this->resourceArray, 0);
 
         $pos = 1;
-        $more = array_get($this->resourceArray, $pos);
+        $more = Arr::get($this->resourceArray, $pos);
 
         if (!empty($more)) {
             if (SnsEndpoint::RESOURCE_NAME !== $more) {
                 do {
                     $this->resource .= '/' . $more;
                     $pos++;
-                    $more = array_get($this->resourceArray, $pos);
+                    $more = Arr::get($this->resourceArray, $pos);
                 } while (!empty($more) && (SnsEndpoint::RESOURCE_NAME !== $more));
             }
         }
@@ -116,16 +117,16 @@ class SnsApplication extends BaseSnsResource
             switch ($fields) {
                 case false:
                 case Sns::FORMAT_SIMPLE:
-                    $resources[] = $this->service->stripArnPrefix(array_get($app, 'PlatformApplicationArn'));
+                    $resources[] = $this->service->stripArnPrefix(Arr::get($app, 'PlatformApplicationArn'));
                     break;
                 case Sns::FORMAT_ARN:
-                    $resources[] = array_get($app, 'PlatformApplicationArn');
+                    $resources[] = Arr::get($app, 'PlatformApplicationArn');
                     break;
                 case true:
                 case Sns::FORMAT_FULL:
                 default:
                     $app['Application'] =
-                        $this->service->stripArnPrefix(array_get($app, 'PlatformApplicationArn'));
+                        $this->service->stripArnPrefix(Arr::get($app, 'PlatformApplicationArn'));
                     $resources[] = $app;
                     break;
             }
@@ -205,7 +206,7 @@ class SnsApplication extends BaseSnsResource
 
         try {
             if (null !== $result = $this->service->getConnection()->getPlatformApplicationAttributes($request)) {
-                $attributes = array_get($result->toArray(), 'Attributes');
+                $attributes = Arr::get($result->toArray(), 'Attributes');
 
                 return [
                     'Application'            => $this->service->stripArnPrefix($resource),
@@ -228,7 +229,7 @@ class SnsApplication extends BaseSnsResource
     public function createApplication($request)
     {
         if (is_array($request)) {
-            $name = array_get($request, 'Name');
+            $name = Arr::get($request, 'Name');
             if (empty($name)) {
                 throw new BadRequestException("Create application request contains no 'Name' field.");
             }
@@ -238,7 +239,7 @@ class SnsApplication extends BaseSnsResource
 
         try {
             if (null !== $result = $this->service->getConnection()->createPlatformApplication($request)) {
-                $arn = array_get($result->toArray(), 'PlatformApplicationArn', '');
+                $arn = Arr::get($result->toArray(), 'PlatformApplicationArn', '');
 
                 return ['Application' => $this->service->stripArnPrefix($arn), 'PlatformApplicationArn' => $arn];
             }
@@ -257,7 +258,7 @@ class SnsApplication extends BaseSnsResource
     public function updateApplication($request)
     {
         if (is_array($request)) {
-            $name = array_get($request, 'Application', array_get($request, 'PlatformApplicationArn'));
+            $name = Arr::get($request, 'Application', Arr::get($request, 'PlatformApplicationArn'));
             if (empty($name)) {
                 throw new BadRequestException("Update application request contains no 'Application' field.");
             }
@@ -289,7 +290,7 @@ class SnsApplication extends BaseSnsResource
     {
         $data = [];
         if (is_array($request)) {
-            $name = array_get($request, 'Application', array_get($request, 'PlatformApplicationArn'));
+            $name = Arr::get($request, 'Application', Arr::get($request, 'PlatformApplicationArn'));
             if (empty($name)) {
                 throw new BadRequestException("Delete application request contains no 'Application' field.");
             }

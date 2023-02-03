@@ -11,6 +11,7 @@ use DreamFactory\Core\File\Components\RemoteFileSystem;
 use DreamFactory\Core\Exceptions\DfException;
 use DreamFactory\Core\Exceptions\BadRequestException;
 use Aws\S3\S3Client;
+use Illuminate\Support\Arr;
 
 /**
  * Class S3FileSystem
@@ -70,7 +71,7 @@ class S3FileSystem extends RemoteFileSystem
                 $ex->getCode());
         }
 
-        $this->container = array_get($config, 'container');
+        $this->container = Arr::get($config, 'container');
 
         if (!$this->containerExists($this->container)) {
             $this->createContainer(['name' => $this->container]);
@@ -170,7 +171,7 @@ class S3FileSystem extends RemoteFileSystem
      */
     public function createContainer($properties, $metadata = [])
     {
-        $name = array_get($properties, 'name', array_get($properties, 'path'));
+        $name = Arr::get($properties, 'name', Arr::get($properties, 'path'));
         if (empty($name)) {
             throw new BadRequestException('No name found for container in create request.');
         }
@@ -563,50 +564,21 @@ class S3FileSystem extends RemoteFileSystem
         }
     }
 
-    /**
-     * @param string $container
-     * @param string $name
-     * @param array  $params
-     *
-     * @throws DfException
-     */
-    public function streamBlob($container, $name, $params = [])
+    protected function getBlobInChunks($containerName, $name, $chunkSize): \Generator
     {
         try {
             $this->checkConnection();
 
             /** @var \Aws\Result $result */
-            $result = $this->blobConn->getObject(
-                [
-                    'Bucket' => $container,
-                    'Key'    => $name
-                ]
-            );
+            $result = $this->blobConn->getObject(['Bucket' => $containerName, 'Key' => $name]);
+            $stream = &$result['Body'];
+            $stream->rewind();
 
-            header('Last-Modified: ' . $result->get('LastModified'));
-            header('Content-Type: ' . $result->get('ContentType'));
-            header('Content-Length:' . intval($result->get('ContentLength')));
-
-            $disposition =
-                (isset($params['disposition']) && !empty($params['disposition'])) ? $params['disposition'] : 'inline';
-
-            header('Content-Disposition: ' . $disposition . '; filename="' . $name . '";');
-            //echo $result->get('Body');
-            $result['Body']->rewind();
-            $chunk = \Config::get('df.file_chunk_size');
-            while ($data = $result['Body']->read($chunk)) {
-                echo $data;
+            while (!$stream->eof()) {
+                yield $stream->read($chunkSize);
             }
         } catch (\Exception $ex) {
-            if ($ex instanceof S3Exception) {
-                $code = $ex->getStatusCode();
-                $status_header = "HTTP/1.1 $code";
-                header($status_header);
-                header('Content-Type: text/html');
-                echo 'Failed to stream/download file. File ' . $name . ' was not found. ' . $ex->getMessage();
-            } else {
-                throw new DfException('Failed to stream blob: ' . $ex->getMessage());
-            }
+            throw new DfException('Failed to stream blob: ' . $ex->getMessage());
         }
     }
 }

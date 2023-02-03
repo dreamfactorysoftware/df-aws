@@ -8,6 +8,7 @@ use DreamFactory\Core\Enums\DbSimpleTypes;
 use DreamFactory\Core\SqlDb\Resources\StoredFunction;
 use DreamFactory\Core\SqlDb\Resources\StoredProcedure;
 use DreamFactory\Core\SqlDb\Services\SqlDb;
+use Illuminate\Support\Arr;
 
 /**
  * Class RedshiftDb
@@ -52,7 +53,7 @@ class RedshiftDb extends SqlDb
             foreach ($constraints[$ts][$tn] as $conName => $constraint) {
                 $table->constraints[strtolower($conName)] = $constraint;
                 $cn = (array)$constraint['column_name'];
-                $type = strtolower(array_get($constraint, 'constraint_type', ''));
+                $type = strtolower(Arr::get($constraint, 'constraint_type', ''));
                 switch ($type[0]) {
                     case 'p':
                         foreach ($cn as $cndx => $colName) {
@@ -77,15 +78,15 @@ class RedshiftDb extends SqlDb
                         break;
                     case 'f':
                         // belongs_to
-                        $rts = array_get($constraint, 'referenced_table_schema', '');
-                        $rtn = array_get($constraint, 'referenced_table_name', '');
-                        $rcn = (array)array_get($constraint, 'referenced_column_name');
+                        $rts = Arr::get($constraint, 'referenced_table_schema', '');
+                        $rtn = Arr::get($constraint, 'referenced_table_name', '');
+                        $rcn = (array)Arr::get($constraint, 'referenced_column_name');
                         $name = ($rts == $defaultSchema) ? $rtn : $rts . '.' . $rtn;
                         foreach ($cn as $cndx => $colName) {
                             if ($column = $table->getColumn($colName)) {
                                 $column->isForeignKey = true;
                                 $column->refTable = $name;
-                                $column->refField = array_get($rcn, $cndx);
+                                $column->refField = Arr::get($rcn, $cndx);
                                 if ((1 === count($rcn)) && (DbSimpleTypes::TYPE_INTEGER === $column->type)) {
                                     $column->type = DbSimpleTypes::TYPE_REF;
                                 }
@@ -100,8 +101,8 @@ class RedshiftDb extends SqlDb
                             'ref_service_id' => $serviceId,
                             'ref_table'      => $name,
                             'ref_field'      => $rcn,
-                            'ref_on_update'  => array_get($constraint, 'update_rule'),
-                            'ref_on_delete'  => array_get($constraint, 'delete_rule'),
+                            'ref_on_update'  => Arr::get($constraint, 'update_rule'),
+                            'ref_on_delete'  => Arr::get($constraint, 'delete_rule'),
                         ]);
 
                         $table->addRelation($relation);
@@ -111,24 +112,24 @@ class RedshiftDb extends SqlDb
         }
 
         foreach ($constraints as $constraintName => $constraint) {
-            if (0 !== strncasecmp('f', strtolower(array_get($constraint, 'constraint_type', '')), 1)) {
+            if (0 !== strncasecmp('f', strtolower(Arr::get($constraint, 'constraint_type', '')), 1)) {
                 continue;
             }
 
-            $rts = array_get($constraint, 'referenced_table_schema', '');
-            $rtn = array_get($constraint, 'referenced_table_name');
+            $rts = Arr::get($constraint, 'referenced_table_schema', '');
+            $rtn = Arr::get($constraint, 'referenced_table_name');
             if ((0 === strcasecmp($rtn, $table->resourceName)) && (0 === strcasecmp($rts, $table->schemaName))) {
-                $ts = array_get($constraint, 'table_schema', '');
-                $tn = array_get($constraint, 'table_name');
+                $ts = Arr::get($constraint, 'table_schema', '');
+                $tn = Arr::get($constraint, 'table_name');
                 $tsk = strtolower($ts);
                 $tnk = strtolower($tn);
-                $cn = array_get($constraint, 'column_name');
-                $rcn = array_get($constraint, 'referenced_column_name');
+                $cn = Arr::get($constraint, 'column_name');
+                $rcn = Arr::get($constraint, 'referenced_column_name');
                 $name = ($ts == $defaultSchema) ? $tn : $ts . '.' . $tn;
                 $type = RelationSchema::HAS_MANY;
                 if (isset($constraints[$tsk][$tnk])) {
                     foreach ($constraints[$tsk][$tnk] as $constraintName2 => $constraint2) {
-                        $type2 = strtolower(array_get($constraint2, 'constraint_type', ''));
+                        $type2 = strtolower(Arr::get($constraint2, 'constraint_type', ''));
                         switch ($type2[0]) {
                             case 'p':
                             case 'u':
@@ -140,14 +141,14 @@ class RedshiftDb extends SqlDb
                                 break;
                             case 'f':
                                 // if other has foreign keys to other tables, we can say these are related as well
-                                $rts2 = array_get($constraint2, 'referenced_table_schema', '');
-                                $rtn2 = array_get($constraint2, 'referenced_table_name');
+                                $rts2 = Arr::get($constraint2, 'referenced_table_schema', '');
+                                $rtn2 = Arr::get($constraint2, 'referenced_table_name');
                                 if (!((0 === strcasecmp($rts2, $table->schemaName)) &&
                                     (0 === strcasecmp($rtn2, $table->resourceName)))
                                 ) {
                                     $name2 = ($rts2 == $defaultSchema) ? $rtn2 : $rts2 . '.' . $rtn2;
-                                    $cn2 = array_get($constraint2, 'column_name');
-                                    $rcn2 = array_get($constraint2, 'referenced_column_name');
+                                    $cn2 = Arr::get($constraint2, 'column_name');
+                                    $rcn2 = Arr::get($constraint2, 'referenced_column_name');
                                     // not same as parent, i.e. via reference back to self
                                     // not the same key
                                     $relation =
@@ -157,8 +158,8 @@ class RedshiftDb extends SqlDb
                                             'ref_service_id'      => $serviceId,
                                             'ref_table'           => $name2,
                                             'ref_field'           => $rcn2,
-                                            'ref_on_update'       => array_get($constraint, 'update_rule'),
-                                            'ref_on_delete'       => array_get($constraint, 'delete_rule'),
+                                            'ref_on_update'       => Arr::get($constraint, 'update_rule'),
+                                            'ref_on_delete'       => Arr::get($constraint, 'delete_rule'),
                                             'junction_service_id' => $serviceId,
                                             'junction_table'      => $name,
                                             'junction_field'      => $cn,
@@ -177,8 +178,8 @@ class RedshiftDb extends SqlDb
                         'ref_service_id' => $serviceId,
                         'ref_table'      => $name,
                         'ref_field'      => $cn,
-                        'ref_on_update'  => array_get($constraint, 'update_rule'),
-                        'ref_on_delete'  => array_get($constraint, 'delete_rule'),
+                        'ref_on_update'  => Arr::get($constraint, 'update_rule'),
+                        'ref_on_delete'  => Arr::get($constraint, 'delete_rule'),
                     ]);
 
                     $table->addRelation($relation);
