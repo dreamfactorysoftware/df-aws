@@ -1,0 +1,39 @@
+repo_name: dreamfactorysoftware/df-aws
+report_id: 1eeb211857d880686f2cad35e5f38380
+repo_type: Public
+timestamp: '2023-12-06T22:36:45+00:00'
+requested_by: daniilly
+provider: github
+branch: master
+detected_tools_count: 3
+tools:
+- name: PHP
+  description: A popular general-purpose scripting language that is especially suited
+    to web development
+  website_url: http://www.php.net/
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/991/hwUcGZ41_400x400.jpg
+  detection_source: Repo Metadata
+- name: Git
+  description: Fast, scalable, distributed revision control system
+  website_url: http://git-scm.com/
+  open_source: true
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Version Control System
+  image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source: Repo Metadata
+- name: aws/aws-sdk-php
+  description: AWS SDK for PHP - Use Amazon Web Services in your PHP project
+  package_url: https://packagist.org/aws/aws-sdk-php
+  open_source: false
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Package Managers
+  image_url: https://img.stackshare.io/package/packagist/image.png
+  detection_source: composer.json
+  last_updated_by: Lee Hicks
+  last_updated_on: 2016-12-13 19:05:50.000000000 Z
