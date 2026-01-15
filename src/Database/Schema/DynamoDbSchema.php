@@ -154,17 +154,27 @@ class DynamoDbSchema extends Schema
      */
     public function updateTable($tableSchema, $changes)
     {
-        // Update the provisioned throughput capacity of the table
-        $properties = array_merge(
-            [static::TABLE_INDICATOR => $tableSchema->quotedName],
-            (array)Arr::get($changes, 'native')
-        );
-        $result = $this->connection->updateTable($properties);
+        // Get native changes for DynamoDB
+        $nativeChanges = (array)Arr::get($changes, 'native');
 
-        // Wait until the table is active again after updating
-        $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $tableSchema->quotedName]);
+        // Only call updateTable if there are actual table-level changes
+        // Virtual relationships and other metadata don't require AWS updateTable calls
+        if (!empty($nativeChanges)) {
+            // Update the provisioned throughput capacity of the table
+            $properties = array_merge(
+                [static::TABLE_INDICATOR => $tableSchema->quotedName],
+                $nativeChanges
+            );
+            $result = $this->connection->updateTable($properties);
 
-        return array_merge(['name' => $tableSchema->quotedName], $result['TableDescription']);
+            // Wait until the table is active again after updating
+            $this->connection->waitUntil('TableExists', [static::TABLE_INDICATOR => $tableSchema->quotedName]);
+
+            return array_merge(['name' => $tableSchema->quotedName], $result['TableDescription']);
+        }
+
+        // No AWS changes needed, just return the table name
+        return ['name' => $tableSchema->quotedName];
     }
 
     /**

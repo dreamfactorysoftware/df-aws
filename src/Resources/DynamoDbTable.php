@@ -75,10 +75,35 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
             $scanProperties['Limit'] = $limit;
             $scanProperties['Count'] = true;
         }
-        $offset = intval(Arr::get($extras, ApiOptions::OFFSET));
-        if ($offset > 0) {
-            $scanProperties['ExclusiveStartKey'] = $offset;
-            $scanProperties['Count'] = true;
+
+        // DynamoDB pagination uses LastEvaluatedKey, not numeric offsets
+        $offset = Arr::get($extras, ApiOptions::OFFSET);
+        if (!empty($offset)) {
+            // Check if it's a numeric offset (not supported by DynamoDB)
+            if (is_numeric($offset)) {
+                throw new BadRequestException(
+                    "DynamoDB does not support numeric offsets. " .
+                    "Use the 'next' token from the previous response as the offset value for pagination. " .
+                    "Example: ?limit=10&offset=<next_token>"
+                );
+            }
+
+            // Offset should be a base64-encoded JSON key structure from previous response
+            if (is_string($offset)) {
+                $decodedKey = json_decode(base64_decode($offset), true);
+                if (empty($decodedKey) || !is_array($decodedKey)) {
+                    throw new BadRequestException(
+                        "Invalid offset token. Use the 'next' value from a previous response for pagination."
+                    );
+                }
+                // Format the key for DynamoDB
+                $scanProperties['ExclusiveStartKey'] = $this->formatAttributes($decodedKey);
+                $scanProperties['Count'] = true;
+            } elseif (is_array($offset)) {
+                // Already an array, format it
+                $scanProperties['ExclusiveStartKey'] = $this->formatAttributes($offset);
+                $scanProperties['Count'] = true;
+            }
         }
 
         try {
@@ -90,14 +115,41 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                 $out[] = $this->unformatAttributes($item);
             }
 
-            $next = $this->unformatAttributes($result['LastEvaluatedKey']);
-            $next = current($next); // todo handle more than one index here.
+            // DynamoDB returns LastEvaluatedKey for pagination (composite keys supported)
+            $lastKey = $result['LastEvaluatedKey'] ?? null;
+            $next = null;
+            if (!empty($lastKey)) {
+                $unformattedKey = $this->unformatAttributes($lastKey);
+                // Encode the full key structure as base64 JSON for pagination
+                $next = base64_encode(json_encode($unformattedKey));
+            }
             $count = $result['ScannedCount'];
             $out = static::cleanRecords($out);
-            $needMore = ($limit > 0) ? (($count - $offset) > $limit) : false;
+
+            // Handle related records (virtual relationships)
+            if (!empty($out)) {
+                $related = Arr::get($extras, ApiOptions::RELATED);
+                $schema = $this->parent->getTableSchema($table);
+                if ($schema && (!empty($related) || $schema->fetchRequiresRelations)) {
+                    if (ApiOptions::FIELDS_ALL !== $related) {
+                        // Convert comma-separated string to array if needed
+                        if (is_string($related)) {
+                            $related = array_map('trim', explode(',', $related));
+                        }
+                    }
+                    $refresh = array_get_bool($extras, ApiOptions::REFRESH);
+                    /** @type \DreamFactory\Core\Database\Schema\RelationSchema[] $availableRelations */
+                    $availableRelations = $schema->getRelations(true);
+                    if (!empty($availableRelations)) {
+                        $this->retrieveRelatedRecords($schema, $availableRelations, $related, $out, $refresh);
+                    }
+                }
+            }
+
+            // DynamoDB doesn't provide total count - use presence of LastEvaluatedKey for pagination
             $addCount = array_get_bool($extras, ApiOptions::INCLUDE_COUNT);
-            if ($addCount || $needMore || $next) {
-                $out['meta']['count'] = $count;
+            if ($addCount || $next) {
+                $out['meta']['count'] = $count; // ScannedCount from this page only
                 if ($next) {
                     $out['meta']['next'] = $next;
                 }
@@ -492,6 +544,33 @@ class DynamoDbTable extends BaseNoSqlDbTableResource
                     if ((str_starts_with($value, '(')) && ((strlen($value) - 1) === strrpos($value, ')'))) {
                         // remove wrapping ()
                         $value = substr($value, 1, -1);
+
+                        // DynamoDB doesn't support IN operator in FilterExpression
+                        // Convert to OR conditions: (field = val1 OR field = val2 OR field = val3)
+                        if (DbComparisonOperators::IN === $sqlOp || DbComparisonOperators::IN_STR === $sqlOp) {
+                            $out_names['#' . $field] = $field;
+                            $conditions = [];
+                            $valueIndex = 0;
+                            foreach (explode(',', $value) as $each) {
+                                $trimmed = trim($each);
+                                // Create unique parameter name for each value
+                                $uniqueInfo = new ColumnSchema(['name' => $field . '_' . $valueIndex]);
+                                $parsedVal = $this->parseFilterValue($trimmed, $uniqueInfo, $out_params, $in_params);
+                                $conditions[] = '#' . $field . ' = ' . $parsedVal;
+                                $valueIndex++;
+                            }
+                            $out = implode(' OR ', $conditions);
+                            // Don't add extra parentheses - they're already handled by $wrap, $leftParen, $rightParen
+                            if ($leftParen) {
+                                $out = $leftParen . $out;
+                            }
+                            if ($rightParen) {
+                                $out .= $rightParen;
+                            }
+                            // Return without wrapping since the parentheses are preserved from original
+                            return $out;
+                        }
+
                         $parsed = [];
                         foreach (explode(',', $value) as $each) {
                             $parsed[] = $this->parseFilterValue(trim($each), $info, $out_params, $in_params);
