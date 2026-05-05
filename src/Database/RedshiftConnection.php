@@ -2,7 +2,6 @@
 
 namespace DreamFactory\Core\Aws\Database;
 
-use Doctrine\DBAL\Driver\PDOPgSql\Driver as DoctrineDriver;
 use DreamFactory\Core\Aws\Database\Schema\RedshiftBuilder;
 use DreamFactory\Core\Aws\Database\Query\Processors\RedshiftProcessor;
 use DreamFactory\Core\Aws\Database\Query\Grammars\RedshiftGrammar as QueryGrammar;
@@ -32,7 +31,7 @@ class RedshiftConnection extends Connection
      */
     protected function getDefaultQueryGrammar()
     {
-        return $this->withTablePrefix(new QueryGrammar);
+        return new QueryGrammar($this);
     }
 
     /**
@@ -42,7 +41,7 @@ class RedshiftConnection extends Connection
      */
     protected function getDefaultSchemaGrammar()
     {
-        return $this->withTablePrefix(new SchemaGrammar);
+        return new SchemaGrammar($this);
     }
 
     /**
@@ -53,15 +52,5 @@ class RedshiftConnection extends Connection
     protected function getDefaultPostProcessor()
     {
         return new RedshiftProcessor;
-    }
-
-    /**
-     * Get the Doctrine DBAL driver.
-     *
-     * @return \Doctrine\DBAL\Driver\PDOPgSql\Driver
-     */
-    protected function getDoctrineDriver()
-    {
-        return new DoctrineDriver;
     }
 }
