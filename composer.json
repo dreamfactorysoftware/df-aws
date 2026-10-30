@@ -35,7 +35,7 @@
     "dreamfactory/df-database": "~1.4.0",
     "dreamfactory/df-email":    "~0.10",
     "dreamfactory/df-file":     "~0.8",
-    "dreamfactory/df-sqldb":    "~1.0",
+    "dreamfactory/df-sqldb":    "~1.5",
     "aws/aws-sdk-php":          "3.*"
   },
   "autoload":    {
