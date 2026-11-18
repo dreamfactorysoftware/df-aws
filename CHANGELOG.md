@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.20.2] - 2026-11-18
+- Laravel 13 compatibility for the Redshift connector.
+
 ## [0.15.1] - 2018-01-25
 ### Changed
 - Adhere to base database changes
