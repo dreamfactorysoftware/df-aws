@@ -33,7 +33,7 @@
   "require":     {
     "php":                      "^8.3",
     "laravel/helpers":          "^1.8",
-    "dreamfactory/df-core":     "~1.0.4",
+    "dreamfactory/df-core":     "~1.0.19",
     "dreamfactory/df-database": "~1.4",
     "dreamfactory/df-email":    "~0.10",
     "dreamfactory/df-file":     "~0.8",
